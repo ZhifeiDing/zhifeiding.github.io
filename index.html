@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
 
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Fun In Life</title>
+  <title>不积跬步,无以至千里;不积小流,无以成江海</title>
   
   <meta name="author" content="Zhifei Ding">
 
-  <link rel="alternative" href="/rss.xml" type="application/rss+xml" title="Fun In Life - RSS" />
+  <link rel="alternative" href="/rss.xml" type="application/rss+xml" title="Zhifei Ding - RSS" />
 
   <!-- Mobile Specific Metas
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -24,6 +24,9 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <link rel="stylesheet" href="/assets/styles/normalize.css">
   <link rel="stylesheet" href="/assets/styles/skeleton.css">
+  <link rel="stylesheet" href="/assets/styles/style.css">
+  <link rel="stylesheet" href="/assets/styles/highlight.css">
+  <script type="text/javascript" src="//code.jquery.com/jquery-2.1.1.min.js"></script>
 
   <link href="/assets/styles/pygments.css" type="text/css" rel="stylesheet" media="all">
 
@@ -32,13 +35,36 @@
   
 </head>
 <body>
+    <div id="container">
+      <div id="main" role="main">
+        <header>
+        <h1>Stay Hungry , Stay Foolish ! </h1>
+        </header>
+        <nav>
+        <span><a title="home page" class="" href="zhifeiding.github.io/cn/">home</a></span>
+        <span><a title="about" class="" href="zhifeiding.github.io/cn/about/">about</a></span>
+        <span><a title="publication" class="" href="zhifeiding.github.io/cn/publication/">publication</a></span>
+        <span><a title="guestbook" class="" href="zhifeiding.github.io/cn/guestbook/">guestbook</a></span>
+        <span><a title="vitae" class="" href="zhifeiding.github.io/cn/vitae/">vitae</a></span>
+        <span><a title="categories" class="" href="zhifeiding.github.io/cn/categories/">categories</a></span>
+        <span><a title="tags" class="" href="zhifeiding.github.io/cn/tags/">tags</a></span>
+        <span><a title="links" class="" href="zhifeiding.github.io/cn/links/">links</a></span>
+        <span><a title="subscribe by RSS" class="" href="zhifeiding.github.io/cn/feed/">subscribe</a></span>
+        </nav>
+        <article class="content">
+        <section class="post">
+<ul class="listing">
 
-<h2>{{ page.title }}</h2>
-<p> Hello, World </p>
-<ul>
-　　{% for post in site.posts %}
-　　　　<li>{{ post.date | date_to_string }} <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
-　　{% endfor %}
-</ul>
+  
+  
+    
+    <li class="listing-seperator">2015</li>
+  
+  <li class="listing-item">
+    <time datetime="2015-10-30">2015-12-08</time>
+    <a href="zhifeiding.github.io/2015/12/05/algorithm-learning.html" title="algorithm learning">algorithm learning</a>
+  </li>
+
+
 </body>
 </html>
