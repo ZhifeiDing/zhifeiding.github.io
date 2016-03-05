@@ -1,86 +1,18 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
-<head>
+---
+layout: homepage
+---
 
-  <!-- Basic Page Needs
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta charset="utf-8">
-  <title>不积跬步,无以至千里;不积小流,无以成江海</title>
-  
-  <meta name="author" content="Zhifei Ding">
-
-  <link rel="alternative" href="/rss.xml" type="application/rss+xml" title="Zhifei Ding - RSS" />
-
-  <!-- Mobile Specific Metas
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- FONT
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <!-- Google webfonts is almost not accessible from China, so we host locally -->
-  <link href="/assets/fonts/fonts.css" type="text/css" rel="stylesheet" media="all">
-
-  <!-- CSS
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="stylesheet" href="/assets/styles/normalize.css">
-  <link rel="stylesheet" href="/assets/styles/skeleton.css">
-  <link rel="stylesheet" href="/assets/styles/style.css">
-  <link rel="stylesheet" href="/assets/styles/highlight.css">
-  <script type="text/javascript" src="//code.jquery.com/jquery-2.1.1.min.js"></script>
-
-  <link href="/assets/styles/pygments.css" type="text/css" rel="stylesheet" media="all">
-
-  <link rel="stylesheet" href="/assets/styles/customize.css">
-
-  
-</head>
-<body>
-    <div id="container">
-      <div id="main" role="main">
-        <header>
-        <h1>Stay Hungry , Stay Foolish ! </h1>
-        </header>
-        <nav>
-        <span><a title="home page" class="" href="/cn/">home</a></span>
-        <span><a title="about" class="" href="/cn/about/">about</a></span>
-        <span><a title="publication" class="" href="/cn/publication/">publication</a></span>
-        <span><a title="guestbook" class="" href="/cn/guestbook/">guestbook</a></span>
-        <span><a title="vitae" class="" href="/cn/vitae/">vitae</a></span>
-        <span><a title="categories" class="" href="/cn/categories/">categories</a></span>
-        <span><a title="tags" class="" href="/cn/tags/">tags</a></span>
-        <span><a title="links" class="" href="/cn/links/">links</a></span>
-        <span><a title="subscribe by RSS" class="" href="/cn/feed/">subscribe</a></span>
-        </nav>
-        <article class="content">
-        <section class="post">
-          <ul class="listing">
-
-  
-  
-    
+        {% for post in site.categories.blog %}
             <li class="listing-seperator">2015</li>
-  
+
               <li class="listing-item">
                 <time datetime="2015-12-06">2015-12-06</time>
-                <a href="/2015/12/06/algorithm-learning.html" title="algorithm learning">algorithm learning</a>
+                <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
               </li>
 
-          </ul>
-
-        </section>
-        </article>
-      </div>
+        {% endfor %}
+        </ul>
     </div>
-    <script type="text/javascript">
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-1988641-2']);
-      _gaq.push(['_trackPageview']);
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
-
-</body>
-</html>
+    <div class="aside">
+    </div>
+</div>
