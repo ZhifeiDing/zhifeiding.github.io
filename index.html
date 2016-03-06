@@ -2,11 +2,11 @@
 layout: homepage
 ---
 
-        {% for post in site.posts %}
-            <li class="listing-seperator">2015</li>
+        {% for post in {{ site.posts | group_by : "page.year" }} %}
+            <li class="listing-seperator">{{ post.year }}</li>
 
               <li class="listing-item">
-                <time datetime="2015-12-06">2015-12-06</time>
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
                 <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
               </li>
 
