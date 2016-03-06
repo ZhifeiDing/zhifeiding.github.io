@@ -8,9 +8,10 @@ layout: homepage
                 <li class="listing-seperator">{{ year }}</li>
                 {% assign pre_year = year %}
             {% endif %}
+            {% assign year = nil %}
 
               <li class="listing-item">
-                <time datetime="{{ post.date }}">{{ post.date  | date : "%m-%e" }}</time> {{ year }}
+                <time datetime="{{ post.date }}">{{ post.date  | date : "%F" }}</time> {{ year }}
                 <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
               </li>
 
