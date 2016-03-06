@@ -3,7 +3,7 @@ layout: homepage
 ---
         {% assign pre_year = "" %}
         {% for post in site.posts %}
-            {% assign year = {{ post.date | date : "%Y" }} %}
+            {% capture year %}{{ post.date | date : "%Y" }} {% endcapture %}
             {% if pre_year != year %}    
                 <li class="listing-seperator">{{ year }}</li>
                 {% assign pre_year = year %}
