@@ -1,9 +1,13 @@
 ---
 layout: homepage
 ---
-
-        {% for post in {{ site.posts | group_by : "page.year" }} %}
-            <li class="listing-seperator">{{ post.year }}</li>
+        {% assign pre_year = "" %}
+        {% for post in site.posts %}
+            {% assign year = {{ post.date | date : "%Y" }} %}
+            {% if pre_year != year %}    
+                <li class="listing-seperator">{{ post.year }}</li>
+                {% assign pre_year = year %}
+            {% endif %}
 
               <li class="listing-item">
                 <time datetime="{{ post.date }}">{{ post.date }}</time>
