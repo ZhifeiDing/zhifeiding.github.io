@@ -1,7 +1,7 @@
 ---
 layout : default
-categories : algorithm, c++, programming
-tags : algorithm, c++
+categories : algorithm:c++:programming
+tags : algorithm:c++
 ---
 
 ====================
