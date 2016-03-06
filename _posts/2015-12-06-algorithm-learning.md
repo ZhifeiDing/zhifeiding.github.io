@@ -1,3 +1,9 @@
+---
+layout : default
+categories : algorithm, c++, programming
+tags : algorithm, c++
+---
+
 ====================
 Algorithms with C++
 ====================
