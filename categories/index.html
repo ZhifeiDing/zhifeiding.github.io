@@ -1,16 +1,21 @@
 ---
-
+layout : tags
+title : Categories
 ---
         <div id='tag_cloud'>
-        {% assign count = 0 %}
+        
         {% for category in site.categories %}
+          {% assign count = 0 %}
           {% assign category = category[0] %}
           {% capture count %}{{ site.categories.category | size }}{% endcapture %}
           <a href="#{{ category }}" title="{{ category }}" rel="{{ count }}">{{ category }} ({{ count }})</a>
+          {% assign count = nil %}
         {% endfor %}
+        
         </div>
         {% assign pre_category = "" %}
         {% for category in site.categories %}
+            {% assign category = category[0] %}
             {% if pre_category != category %}    
               <li class="listing-seperator" id={{ category }}>{{ category }}</li>
               {% assign pre_category = category %}
