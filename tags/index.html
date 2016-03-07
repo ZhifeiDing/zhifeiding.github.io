@@ -1,0 +1,32 @@
+---
+layout : tags
+title : Tags
+---
+        <div id='tag_cloud'>
+
+        {% for tag_name in site.tags %}
+          {% assign count = 0 %}
+          {% assign tag = tag_name[0] %}
+          {% capture count %}{{ site.tags.tag | size }}{% endcapture %}
+          <a href="#{{ tag }}" title="{{ tag }}" rel="{{ count }}">{{ tag }} ({{ count }})</a>
+          {% assign count = nil %}
+        {% endfor %}
+
+        </div>
+        {% assign pre_tag = "" %}
+        {% for tag_name in site.tags %}
+            {% assign tag = tag_name[0] %}
+            {% if pre_category != tag %}
+              <li class="listing-seperator" id={{ tag }}>{{ tag }}</li>
+              {% assign pre_tag = tag %}
+            {% endif %}
+            {% for post in site.tags.tag %}
+
+              <li class="listing-item">
+                <time datetime="{{ post.date }}">{{ post.date  | date : "%F" }}</time>
+                <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
+              </li>
+
+            {% endfor %}
+        {% endfor %}
+        {% assign pre_tag = nil %}

@@ -10,3 +10,5 @@ defaults:
     values:
       layout: "default"
       author: "Zhifei Ding"
+      categories: "programming"
+      tags: "C++"
