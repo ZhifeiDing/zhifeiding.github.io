@@ -6,21 +6,21 @@ title : Categories
         
         {% for category in site.categories %}
           {% assign count = 0 %}
-          {% assign category = category[0] %}
-          {% capture count %}{{ site.categories.category | size }}{% endcapture %}
-          <a href="#{{ category }}" title="{{ category }}" rel="{{ count }}">{{ category }} ({{ count }})</a>
+          {% assign cat = category[0] %}
+          {% capture count %}{{ site.categories.cat | size }}{% endcapture %}
+          <a href="#{{ cat }}" title="{{ cat }}" rel="{{ count }}">{{ cat }} ({{ count }})</a>
           {% assign count = nil %}
         {% endfor %}
         
         </div>
         {% assign pre_category = "" %}
         {% for category in site.categories %}
-            {% assign category = category[0] %}
-            {% if pre_category != category %}    
-              <li class="listing-seperator" id={{ category }}>{{ category }}</li>
-              {% assign pre_category = category %}
+            {% assign cat = category[0] %}
+            {% if pre_category != cat %}    
+              <li class="listing-seperator" id={{ cat }}>{{ cat }}</li>
+              {% assign pre_category = cat %}
             {% endif %}
-            {% for post in site.categories.category %}
+            {% for post in site.categories.cat %}
 
               <li class="listing-item">
                 <time datetime="{{ post.date }}">{{ post.date  | date : "%F" }}</time>
