@@ -1,10 +1,11 @@
 ---
 layout: default
 title : hello , world !
+category : life
 ---
 
 # page.title
 
 ** first demo
 
-** {{page.data | data_to_string }} 
+** 
