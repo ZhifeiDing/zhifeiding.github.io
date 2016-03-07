@@ -6,27 +6,27 @@
         <header>
         <h1> {{ page.title }} </h1>
         </header>
-        
+
     {% include navigator.html %}
     <article class="content">
     <section class="post">
-      
+
 　　{{ content }}
 　　
     </section>
-    
+
     <script type="text/javascript">
     $(function(){
       $(document).keydown(function(e) {
         if (e.target.nodeName.toUpperCase() != 'BODY') return;
         var url = false;
             if (e.which == 37 || e.which == 74) {  // Left arrow and J
-                
+
             url = '{{ page.url }}';
-            
+
             }
             else if (e.which == 39 || e.which == 75) {  // Right arrow and K
-                
+
             }
             if (url) {
                 window.location = url;
@@ -34,13 +34,13 @@
       });
     })
     </script>
-    
-    
+
+
     </article>
     </div>
-    </div>  
-    
+    </div>
+
         {% include footer.html %}
-    
+
   </body>
 </html>

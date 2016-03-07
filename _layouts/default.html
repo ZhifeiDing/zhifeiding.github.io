@@ -6,11 +6,11 @@
         <header>
         <h1> {{ page.title }} </h1>
         </header>
-        
+
     {% include navigator.html %}
     <article class="content">
     <section class="post">
-      
+
 　　{{ content }}
 　　
     </section>
@@ -27,7 +27,7 @@
       Published under <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">(CC) BY-NC-SA</a>
     </span>
     </section>
-    
+
     <section class="comment">
     <div id="disqus_thread"></div>
     <script>
@@ -43,29 +43,29 @@
       */
         (function() {  // REQUIRED CONFIGURATION VARIABLE: EDIT THE SHORTNAME BELOW
             var d = document, s = d.createElement('script');
-            
+
             s.src = '//dzhf21.disqus.com/embed.js';  // IMPORTANT: Replace EXAMPLE with your forum shortname!
-            
+
             s.setAttribute('data-timestamp', +new Date());
             (d.head || d.body).appendChild(s);
         })();
     </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
     </section>
-    
-    
+
+
     <script type="text/javascript">
     $(function(){
       $(document).keydown(function(e) {
         if (e.target.nodeName.toUpperCase() != 'BODY') return;
         var url = false;
             if (e.which == 37 || e.which == 74) {  // Left arrow and J
-                
+
             url = '{{ page.url }}';
-            
+
             }
             else if (e.which == 39 || e.which == 75) {  // Right arrow and K
-                
+
             }
             if (url) {
                 window.location = url;
@@ -73,13 +73,13 @@
       });
     })
     </script>
-    
-    
+
+
     </article>
     </div>
-    </div>  
-    
+    </div>
+
         {% include footer.html %}
-    
+
   </body>
 </html>
