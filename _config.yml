@@ -2,6 +2,11 @@ baseurl : /homepages
 # Outputting
 #permalink:     pretty
 permalink: /:categories/:year/:month/:day/:title/
+# use github flavored markdown 
+markdown: redcarpet2
+redcarpet:
+  extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "strikethrough", "superscript"]
+
 defaults:
   -
     scope:
