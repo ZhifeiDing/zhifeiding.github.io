@@ -3,30 +3,26 @@ layout : tags
 title : Categories
 ---
         <div id='tag_cloud'>
-        
+
         {% for category in site.categories %}
-          {% assign count = 0 %}
           {% assign cat = category[0] %}
-          {% capture count %}{{ site.categories.cat | size }}{% endcapture %}
+          {% assign count = site.categories.cat | size %}
           <a href="#{{ cat }}" title="{{ cat }}" rel="{{ count }}">{{ cat }} ({{ count }})</a>
-          {% assign count = nil %}
         {% endfor %}
-        
+
         </div>
         {% assign pre_category = "" %}
         {% for category in site.categories %}
             {% assign cat = category[0] %}
-            {% if pre_category != cat %}    
+            {% if pre_category != cat %}
               <li class="listing-seperator" id={{ cat }}>{{ cat }}</li>
               {% assign pre_category = cat %}
             {% endif %}
             {% for post in site.categories.cat %}
-
               <li class="listing-item">
                 <time datetime="{{ post.date }}">{{ post.date  | date : "%F" }}</time>
                 <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
               </li>
-              
             {% endfor %}
         {% endfor %}
         {% assign pre_category = nil %}
