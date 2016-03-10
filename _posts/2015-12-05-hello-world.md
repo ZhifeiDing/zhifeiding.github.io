@@ -1,11 +1,8 @@
 ---
 layout: default
 title : hello , world !
-category : life
+categories : life
 ---
+# Hello World
 
-# page.title
-
-** first demo
-
-** 
+搭建好github pages后测试
