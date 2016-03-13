@@ -10,3 +10,5 @@ title : Links
 # 网站
 
 * [kramdown](http://http://kramdown.gettalong.org/) kramdown fast, pure-Ruby Markdown-superset converter
+* [linux-tools](http://linuxtools-rst.readthedocs.org/) linux tools usage
+  introduction
