@@ -3,7 +3,8 @@ baseurl : /homepages
 #permalink:     pretty
 permalink: /:categories/:year/:month/:day/:title/
 # highlight
-pygments: true
+# pygments: true
+highlighter:rouge
 # use github flavored markdown
 #markdown: redcarpet2
 #redcarpet:
