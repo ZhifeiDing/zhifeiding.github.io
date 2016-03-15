@@ -4,7 +4,7 @@ baseurl : /homepages
 permalink: /:categories/:year/:month/:day/:title/
 # highlight
 # pygments: true
-highlighter:rouge
+# highlighter:rouge
 # use github flavored markdown
 #markdown: redcarpet2
 #redcarpet:
