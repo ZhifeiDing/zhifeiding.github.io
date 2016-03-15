@@ -2,6 +2,9 @@ baseurl : /homepages
 # Outputting
 #permalink:     pretty
 permalink: /:categories/:year/:month/:day/:title/
+# highlight
+# pygments: true
+# highlighter:rouge
 # use github flavored markdown
 #markdown: redcarpet2
 #redcarpet:
