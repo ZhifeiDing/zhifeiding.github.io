@@ -20,6 +20,14 @@ tags : [sort, c++, algorithm]
 冒泡排序时间复杂度是```O(n^2)```, 空间复杂度是```O(1)```, 所以是  ```in-place comparison based stable``` 排序算法。 因为时间复杂度冒泡排序很少会被使用， 不过由于原理和实现简单， 所以也是出现很频繁。 冒泡排序，就如名字所示， 就像冒泡一样， 大的往下沉，这样最后整个数据就是有序的。因此也被称为```sinking sort```
 
 ```cpp
+// bubble sort
+template<typename T>
+void bubbleSort(std::vector<T> &nums) {
+    for(int i = nums.size()-1; i > 0; --i)
+        for(int j = 0; j < i; ++j)
+            if( nums[j+1] < nums[j] )
+                std::swap(nums[j+1], nums[j]);
+}
 ```
 
 ## 插入排序
