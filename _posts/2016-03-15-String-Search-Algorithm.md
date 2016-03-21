@@ -29,8 +29,10 @@ int nativeStringSearch(string &text, string &p) {
   为了提高比较速度， 当Text与Pattern不匹配时，KMP算法利用pattern自身的特点来跳过一些native string searching算法中比较过程。原理就是当遇到不匹配字符时， 前面已经匹配到的子串中如果存在前缀子串则可以从匹配到前缀子串处开始比较。具体例子可以参考[wikipedia](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
 
 ## 部分匹配表
-  部分匹配表其实就是当Pattern和Text不匹配时，根据
-  部分匹配表生成代码
+  部分匹配表其实就是当Pattern和Text不匹配时，在已经匹配的子串中前缀子串和后缀子串匹配的长度来决定Text移动长度。
+  
+  部分匹配表生成代码:
+  
 ```cpp
 void KMPTable(string &p, vector<int> &kmp_table) {
 	kmp_table[0] = -1;
@@ -54,8 +56,9 @@ void KMPTable(string &p, vector<int> &kmp_table) {
 ```
 
 ## KMP算法实现
-
-  使用上面生成的部分匹配表的代码
+  
+  在部分匹配表已经生成情况下***KMP算法***实现比较简单的，使用上面生成的部分匹配表的***KMP算法***代码:
+  
 ```cpp
 int KMPSearch(string &text, string &p) {
 	vector<int> kmp_table(p.size(),0);
@@ -79,9 +82,14 @@ int KMPSearch(string &text, string &p) {
 	return -1;
 }
 ```
+
 在部分匹配表已经存在情况下， 上面代码的时间复杂度是`O(n)`(n是Text长度), 而计算部分匹配表的时间复杂度是`O(k)`(k是Pattern的长度). 所以KMP总的时间复杂度是`O(k+n)`。 
 
 # Boyer-Moore 算法
+
+了解了上面的***KMP算法***之后， 你可能会疑惑， 怎么还有***Boyer-Moore算法**? 难道还能比***KMP算法***更efficient？  
+
+
 
 ```cpp
 ```
