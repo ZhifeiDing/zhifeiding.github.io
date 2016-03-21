@@ -33,7 +33,7 @@ int nativeStringSearch(string &text, string &p) {
   
   部分匹配表生成代码:
   
-```cpp
+```cpp   
 void KMPTable(string &p, vector<int> &kmp_table) {
 	kmp_table[0] = -1;
 	if( p.size() <= 2 )
@@ -59,7 +59,7 @@ void KMPTable(string &p, vector<int> &kmp_table) {
   
   在部分匹配表已经生成情况下***KMP算法***实现比较简单的，使用上面生成的部分匹配表的***KMP算法***代码:
   
-```cpp
+```cpp   
 int KMPSearch(string &text, string &p) {
 	vector<int> kmp_table(p.size(),0);
 	KMPTable(p, kmp_table);
