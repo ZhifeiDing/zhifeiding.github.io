@@ -25,8 +25,8 @@ int nativeStringSearch(string &text, string &p) {
 
 # KMP算法
 
-  大名鼎鼎的KMP算法其实是**Knuth–Morris–Pratt**的缩写， 而里面每一个人都是一个人名。上面的native string searching是从Text一个一个移动，为了提高比较速度， 我们想能不能在Text和Pattern不等时不要像上面一样一个一个移动呢？如果可以那又该怎么办呢？  
-  为了提高比较速度， 当Text与Pattern不匹配时，KMP算法利用pattern自身的特点来跳过一些native string searching算法中比较过程。原理就是当遇到不匹配字符时， 前面已经匹配到的子串中如果存在前缀子串则可以从匹配到前缀子串处开始比较。具体例子可以参考[wikipedia](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
+  大名鼎鼎的***KMP算法***其实是**Knuth–Morris–Pratt**的缩写， 而里面每一个人都是一个人名。上面的native string searching是从Text一个一个移动，为了提高比较速度， 我们想能不能在Text和Pattern不等时不要像上面一样一个一个移动呢？如果可以那又该怎么办呢？  
+  为了提高比较速度， 当Text与Pattern不匹配时，***KMP算法***利用pattern自身的特点来跳过一些native string searching算法中比较过程。原理就是当遇到不匹配字符时， 前面已经匹配到的子串中如果存在前缀子串则可以从匹配到前缀子串处开始比较。具体例子可以参考[wikipedia](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
 
 ## 部分匹配表
   部分匹配表其实就是当Pattern和Text不匹配时，在已经匹配的子串中前缀子串和后缀子串匹配的长度来决定Text移动长度。
@@ -87,7 +87,8 @@ int KMPSearch(string &text, string &p) {
 
 # Boyer-Moore 算法
 
-了解了上面的***KMP算法***之后， 你可能会疑惑， 怎么还有***Boyer-Moore算法**? 难道还能比***KMP算法***更efficient？  
+了解了上面的***KMP算法***之后， 你可能会疑惑， 怎么还有***Boyer-Moore算法***? 难道还能比***KMP算法***更efficient？   
+在回答上面问题之前， 我们先了解一下***Boyer-Moore算法***原理。
 
 
 
