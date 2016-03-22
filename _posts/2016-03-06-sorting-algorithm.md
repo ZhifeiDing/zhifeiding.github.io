@@ -8,11 +8,12 @@ tags : [sort, c++, algorithm]
 
 # 排序算法的分类
 
-   排序算法根据不同比较方法可以下面这些分类方法:
-   * 根据排序方式是否是比较可以分为 comparison based , 比如插入排序和桶排序
-   * 根据空间复杂度可以分为是否 ```in-place``` ， 比如插入排序和合并排序
-   * 根据时间复杂度可以分为```O(n^2)```, ```O(nlogn)```和```O(log^2n)```
-   * 根据相同值是否保持相对位置可以分为```stable```
+排序算法根据不同比较方法可以下面这些分类方法:
+
+* 根据排序方式是否是比较可以分为 comparison based , 比如插入排序和桶排序
+* 根据空间复杂度可以分为是否 ```in-place``` ， 比如插入排序和合并排序
+* 根据时间复杂度可以分为```O(n^2)```, ```O(nlogn)```和```O(log^2n)```
+* 根据相同值是否保持相对位置可以分为```stable```
 
 # 具体算法分析和实现
 
@@ -80,9 +81,147 @@ void selectionSort(std::vector<T> &nums) {
 
 ## 合并排序
 
+  合并排序应用分治法，将数据分成两部分， 分别排好序之后将其合并成同一个序列。
+  其时间复杂度为`O(nlogn)`,而空间复杂度为`O(n)`。
+
+![mergeSort](https://upload.wikimedia.org/wikipedia/commons/c/cc/Merge-sort-example-300px.gif)
+
+```cpp
+// merge sort
+template<typename T>
+void merge(std::vector<T> &nums, int left, int mid, int right) {
+    std::vector<T> r;
+    int i = left, j = mid+1;
+    while( i <= mid && j <= right ) {
+        if( nums[i] <= nums[j] ) {
+            r.push_back(nums[i]);
+            ++i;
+        } else {
+            r.push_back(nums[j]);
+            ++j;
+        }
+    }
+    if( j <= right ) {
+        i = j;
+        mid = right;
+    }
+    while( i <= mid ) {
+        r.push_back(nums[i]);
+        ++i;
+    }
+    copy(r.begin(), r.end(), nums.begin()+left);
+}
+
+template<typename T>
+void mergeSort(std::vector<T> &nums, int left, int right) {
+    if( right <= left )
+        return;
+    int mid = left + ( right - left ) / 2;
+    mergeSort(nums, left, mid);
+    mergeSort(nums, mid+1, right);
+    merge(nums, left, mid, right);
+}
+
+template<typename T>
+void mergeSort(std::vector<T> &nums) {
+    mergeSort(nums, 0, nums.size()-1);
+}
+```
+
 ## 堆排序
 
+  堆排序是选择排序一种，
+  但是由于使用堆这种数据结构，使得选择最大（最小）值的过程复杂度变成`O(logn)`,因此堆排序比选择排序更加efficient。堆排序的时间复杂度是
+  `O(nlogn)`。
+
+```cpp
+// heap sort
+template<typename T>
+void siftDown(std::vector<T> &nums, int start, int end) {
+    while( 2 * start + 1 <= end ) {
+        int child = 2 * start + 1;
+        int swap = start;
+        if( nums[start] < nums[child] )
+            swap = child;
+        if( child + 1 <= end && nums[swap] < nums[child+1] )
+            swap = child + 1;
+        if( swap == start )
+            return;
+        else {
+            std::swap(nums[swap], nums[start]);
+            start = swap;
+        }
+    }
+}
+template<typename T>
+void heapify(std::vector<T> &nums) {
+    for(int i = (nums.size()-2)/2; i >= 0; --i)
+        siftDown(nums, i, nums.size()-1);
+}
+template<typename T>
+void heapSort(std::vector<T> &nums) {
+    // build the heap
+    heapify(nums);
+    // exchange the largest value to the end of the array
+    // then call siftDown() to rebalance the heap[0..end]
+    int end = nums.size()-1;
+    while( end ) {
+        std::swap(nums[0], nums[end]);
+        --end;
+        siftDown(nums, 0, end);
+    }
+}
+```
+
 ## 快排
+
+  快排也是分治法的一种，平均时间复杂度是`O(nlogn)`，在数据有序情况下最坏时间复杂度是`O(n^2)`。快排主要思想是把数据分成两部分，和选定一个值比较，大的数据在一边，小的在另一边，重复这一步只到两边数据为空或只有一个。这样整个数据就拍好序了。因此，选定值的好坏关系到快排的时间复杂度。
+
+```cpp
+// quick sort
+template<typename T>
+int pivot(std::vector<T> &nums, int start, int end) {
+    int mid = start + ( end - start )/2;
+    int p = mid;
+    if( nums[start] < nums[end] ) {
+        if( nums[mid] <= nums[start] )
+            p = start;
+        else if( nums[end] < nums[mid] )
+            p = end;
+    } else {
+        if( nums[mid] <= nums[end] )
+            p = end;
+        else if( nums[start] < nums[mid] )
+            p = start;
+    }
+    return nums[p];
+}
+template<typename T>
+int partition(std::vector<T> &nums, int start, int end) {
+    int p = pivot(nums, start, end);
+    int l = start - 1, r = end + 1;
+    while( l < r ) {
+        while( nums[++l] < p );
+        while( p < nums[--r] );
+        if( l >= r )
+            return r;
+        std::swap(nums[l], nums[r]);
+    }
+    return r;
+}
+template<typename T>
+void quickSort(std::vector<T> &nums, int start, int end) {
+    if( end <= start )
+        return;
+    int p = partition(nums, start, end);
+    quickSort(nums, start, p);
+    quickSort(nums, p + 1, end);
+}
+template<typename T>
+void quickSort(std::vector<T> &nums) {
+    quickSort(nums, 0, nums.size()-1);
+}
+```
 
 # 各种排序算法的复杂度
 
