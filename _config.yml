@@ -2,6 +2,8 @@ baseurl : /homepages
 # Outputting
 #permalink:     pretty
 permalink: /:categories/:year/:month/:day/:title/
+# sitemap
+jekyll-sitemap
 # highlight
 # pygments: true
 # highlighter:rouge
