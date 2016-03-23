@@ -2,27 +2,20 @@
 layout : tags
 title : Categories
 ---
-        <div id='tag_cloud'>
+<div id='tag_cloud'>
+{% for cat in site.categories %}
+<a href="#{{ cat[0] }}" title="{{ cat[0] }}" rel="{{ cat[1].size }}">{{ cat[0] }} ({{ cat[1].size }})</a>
+{% endfor %}
+</div>
 
-        {% for category in site.categories %}
-          {% assign cat = category[0] %}
-          {% assign count = site.categories.cat | size %}
-          <a href="#{{ cat }}" title="{{ cat }}" rel="{{ count }}">{{ cat }} ({{ count }})</a>
-        {% endfor %}
-
-        </div>
-        {% assign pre_category = "" %}
-        {% for category in site.categories %}
-            {% assign cat = category[0] %}
-            {% if pre_category != cat %}
-              <li class="listing-seperator" id={{ cat }}>{{ cat }}</li>
-              {% assign pre_category = cat %}
-            {% endif %}
-            {% for post in site.categories.pre_category %}
-              <li class="listing-item">
-                <time datetime="{{ post.date }}">{{ post.date  | date : "%F" }}</time>
-                <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
-              </li>
-            {% endfor %}
-        {% endfor %}
-        {% assign pre_category = nil %}
+<ul class="listing">
+{% for cat in site.categories %}
+  <li class="listing-seperator" id="{{ cat[0] }}">{{ cat[0] }}</li>
+{% for post in cat[1] %}
+  <li class="listing-item">
+  <time datetime="{{ post.date | date:"%Y-%m-%d" }}">{{ post.date | date:"%Y-%m-%d" }}</time>
+  <a href="{{ site.url }}{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>
+  </li>
+{% endfor %}
+{% endfor %}
+</ul>
