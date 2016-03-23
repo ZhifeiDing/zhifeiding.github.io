@@ -5,9 +5,9 @@ categories : [programming]
 tags : [algorithm,c++]
 ---
 
-====================
+***
 
-学习数据结构和算法过程中我根据使用的数据结构或者特殊算法分了一些类，并将不同的文体记录在 [algorithm learning](https://github.com/ZhifeiDing/algorithm_learning) . 所有问题都是来自leetcode, 使用```C++```实现并测试过的。
+学习数据结构和算法过程中我根据使用的数据结构或者特殊算法分了一些类，并将不同的问题记录在 [algorithm learning](https://github.com/ZhifeiDing/algorithm_learning) . 所有问题都是来自leetcode, 使用```C++```实现并测试过的。
 
 # array and string
   * 主要就是一些没有应用除```vector```之外数据结构或者特殊算法技巧的问题
