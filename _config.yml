@@ -3,7 +3,8 @@ baseurl : /homepages
 #permalink:     pretty
 permalink: /:categories/:year/:month/:day/:title/
 # sitemap
-jekyll-sitemap
+gems:
+  - jekyll-sitemap
 # highlight
 # pygments: true
 # highlighter:rouge
