@@ -6,6 +6,7 @@
         <header>
         <h1> {{ page.title }} </h1>
         </header>
+        <!--
         <section class="meta">
         <script type="text/javascript" src="/assets/styles/xepOnline.jqPlugin.js"></script>
         <a href="#" onclick="return xepOnline.Formatter.Format('Usage',
@@ -13,6 +14,7 @@
           <img src="/assets/images/pdf_icon.jpg">
         </a>
         </section>
+        -->
 
     {% include navigator.html %}
     <article class="content">
@@ -42,12 +44,15 @@
          *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
          *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
          */
-         /*
+         
         var disqus_config = function () {
+          /*
             this.page.url = 'zhifeiding.github.io{{ site.url }}{{ page.url | remove:'index.html' }}';  // Replace PAGE_URL with your page's canonical URL variable
+          */  
             this.page.identifier = 'zhifei'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            
         };
-        */
+        
         (function() {  // REQUIRED CONFIGURATION VARIABLE: EDIT THE SHORTNAME BELOW
             var d = document, s = d.createElement('script');
 
