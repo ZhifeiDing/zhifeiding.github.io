@@ -90,6 +90,16 @@ int KMPSearch(string &text, string &p) {
 了解了上面的***KMP算法***之后， 你可能会疑惑， 怎么还有***Boyer-Moore算法***? 难道还能比***KMP算法***更efficient？   
 在回答上面问题之前， 我们先了解一下***Boyer-Moore算法***原理。
 
+与`KMP`算法类似， `Boyer-Moore`算法也是利用Pattern本身特点来跳过一些比较。不同的是，`Boyer-Moore`算法使用了两种规则来shift pattern，并且从右往左比较。.
+
+* 坏字符规则
+
+当比较的字符不等时，如果我们可以将该字符和在pattern中出现的该字符对齐比较。如果不存在我们可以直接将pattern移到该字符之后开始比较。
+
+* 好后缀规则
+
+这儿好后缀指的是当pattern和Text出现mismatch时候，如果
+
 
 
 ```cpp
