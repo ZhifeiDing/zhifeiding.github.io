@@ -96,11 +96,27 @@ int KMPSearch(string &text, string &p) {
 
 当比较的字符不等时，如果我们可以将该字符和在pattern中出现的该字符对齐比较。如果不存在我们可以直接将pattern移到该字符之后开始比较。
 
+```cpp
+```
+
 * 好后缀规则
 
-这儿好后缀指的是当pattern和Text出现mismatch时候，如果
-
-
+这儿好后缀指的是当pattern和Text出现mismatch时候，如果已经match的子串在pattern里存在则我们可以将pattern移动来使子串与其对齐来比较。如果不存在但是pattern前缀和和子串后缀有匹配，则可以将其对其来比较。如果都不存在则将pattern移到mismatch字符之后开始比较。
 
 ```cpp
 ```
+
+## *Boyer-Moore*算法
+
+有了上面坏字符和好后缀规则，我们可以在每次比较fail的时候来移动两者间大值来跳过很多必然fail的比较。
+
+```cpp
+```
+
+那么上面代码的时间复杂度是多少呢？我们可以很清楚知道最好情况是每次比较pattern最后一个字符时就fail，这样我们可以移动整个字符，这样时间复杂度就是`O(n/m)`(m是pattern长度，n是Text长度)。那么最worst情况呢？那就是每个字符串都比较了`O(n)`。
+
+# Reference
+
+[1.Johns Hopkins - Boyer-Moore](http://www.cs.jhu.edu/~langmea/resources/lecture_notes/boyer_moore.pdf)  
+[2.Wikipedia - Boyer-Moore](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm)  
+[3.Wikipedia - Knuth-Morris-Pratt](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)  
