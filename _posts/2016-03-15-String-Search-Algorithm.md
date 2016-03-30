@@ -97,6 +97,13 @@ int KMPSearch(string &text, string &p) {
 当比较的字符不等时，如果我们可以将该字符和在pattern中出现的该字符对齐比较。如果不存在我们可以直接将pattern移到该字符之后开始比较。
 
 ```cpp
+// build the bad character shift rule table
+void BMBadChar(string &p, vector<int> &badChar) {
+	// we aasume badChar has been initialized and have default value of pattern's length
+	for(int i = 0; i < p.size(); ++i)
+		// if the mismatched char is found in pattern we can shift the pattern to match this char
+		badChar[p[i]-'0'] = p.size() -1 - i;  
+}
 ```
 
 * 好后缀规则
@@ -104,6 +111,38 @@ int KMPSearch(string &text, string &p) {
 这儿好后缀指的是当pattern和Text出现mismatch时候，如果已经match的子串在pattern里存在则我们可以将pattern移动来使子串与其对齐来比较。如果不存在但是pattern前缀和和子串后缀有匹配，则可以将其对其来比较。如果都不存在则将pattern移到mismatch字符之后开始比较。
 
 ```cpp
+// check whether the substring p[p..p.size()-1] is a prefix of itself
+bool isPrefix(string &p, int idx) {
+	for(int i = 0, j = idx; j < p.size(); ++i, ++j)
+		if( p[i] != p[j] )
+			return false;
+	return true;
+}
+
+// record the matched suffix's length
+int suffix(string &p, int idx) {
+	for(int i = idx, j = p.size()-1; i >= 0 && p[i] == p[j]; --i,--j);
+	return p - i;
+}
+
+// build the good suffix shift rule table
+void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
+	// first check that the matched suffix has a matched prefix
+	int lastMatchedPrefix = p.size();  // record the last matched prefix's index
+	for(int i = p.size() - 1; i >= 0; --i) {
+		if( isPrefix(p,i+1) ) 
+			lastMatchedPrefix = i+1;
+		// when there's matched prefix we should shift the pattern to the matched the suffix
+		goodSuffix[p.size() - 1 - i] = lastMatchedPrefix - i + p.size() - 1;
+	}
+	
+	// second if there exists substring matched with the matched suffix
+	// we should shift pattern to match the substring instead of previous prefix
+	for(int i = 0; i < p.size(); ++i) {
+	int slen = uffix(p,i);
+		goodSuffix[slen] = slen + p.size() - 1 - i;
+	}
+}
 ```
 
 ## *Boyer-Moore*算法
@@ -111,6 +150,25 @@ int KMPSearch(string &text, string &p) {
 有了上面坏字符和好后缀规则，我们可以在每次比较fail的时候来移动两者间大值来跳过很多必然fail的比较。
 
 ```cpp
+int BMSearch(string &text, string &p) {
+	vector<int> badChar(256, p.size()); // initialize bad character table to pattern's length
+	BMBadChar(p,badChar);
+	
+	vector<int> goodSuffix(p.size()); // declare of the good suffix shift table
+	BMGoodSuffix(p, goodSuffix);
+	
+	int i = p.size() - 1; // index of text
+	while( i <= text.size() - p.size() ) {
+		int j = p.size() - 1;
+		for(; j >= 0 && p[j] == text[i]; --j,--i);
+		if( j < 0 )
+			return i+1;
+		// the difference with other string searching algorithm
+		// choose the larger between good suffix table and bad character table
+		i += max(goodSuffix[p.size() - 1 - j], badChar[text[i]]);
+	}
+	return -1;  // not found
+}
 ```
 
 那么上面代码的时间复杂度是多少呢？我们可以很清楚知道最好情况是每次比较pattern最后一个字符时就fail，这样我们可以移动整个字符，这样时间复杂度就是`O(n/m)`(m是pattern长度，n是Text长度)。那么最worst情况呢？那就是每个字符串都比较了`O(n)`。
