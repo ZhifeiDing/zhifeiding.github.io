@@ -16,7 +16,7 @@ int nativeStringSearch(string &text, string &p) {
     for(int i = 0; i < text.size() - p.size(); ++i) {
         int j;
         for(j = 0; j < p.size() && text[i+j] == p[j]; ++j);
-        if( j == p.size() - 1 )
+        if( j == p.size() )
             return i;
     }
     return -1;  // not found
@@ -68,7 +68,7 @@ int KMPSearch(string &text, string &p) {
 
     int m = 0; // the index of text
     int i = 0; // the index of p
-    while( m + p.size() < text.size() ) {
+    while( m + p.size() <= text.size() ) {
         if( text[m+i] == p[i] ) {
             if( i == p.size() - 1 )
                 return m;
@@ -175,6 +175,31 @@ int BMSearch(string &text, string &p) {
 ```
 
 那么上面代码的时间复杂度是多少呢？我们可以很清楚知道最好情况是每次比较pattern最后一个字符时就fail，这样我们可以移动整个字符，这样时间复杂度就是`O(n/m)`(m是pattern长度，n是Text长度)。那么最worst情况呢？那就是每个字符串都比较了`O(n)`。
+
+# 测试程序
+
+```cpp
+typedef int(*fptr)(string&,string&);
+void test_strSearch(fptr func, string &text, string &p, string funcName) {
+    int idx = func(text,p);
+    cout << funcName << "(" << text << "," << p << ") return " << idx << endl;
+}
+void test_strSearch() {
+    string text = "this is a simple example";
+    string p = "example";
+    unordered_map<string, fptr> funcMap = {
+        {"nativeStringSearch",nativeStringSearch},
+        {"KMPSearch", KMPSearch},
+        {"BMSearch", BMSearch}
+    };
+    for(auto itr : funcMap)
+        test_strSearch(static_cast<fptr>(itr.second), text, p, static_cast<string>(itr.first));
+}
+int main() {
+    test_strSearch();
+    return 0;
+}
+```
 
 # Reference
 
