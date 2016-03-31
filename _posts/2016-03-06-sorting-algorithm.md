@@ -218,10 +218,14 @@ void quickSort(std::vector<T> &nums, int start, int end) {
     quickSort(nums, p + 1, end);
 }
 template<typename T>
-void quickSort(std::vector<T> &nums) {
+void quickSort(std:vector<T> &nums) {
     quickSort(nums, 0, nums.size()-1);
 }
 ```
 
 # 各种排序算法的复杂度
+  上面列举了六种排序算法，
+  其中冒泡排序，选择排序和插入排序时间复杂度都是`O(n^2)`,
+  而堆排序，合并排序和快排平均时间复杂度都是`O(nlogn)`。
 
+# 参考
