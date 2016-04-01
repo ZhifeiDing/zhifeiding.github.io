@@ -101,9 +101,11 @@ int KMPSearch(string &text, string &p) {
 ```cpp
 // build the bad character shift rule table
 void BMBadChar(string &p, vector<int> &badChar) {
-    // we aasume badChar has been initialized and have default value of pattern's length
+    // we aasume badChar has been initialized and 
+    // have default value of pattern's length
     for(int i = 0; i < p.size(); ++i)
-        // if the mismatched char is found in pattern we can shift the pattern to match this char
+        // if the mismatched char is found in pattern 
+        // we can shift the pattern to match this char
         badChar[p[i]-'0'] = p.size() -1 - i;
 }
 ```
@@ -135,7 +137,8 @@ void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
     for(int i = p.size() - 1; i >= 0; --i) {
         if( isPrefix(p,i+1) )
             lastMatchedPrefix = i+1;
-        // when there's matched prefix we should shift the pattern to the matched the suffix
+        // when there's matched prefix we should shift the pattern to the 
+        // matched the suffix
         goodSuffix[p.size() - 1 - i] = lastMatchedPrefix - i + p.size() - 1;
     }
 
@@ -154,10 +157,12 @@ void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
 
 ```cpp
 int BMSearch(string &text, string &p) {
-    vector<int> badChar(256, p.size()); // initialize bad character table to pattern's length
+    // initialize bad character table to pattern's length
+    vector<int> badChar(256, p.size()); 
     BMBadChar(p,badChar);
-
-    vector<int> goodSuffix(p.size()); // declare of the good suffix shift table
+    
+    // declare of the good suffix shift table
+    vector<int> goodSuffix(p.size()); 
     BMGoodSuffix(p, goodSuffix);
 
     int i = p.size() - 1; // index of text
@@ -174,9 +179,51 @@ int BMSearch(string &text, string &p) {
 }
 ```
 
-那么上面代码的时间复杂度是多少呢？我们可以很清楚知道最好情况是每次比较pattern最后一个字符时就fail，这样我们可以移动整个字符，这样时间复杂度就是`O(n/m)`(m是pattern长度，n是Text长度)。那么最worst情况呢？那就是每个字符串都比较了`O(n)`。
+那么上面代码的时间复杂度是多少呢？我们可以很清楚知道最好情况是每次比较pattern最后一个字符时就fail，这样我们可以移动整个pattern长度，这样时间复杂度就是`O(n/m)`(m是pattern长度，n是Text长度)。那么最worst情况呢？那就是每个字符串都比较了`O(n)`。
+
+# Boyer–Moore–Horspool 算法
+
+从算法命名我们就能知道肯定和上面的*Boyer-Moore*算法有关系。*Boyer-Moore*算法同时使用了坏字符和好后缀两个规则来跳过一些不必要的比较。其中，好后缀规则比较相对于怀字符规则比较难实现，而且实际中发现好后缀规则使用并不高。因此，就有了只使用怀字符规则的string searching algorithm. *Boyer–Moore–Horspool*就是其中一种。
+
+具体来说，和*Boyer–Moore*算法也是采用了*Boyer-Moore*怀字符规则，只不过不同于*Boyer-Moore*使用mismatched character来做为下次对齐不同，*Boyer-Moore-Horspool*则使用已经matched的子串中第一个字符来对齐的。
+
+## Boyer-Moore-Horspool 坏字符规则实现
+
+```cpp
+// build Boyer-Moore-Horspool bad character table
+void BMHBadChar(string &p, vector<int> &badChar) {
+	for(int i = 0; i < p.size() - 1; ++i)
+		badChar[p[i]] = p.size() -1 - i;
+}
+```
+
+## Boyer–Moore–Horspool 算法实现
+
+相比于上面*Boyer-Moore*算法，*Boyer-Moore-Horspool*算法实现比较简单。
+
+```cpp
+int BMHSearch(string &text, string &p) {
+  // initialize bad character table to pattern's length
+	vector<int> badChar(256, p.size()); 
+	BMHBadChar(p,badChar); 
+	
+	int i = p.size() - 1; // index of text
+	while( i <= text - p.size() ) {
+		int j = p.size()-1; // index of pattern
+		for(; j >= 0 && text[i-p.size()+1+j] == p[j]; --j);
+		if( j < 0 )
+			return i-p.size();
+		// the difference with BOyer-Moore slgorithm
+		// we always choose the first matched text char
+		i += badChar[text[i]];
+	}
+	return -1; // not found
+}
+```
 
 # 测试程序
+
+写了一个简单的程序来测试上面几种string searching algorithm。
 
 ```cpp
 typedef int(*fptr)(string&,string&);
@@ -203,6 +250,6 @@ int main() {
 
 # Reference
 
-[1.Johns Hopkins - Boyer-Moore](http://www.cs.jhu.edu/~langmea/resources/lecture_notes/boyer_moore.pdf)
-[2.Wikipedia - Boyer-Moore](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm)
-[3.Wikipedia - Knuth-Morris-Pratt](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
+[1.Johns Hopkins - Boyer-Moore](http://www.cs.jhu.edu/~langmea/resources/lecture_notes/boyer_moore.pdf)  
+[2.Wikipedia - Boyer-Moore](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm)  
+[3.Wikipedia - Knuth-Morris-Pratt](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)  
