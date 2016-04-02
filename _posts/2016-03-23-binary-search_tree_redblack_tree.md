@@ -48,6 +48,12 @@ Binary Search Tree是符合下面定义的二叉树:
 ```cpp
 ```
 
+* `erase(iterator itr)`删除一个数据，可以分为三种情况：
+> * 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据
+  * 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点
+  * 要删掉的数据节点存在左右子树，
+  ![erase](https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Binary_search_tree_delete.svg/320px-Binary_search_tree_delete.svg.png)
+
 # __Red-Black Tree__
 
 ## 什么是*Red-Black Tree* ?
@@ -55,15 +61,15 @@ Binary Search Tree是符合下面定义的二叉树:
 上面说过， 在最坏情况下，__BST__会退化成`link-list`，其时间复杂度是`O(n)`。因此为了保证`O(logn)`的时间复杂度，需要设计一种能够使Tree保持平衡的机制。这儿的*Red-Black Tree*就是一种*自平衡的二叉查找树*。
 Red-Black Tree是符合下面定义的二叉树:
 
-> 1. 任意节点值比其左子树所有节点值大，比右子树所有节点小。(BST的定义)   
-  2. 任意节点要么是黑色要么是红色  
-  3. 根节点必须是黑色  
-  4. 所有的叶子节点(nil)都是黑色  
-  5. 如果一个节点是红色，则其左右子节点必须是黑色  
-  6. 从任意节点到叶子节点(nil)所有path上的黑色节点个数相同  
-  
+> 1. 任意节点值比其左子树所有节点值大，比右子树所有节点小。(BST的定义)
+  2. 任意节点要么是黑色要么是红色
+  3. 根节点必须是黑色
+  4. 所有的叶子节点(nil)都是黑色
+  5. 如果一个节点是红色，则其左右子节点必须是黑色
+  6. 从任意节点到叶子节点(nil)所有path上的黑色节点个数相同
+
 ![RBT](https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Red-black_tree_example.svg/320px-Red-black_tree_example.svg.png)
-  
+
 上面说满足这些约束的就是*Red-Black Tree*，是能够保证`O(logn)`最坏时间复杂度的自平衡的二叉查找树。真的是这样吗？假设从一个节点到叶子节点的path上黑色节点个数(不算叶子节点)为`B`,则最长path上能够有的最多的节点个数为`2*B`(黑红节点交叉)， 而最短的path上的节点最少也要有`B`个(全是黑色节点)。因此对于一个*Red-Black Tree*, 没有path会比其他path长两倍。这就保证了*Red-Black Tree*的高度大致保持平衡，而*Red-Black Tree*上各种操作和高度是
 
 ### *Red-Black Tree*的缺点
