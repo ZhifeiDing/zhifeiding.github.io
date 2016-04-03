@@ -36,6 +36,86 @@ Binary Search Tree是符合下面定义的二叉树:
   包含上面所描述的四种操作。我们使用`TreeNode`作为BST的节点
 
 ```cpp
+// TreeNode<T> definition
+template<typename T>
+class TreeNode {
+public:
+    T val;
+    TreeNode<T> *left;
+    TreeNode<T> *right;
+    TreeNode<T> *parent;
+    // constructor
+    TreeNode() : left(nullptr), right(nullptr), parent(nullptr){};
+    TreeNode(T v) : val(v), left(nullptr), right(nullptr), parent(nullptr){};
+    TreeNode(T v, TreeNode<T> *l, TreeNode *r, TreeNode *p = nullptr) : val(v), left(l), right(r),parent(p){};
+};
+
+
+// Binary search Tree declaration
+template<typename T>
+class BST {
+public:
+    // default constructor
+    explicit BST();
+    // copy constructor
+    BST(const BST &other);
+    // assignment constructor
+    const BST<T>& operator=(const BST &other);
+
+    // STL-style iterator
+    class iterator {
+    public:
+        friend class BST;
+        explicit iterator();
+        const iterator& operator=(const iterator &other); // assignment constructor
+        iterator& operator++(); // prefix increment
+        iterator operator++(int); // postfix increment
+        T& operator*() const;
+        bool operator!=(const BST<T>::iterator &other) const;
+        bool operator==(const BST<T>::iterator &other) const;
+        // for iterator_traits to refer
+        typedef std::output_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef T* pointer;
+        typedef T& reference;
+    private:
+        iterator(TreeNode<T>* n);
+        TreeNode<T>* node;
+        TreeNode<T>* pre;
+    };
+
+    // iterator begin() and end()
+    iterator begin() const;
+    iterator end() const;
+
+    // insert an element into BST
+    void insert(T v);
+
+    // find an element
+    iterator find(const T& v) const;
+    //const_iterator find(const T& v) const;
+
+    // remove one element
+    void erase(iterator itr);
+
+    // return the size of BST
+    const std::size_t size() const;
+
+    // check whether the BST is nullptr
+    const bool empty() const;
+
+private:
+    std::size_t cnt;
+    TreeNode<T> *root;
+
+    // private insert function
+    void insert(T v, TreeNode<T> *&r, TreeNode<T> * const &p = nullptr);
+    // private : replace node in parent
+    void replace_node_in_parent(TreeNode<T> *node, TreeNode<T> *newNode = nullptr);
+    // private : find the max value node
+    TreeNode<T> *findMax(TreeNode<T> *node);
+};
 ```
 
 * 实现`insert(T v)`来插入一个新的数据
