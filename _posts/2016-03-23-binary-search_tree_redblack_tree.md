@@ -61,6 +61,8 @@ public:
     BST(const BST &other);
     // assignment constructor
     const BST<T>& operator=(const BST &other);
+    // destructor
+    ~BST();
 
     // STL-style iterator
     class iterator {
@@ -82,7 +84,7 @@ public:
     private:
         iterator(TreeNode<T>* n);
         TreeNode<T>* node;
-        TreeNode<T>* pre;
+        TreeNode<T>* lastNode;
     };
 
     // iterator begin() and end()
@@ -117,6 +119,52 @@ private:
     TreeNode<T> *findMax(TreeNode<T> *node);
 };
 ```
+
+
+为了模拟STL容器类，在`BST<T>`里我们实现了inner class
+`iterator`来提供iterator类的支持。`iterator`类的构造函数和成员函数实现如下:
+
+```cpp
+// BST<T>::iterator
+// default constructor
+template<typename T>
+BST<T>::iterator::iterator() {
+    node = nullptr;
+    lastNode = nullptr;
+}
+
+// one argument constructor
+template<typename T>
+BST<T>::iterator::iterator(TreeNode<T>* n) {
+    node = n;
+    lastNode = nullptr;
+}
+
+// assignment constructor
+template<typename T>
+const typename BST<T>::iterator& BST<T>::iterator::operator=(const iterator &other) {
+    this->node = other.node;
+    return *this;
+}
+
+template<typename T>
+T& BST<T>::iterator::operator*() const {
+    return this->node->val;
+}
+
+// overload operator ==
+template<typename T>
+bool BST<T>::iterator::operator==(const BST<T>::iterator &other) const {
+    return this->node == other.node;
+}
+
+// overload operator !=
+template<typename T>
+bool BST<T>::iterator::operator!=(const BST<T>::iterator &other ) const {
+    return this->node != other.node;
+}
+```
+
 
 * 实现`insert(T v)`来插入一个新的数据
 
