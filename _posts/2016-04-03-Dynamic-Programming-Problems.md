@@ -27,7 +27,7 @@ tags: [c++,algorithm]
 
 ## Longest Increasing Subsequence
 
-`Longest Increasing Subsequence` 
+`Longest Increasing Subsequence` 是指从给定的序列中找出最长的递增子序列，子序列可以是不连续的，也可以由重复的数据。如果使用`brute force`来解决， 我们需要从第一个元素开始查找以该元素开始的子序列的递增子序列, 这样得到的时间复杂度是`O(n^2)`。那么有没有更好的算法呢?
 
 ```cpp
 ```
