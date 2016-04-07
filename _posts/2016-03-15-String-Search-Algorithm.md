@@ -101,12 +101,12 @@ int KMPSearch(string &text, string &p) {
 ```cpp
 // build the bad character shift rule table
 void BMBadChar(string &p, vector<int> &badChar) {
-    // we aasume badChar has been initialized and 
+    // we aasume badChar has been initialized and
     // have default value of pattern's length
     for(int i = 0; i < p.size(); ++i)
-        // if the mismatched char is found in pattern 
+        // if the mismatched char is found in pattern
         // we can shift the pattern to match this char
-        badChar[p[i]-'0'] = p.size() -1 - i;
+        badChar[p[i]] = p.size() -1 - i;
 }
 ```
 
@@ -137,7 +137,7 @@ void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
     for(int i = p.size() - 1; i >= 0; --i) {
         if( isPrefix(p,i+1) )
             lastMatchedPrefix = i+1;
-        // when there's matched prefix we should shift the pattern to the 
+        // when there's matched prefix we should shift the pattern to the
         // matched the suffix
         goodSuffix[p.size() - 1 - i] = lastMatchedPrefix - i + p.size() - 1;
     }
@@ -145,7 +145,7 @@ void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
     // second if there exists substring matched with the matched suffix
     // we should shift pattern to match the substring instead of previous prefix
     for(int i = 0; i < p.size(); ++i) {
-    int slen = suffix(p,i);
+        int slen = suffix(p,i);
         goodSuffix[slen] = slen + p.size() - 1 - i;
     }
 }
@@ -158,11 +158,11 @@ void BMGoodSuffix(string &p, vector<int> &goodSuffix) {
 ```cpp
 int BMSearch(string &text, string &p) {
     // initialize bad character table to pattern's length
-    vector<int> badChar(256, p.size()); 
+    vector<int> badChar(256, p.size());
     BMBadChar(p,badChar);
-    
+
     // declare of the good suffix shift table
-    vector<int> goodSuffix(p.size()); 
+    vector<int> goodSuffix(p.size());
     BMGoodSuffix(p, goodSuffix);
 
     int i = p.size() - 1; // index of text
@@ -192,8 +192,8 @@ int BMSearch(string &text, string &p) {
 ```cpp
 // build Boyer-Moore-Horspool bad character table
 void BMHBadChar(string &p, vector<int> &badChar) {
-	for(int i = 0; i < p.size() - 1; ++i)
-		badChar[p[i]] = p.size() -1 - i;
+    for(int i = 0; i < p.size() - 1; ++i)
+        badChar[p[i]] = p.size() -1 - i;
 }
 ```
 
@@ -203,21 +203,21 @@ void BMHBadChar(string &p, vector<int> &badChar) {
 
 ```cpp
 int BMHSearch(string &text, string &p) {
-  // initialize bad character table to pattern's length
-	vector<int> badChar(256, p.size()); 
-	BMHBadChar(p,badChar); 
-	
-	int i = p.size() - 1; // index of text
-	while( i <= text - p.size() ) {
-		int j = p.size()-1; // index of pattern
-		for(; j >= 0 && text[i-p.size()+1+j] == p[j]; --j);
-		if( j < 0 )
-			return i-p.size();
-		// the difference with BOyer-Moore slgorithm
-		// we always choose the first matched text char
-		i += badChar[text[i]];
-	}
-	return -1; // not found
+    // initialize bad character table to pattern's length
+    vector<int> badChar(256, p.size());
+    BMHBadChar(p,badChar);
+
+    int i = p.size() - 1; // index of text
+    while( i < text.size() ) {
+        int j = p.size()-1; // index of pattern
+        for(; j >= 0 && text[i-p.size()+1+j] == p[j]; --j);
+        if( j < 0 )
+            return i-p.size()+1;
+        // the difference with BOyer-Moore slgorithm
+        // we always choose the first matched text char
+        i += badChar[text[i]];
+    }
+    return -1; // not found
 }
 ```
 
@@ -232,15 +232,32 @@ void test_strSearch(fptr func, string &text, string &p, string funcName) {
     cout << funcName << "(" << text << "," << p << ") return " << idx << endl;
 }
 void test_strSearch() {
-    string text = "this is a simple example";
-    string p = "example";
     unordered_map<string, fptr> funcMap = {
         {"nativeStringSearch",nativeStringSearch},
         {"KMPSearch", KMPSearch},
-        {"BMSearch", BMSearch}
+        {"BMSearch", BMSearch},
+        {"BMHSearch", BMHSearch}
     };
-    for(auto itr : funcMap)
-        test_strSearch(static_cast<fptr>(itr.second), text, p, static_cast<string>(itr.first));
+    unordered_map<string, string> TextPattern = {
+        {"this is a simple example", "example"},
+        {"this should have no match", "gave"},
+        {"match at the begin", "match"},
+        {"match in the middle", "th"}
+    };
+    srand((unsigned int)time(NULL));
+    int i = 0;
+    auto itr = TextPattern.begin();
+    while( itr != TextPattern.end() ) {
+        ++i;
+        cout << endl << "#################" << endl;
+        cout << "Test Step : " << i << endl;
+        string text = (*itr).first;
+        string p = (*itr).second;
+        ++itr;
+        for(auto itr : funcMap)
+            test_strSearch(static_cast<fptr>(itr.second), text, p, static_cast<string>(itr.first));
+        cout << "#################" << endl;
+    }
 }
 int main() {
     test_strSearch();
@@ -248,8 +265,47 @@ int main() {
 }
 ```
 
+测试输出是这样的 :
+
+```cpp
+#################
+Test Step : 1
+BMHSearch(match in the middle,th) return 9
+BMSearch(match in the middle,th) return 9
+KMPSearch(match in the middle,th) return 9
+nativeStringSearch(match in the middle,th) return 9
+#################
+
+#################
+Test Step : 2
+BMHSearch(match at the begin,match) return 0
+BMSearch(match at the begin,match) return 0
+KMPSearch(match at the begin,match) return 0
+nativeStringSearch(match at the begin,match) return 0
+#################
+
+#################
+Test Step : 3
+BMHSearch(this should have no match,gave) return -1
+BMSearch(this should have no match,gave) return -1
+KMPSearch(this should have no match,gave) return -1
+nativeStringSearch(this should have no match,gave) return -1
+#################
+
+#################
+Test Step : 4
+BMHSearch(this is a simple example,example) return 17
+BMSearch(this is a simple example,example) return 17
+KMPSearch(this is a simple example,example) return 17
+nativeStringSearch(this is a simple example,example) return 17
+#################
+```
+
 # Reference
 
-[1.Johns Hopkins - Boyer-Moore](http://www.cs.jhu.edu/~langmea/resources/lecture_notes/boyer_moore.pdf)  
-[2.Wikipedia - Boyer-Moore](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm)  
-[3.Wikipedia - Knuth-Morris-Pratt](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)  
+[1.Johns Hopkins - Boyer-Moore](http://www.cs.jhu.edu/~langmea/resources/lecture_notes/boyer_moore.pdf)
+
+[2.Wikipedia - Boyer-Moore](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm)
+
+[3.Wikipedia - Knuth-Morris-Pratt](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
+
