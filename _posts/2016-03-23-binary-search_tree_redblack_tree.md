@@ -174,6 +174,20 @@ bool BST<T>::iterator::operator!=(const BST<T>::iterator &other ) const {
 * `find(T v)`查找数据是否存在
 
 ```cpp
+// find an element
+template<typename T>
+typename RBT<T>::iterator RBT<T>::find(const T& v) const {
+    TreeNode<T> *p = root;
+    while( p ) {
+        if( p->val == v )
+            return iterator(p);
+        if( p->val < v )
+            p = p->right;
+        else
+            p = p->left;
+    }
+    return end();
+}
 ```
 
 * `erase(iterator itr)`删除一个数据，可以分为三种情况：
