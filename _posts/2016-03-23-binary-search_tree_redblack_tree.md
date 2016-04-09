@@ -163,12 +163,200 @@ template<typename T>
 bool BST<T>::iterator::operator!=(const BST<T>::iterator &other ) const {
     return this->node != other.node;
 }
+
+// overload prefix ++
+template<typename T>
+typename BST<T>::iterator& BST<T>::iterator::operator++() {
+    // if current node is root , we could get the lastNode
+    if( node->parent == nullptr ) {
+        lastNode = node;
+        while( lastNode->right )
+            lastNode = lastNode->right;
+    }
+    if( node->right != nullptr ) {
+        node = node->right;
+        while( node->left )
+            node = node->left;
+    } else if( node == lastNode ){
+        node = nullptr;
+    } else if( node == node->parent->left ) {
+        node = node->parent;
+    } else if( node == node->parent->right ) {
+        while( node->parent->val <= node->val )
+            node = node->parent;
+        node = node->parent;
+    }
+    return *this;
+}
+
+// overload postfix ++
+template<typename T>
+typename BST<T>::iterator BST<T>::iterator::operator++(int) {
+    // if current node is root , we could get the lastNode
+    if( node->parent == nullptr ) {
+        lastNode = node;
+        while( lastNode->right )
+            lastNode = lastNode->right;
+    }
+    TreeNode<T> *p = this->node;
+    if( node->right != nullptr ) {
+        node = node->right;
+        while( node->left )
+            node = node->left;
+    } else if( node == lastNode ){
+        node = nullptr;
+    } else if( node == node->parent->left ) {
+        node = node->parent;
+    } else if( node == node->parent->right ) {
+        while( node->parent->val <= node->val )
+            node = node->parent;
+        node = node->parent;
+    }
+    return iterator(p);
+}
 ```
 
+* `BST`类构造函数
+
+```cpp
+// default constructor -- only initialize the private variable
+template<typename T>
+BST<T>::BST() {
+    cnt = 0;
+    root = nullptr;
+}
+
+// copy constructor -- deep copy every element of the other BST
+template<typename T>
+BST<T>::BST(const BST &other) {
+    cnt = other.cnt;
+    if( cnt == 0 )
+        return;
+    std::queue<std::pair<TreeNode<T>*, TreeNode<T>*> > q;
+    q.push(std::make_pair(root(other.root->val),other.root));
+    while( !q.empty() ) {
+        TreeNode<T> *node1 = q.front().first;
+        TreeNode<T> *node2 = q.front().second;
+        q.pop();
+        if( node2->left ) {
+            node1->left = new TreeNode<T>(node2->left->val);
+            node1->left->parent = node1;
+            q.push(make_pair(node1->left, node2->left));
+        }
+        if( node2->right ) {
+            node1->right = new TreeNode<T>(node2->right->val);
+            node1->irght->parent = node1;
+            q.push(make_pair(node1->right, node2->right));
+        }
+    }
+}
+
+// assignment constructor
+template<typename T>
+const BST<T>& BST<T>::operator=(const BST &other) {
+    cnt = other.cnt;
+    if( cnt == 0 )
+        return *this;
+    std::queue<std::pair<TreeNode<T>*, TreeNode<T>*> > q;
+    q.push(std::make_pair(root(other.root->val),other.root));
+    while( !q.empty() ) {
+        TreeNode<T> *node1 = q.front().first;
+        TreeNode<T> *node2 = q.front().second;
+        q.pop();
+        if( node2->left ) {
+            node1->left = new TreeNode<T>(node2->left->val);
+            node1->left->parent = node1;
+            q.push(make_pair(node1->left, node2->left));
+        }
+        if( node2->right ) {
+            node1->right = new TreeNode<T>(node2->right->val);
+            node1->right->parent = node1;
+            q.push(make_pair(node1->right, node2->right));
+        }
+    }
+    return *this;
+}
+
+// destructor
+template<typename T>
+BST<T>::~BST() {
+    if( cnt == 0 )
+        return ;
+    cnt = 0;
+    std::queue<TreeNode<T>*> q;
+    q.push(root);
+    while( !q.empty() ) {
+        root = q.front();
+        q.pop();
+        if( root->left ) {
+            q.push(root->left);
+        }
+        if( root->right ) {
+            q.push(root->right);
+        }
+        delete root;
+    }
+}
+```
+
+* `begin()`及`end()`函数
+
+```cpp
+// iterator begin() and end()
+template<typename T>
+typename BST<T>::iterator BST<T>::begin() const {
+    TreeNode<T>* node = root;
+    while( node && node->left )
+        node = node->left;
+    return iterator(node);
+}
+
+template<typename T>
+typename BST<T>::iterator BST<T>::end() const {
+    return iterator();
+}
+
+```
+
+* `size()`及`empty()`函数
+
+```cpp
+// return the size of BST
+template<typename T>
+const std::size_t BST<T>::size() const {
+    return cnt;
+}
+
+// check whether the BST is nullptr
+template<typename T>
+const bool BST<T>::empty() const {
+    return cnt == 0;
+}
+
+```
 
 * 实现`insert(T v)`来插入一个新的数据
 
 ```cpp
+// insert an element into BST
+template<typename T>
+void BST<T>::insert(T v) {
+    insert(v,root);
+    // increase cnt
+    ++cnt;
+}
+
+// private : insert an element into BST
+template<typename T>
+void BST<T>::insert(T v, TreeNode<T> *&r, TreeNode<T> * const &p) {
+    if( r == nullptr )
+        r = new TreeNode<T>(v, nullptr, nullptr, p);
+    else if( v < r->val )
+        insert(v, r->left, r);
+    else
+        insert(v, r->right,r);
+}
+
 ```
 
 * `find(T v)`查找数据是否存在
@@ -195,6 +383,55 @@ typename RBT<T>::iterator RBT<T>::find(const T& v) const {
   * 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点
   * 要删掉的数据节点存在左右子树，
   ![erase](https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Binary_search_tree_delete.svg/320px-Binary_search_tree_delete.svg.png)
+
+```cpp
+// remove one element
+template<typename T>
+void BST<T>::erase(iterator itr) {
+    --cnt;
+    if( cnt == 0 ) {
+        root = nullptr;
+        return;
+    }
+    // if left & right child both exist
+    if( (itr.node)->left && (itr.node)->right ) {
+        TreeNode<T> *predecessor = findMax((itr.node)->left);
+        (itr.node)->val = predecessor->val;
+        erase(iterator(predecessor));
+    // if only left child exist
+    } else if( (itr.node)->left ) {
+        replace_node_in_parent(itr.node, (itr.node)->left);
+    // if only right child exist
+    } else if( (itr.node)->right ) {
+        replace_node_in_parent(itr.node, (itr.node)->right);
+    // if no child
+    } else {
+        replace_node_in_parent(itr.node);
+    }
+}
+
+template<typename T>
+void BST<T>::replace_node_in_parent(TreeNode<T> *node, TreeNode<T> *newNode) {
+    if( node->parent ) {
+        if( node->parent->left == node )
+            node->parent->left = newNode;
+        else
+            node->parent->right = newNode;
+    } else {
+        root = newNode;
+    }
+    if( newNode )
+        newNode->parent = node->parent;
+}
+
+template<typename T>
+TreeNode<T> *BST<T>::findMax(TreeNode<T> *node) {
+    while( node && node->right )
+        node = node->right;
+    return node;
+}
+
+```
 
 # __Red-Black Tree__
 
