@@ -379,6 +379,7 @@ typename RBT<T>::iterator RBT<T>::find(const T& v) const {
 ```
 
 * `erase(iterator itr)`删除一个数据，可以分为三种情况：
+
 > * 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据
   * 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点
   * 要删掉的数据节点存在左右子树，
@@ -437,7 +438,7 @@ TreeNode<T> *BST<T>::findMax(TreeNode<T> *node) {
 
 ## 什么是*Red-Black Tree* ?
 
-上面说过， 在最坏情况下，__BST__会退化成`link-list`，其时间复杂度是`O(n)`。因此为了保证`O(logn)`的时间复杂度，需要设计一种能够使Tree保持平衡的机制。这儿的*Red-Black Tree*就是一种*自平衡的二叉查找树*。
+上面说过， 在最坏情况下，`BST`会退化成`link-list`，其时间复杂度是`O(n)`。因此为了保证`O(logn)`的时间复杂度，需要设计一种能够使Tree保持平衡的机制。这儿的*Red-Black Tree*就是一种*自平衡的二叉查找树*。
 Red-Black Tree是符合下面定义的二叉树:
 
 > 1. 任意节点值比其左子树所有节点值大，比右子树所有节点小。(BST的定义)
@@ -450,10 +451,6 @@ Red-Black Tree是符合下面定义的二叉树:
 ![RBT](https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Red-black_tree_example.svg/320px-Red-black_tree_example.svg.png)
 
 上面说满足这些约束的就是*Red-Black Tree*，是能够保证`O(logn)`最坏时间复杂度的自平衡的二叉查找树。真的是这样吗？假设从一个节点到叶子节点的path上黑色节点个数(不算叶子节点)为`B`,则最长path上能够有的最多的节点个数为`2*B`(黑红节点交叉)， 而最短的path上的节点最少也要有`B`个(全是黑色节点)。因此对于一个*Red-Black Tree*, 没有path会比其他path长两倍。这就保证了*Red-Black Tree*的高度大致保持平衡，而*Red-Black Tree*上各种操作和高度是
-
-### *Red-Black Tree*的缺点
-
-上面说了对于平衡BST，其操作时间复杂度为`O(logn)`，可是如果BST不是平衡的呢，比如一个只包含右子树的BST,我们知道其时间复杂度是`O(n)`。因此，BST没法保证`O(logn)`的时间复杂度。
 
 ## *Red-Black Tree*的实现
 
@@ -468,8 +465,8 @@ Red-Black Tree是符合下面定义的二叉树:
 
 ## 代码
 
-* 首先， 我们声明一个BST类,
-  包含上面所描述的四种操作。我们使用`TreeNode`作为BST的节点
+* 首先， 我们声明一个RBT类,
+  包含上面所描述的四种操作。我们使用`TreeNode`作为RBT的节点,和上面的`BST<T>`类似。
 
 ```cpp
 ```
@@ -483,3 +480,13 @@ Red-Black Tree是符合下面定义的二叉树:
 
 ```cpp
 ```
+
+# 测试程序
+
+```cpp
+```
+
+# 参考
+
+1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)
+2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)
