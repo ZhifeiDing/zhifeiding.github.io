@@ -23,6 +23,8 @@ tags: [c++,algorithm]
 ## Longest Common Subsequence
 
 ```cpp
+int longestCommonSubsequence() {
+}
 ```
 
 ## Longest Increasing Subsequence
@@ -30,6 +32,29 @@ tags: [c++,algorithm]
 `Longest Increasing Subsequence` 是指从给定的序列中找出最长的递增子序列，子序列可以是不连续的，也可以由重复的数据。如果使用`brute force`来解决， 我们需要从第一个元素开始查找以该元素开始的子序列的递增子序列, 这样得到的时间复杂度是`O(n^2)`。那么有没有更好的算法呢?
 
 ```cpp
+int longestIncreasingSubsequence(vector<int> nums) {
+		if( nums.size() == 0 )
+			return 0;
+		vector<int> ends(nums[0]);
+		for(int i = 1; i < nums.size(); ++i) {
+			if( nums[i] <= ends[0] )
+				ends[0] = nums[i];
+			else if( ends.back() <= nums[i] )
+				ends.push_back(nums[i]);
+			else {
+				int l = 0, r = ends.size()-1;
+				int m = l + ( r - l )/2;
+				while( l < r ) {
+					if( ends[m] < nums[i] )
+						l = m + 1;
+					else
+						r = m;
+				}
+				ends[r] = nums[i];
+			}
+		}
+		return ends.size();
+}
 ```
 
 ## Edit Distance
