@@ -84,6 +84,32 @@ int longestIncreasingSubsequence(vector<int> nums) {
 ## Edit Distance
 
 ```cpp
+int LevenshteinDistance(string &s1, string &s2) {
+	if( s1.empty() )
+		return s2.size();
+		
+	if( s2.empty() )
+		return s1.size();
+		
+	vector<vector<int> > dist(s1.size()+1, vector<int>(s2.size()));
+	
+	for(int i = 1; i <= s1.size();++i)
+		dist[i][0] = i;
+	for(int i = 1; i <= s2.size();++i)
+		dist[0][i] = i;
+		
+	for(int i = 0; i < s1.size(); ++i)
+		for(int j = 0; j < s2.size(); ++j) {
+			int cost = 0;
+			if( s1[i] != s2[j] )
+				cose = 1;
+			dist[i+1][j+1] = min(
+							min(dist[i+1][j] +1, //delete
+								dist[i][j+1]+1), // insertion
+								dist[i][j]+cost); // substitution
+		}
+	return dist[s1.size()][s2.size()];
+}
 ```
 
 # 参考
