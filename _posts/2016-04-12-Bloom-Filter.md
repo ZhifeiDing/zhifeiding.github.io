@@ -1,7 +1,7 @@
 ---
 title: Bloom Filter
 categories：programming
-tags: [data structure, c++]
+tags: [c++,data structure]
 ---
 
 # 什么是*Bloom Filter* ?
