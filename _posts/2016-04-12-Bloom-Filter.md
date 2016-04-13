@@ -8,8 +8,9 @@ tags : [c++, data structure]
 
 > *Bloom Filter*是一种_space efficient probabilistic data structure_，其使用`m bit`来记录`n`个记录。每个记录会用`k`个hash函数来影射到`m bit`中的`k`位上。
 
-*Bloom Filter*是_space efficient probabilistic data structure_, 可以用来查询记录是否存在。
+由其结构可知，*Bloom Filter*可以用来查询记录是否存在。并且返回
 
+如下图所示*Bloom Filter*, `m = 18, k = 3`:  
 ![bloom filter](https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Bloom_filter.svg/640px-Bloom_filter.svg.png)
 
 # *Bloom FIlter* 有什么应用 ?
