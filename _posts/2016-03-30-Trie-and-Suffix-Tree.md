@@ -17,19 +17,85 @@ tags : [c++,data structure，tree]
 
 * Trie类声明
 
-```cpp
-```
-
-* Trie类构造函数
+首先， 我们需要定义一个`TrieNode`来表示`Trie`中节点:
 
 ```cpp
+class TrieNode {
+public:
+	// constructor
+	explicit TrieNode() {
+		node.resize(26);
+		isLeaf = false;
+	}
+	const TrieNode*& operator [](int idx) {
+		return node[idx];
+	}
+	void setLeaf() {
+		isLeaf = true;
+	}
+	bool isLeaf() const {
+		return isLeaf;
+	}
+private:
+	// here only consider lowercase alphabetic 
+	vector<TrieNode*> node;
+	// indicate whether the node is leaf
+	bool isLeaf;
+};
 ```
 
-* Trie类`insert()`成员函数
+然后我们以上面`TrieNode`类为节点声明`Trie`类:
 
 ```cpp
+class Trie {
+public:
+	// constructor
+	explicit Trie();
+	// insert an element
+	void insert(const string &s);
+	// check if an element exists
+	bool exists(const string &s);
+private:
+	TrieNode *root;
+};
 ```
 
+* Trie类构造函数: 创建root节点， 并设置其为leaf节点
+
+```cpp
+Trie::Trie() {
+	root = new TrieNode();
+	root->setLeaf() = true;
+}
+```
+
+* Trie类`insert(const string &s)`成员函数
+
+```cpp
+void Trie::insert(const string &s) {
+	TrieNode* node = root;
+	for(auto ch : s) {
+		if( node[ch - 'a'] == nullptr )
+			node[ch-'a'] = new TrieNode();
+		node = node[ch-'a'];
+	}
+	node->setLeaf();
+}
+```
+
+* Trie类`exists(const string &s)`成员函数
+
+```cpp
+bool Trie::exists(const string &s) {
+	TrieNode* node = root;
+	for(auto ch : s) {
+		if( node[ch - 'a'] == nullptr )
+			return false;
+		node = node[ch-'a'];
+	}
+	return node->isLeaf();
+}
+```
 
 # Suffix Tree
 
