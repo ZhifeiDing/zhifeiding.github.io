@@ -8,6 +8,11 @@ tags : [c++,data structure，tree]
 
 ## 什么是Trie?
 
+> *Trie*(读try)是一种*prefix tree*, 即可以通过前缀来查找。和二叉树不同，*Trie*并不存储值本身，而是根据字符位置来索引。
+
+*Trie*结构如下图所示：
+![Trie](https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Trie_example.svg/256px-Trie_example.svg.png)
+
 ## Trie实现
 
 * Trie类声明
