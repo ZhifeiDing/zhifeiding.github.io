@@ -101,6 +101,8 @@ bool Trie::exists(const string &s) {
 
 ## 什么是Suffix Tree?
 
+![Suffix Tree](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Suffix_tree_BANANA.svg/226px-Suffix_tree_BANANA.svg.png)
+
 ## Suffix Tree实现
 
 * Suffix Tree类声明
