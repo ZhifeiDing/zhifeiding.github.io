@@ -476,10 +476,31 @@ Red-Black Tree是符合下面定义的二叉树:
 ```cpp
 ```
 
+![insert case3](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Red-black_tree_insert_case_3.svg/320px-Red-black_tree_insert_case_3.svg.png)
+
+![insert case4](https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Red-black_tree_insert_case_4.svg/320px-Red-black_tree_insert_case_4.svg.png)
+
+![insert case5](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Red-black_tree_insert_case_5.svg/320px-Red-black_tree_insert_case_5.svg.png)
+
 * `find(T v)`查找数据是否存在
 
 ```cpp
 ```
+
+* `erase(iterator itr)`删除数据
+
+```cpp
+```
+
+![delete case2](https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Red-black_tree_delete_case_2_as_svg.svg/320px-Red-black_tree_delete_case_2_as_svg.svg.png)
+
+![delete case3](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Red-black_tree_delete_case_3_as_svg.svg/320px-Red-black_tree_delete_case_3_as_svg.svg.png)
+
+![delete case4](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Red-black_tree_delete_case_4_as_svg.svg/320px-Red-black_tree_delete_case_4_as_svg.svg.png)
+
+![delete case5](https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Red-black_tree_delete_case_5_as_svg.svg/320px-Red-black_tree_delete_case_5_as_svg.svg.png)
+
+![delete case6](https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Red-black_tree_delete_case_6_as_svg.svg/320px-Red-black_tree_delete_case_6_as_svg.svg.png)
 
 # 测试程序
 
