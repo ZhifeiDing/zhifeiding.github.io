@@ -121,8 +121,10 @@ private:
 ```
 
 
-为了模拟STL容器类，在`BST<T>`里我们实现了inner class
+* 为了模拟STL容器类，在`BST<T>`里我们实现了inner class
 `iterator`来提供iterator类的支持。`iterator`类的构造函数和成员函数实现如下:
+
+> `iterator`无参数构造函数， 将内部指针设为`nullptr`即可
 
 ```cpp
 // BST<T>::iterator
@@ -132,38 +134,62 @@ BST<T>::iterator::iterator() {
     node = nullptr;
     lastNode = nullptr;
 }
+```
 
+> `iterator`一个参数构造函数，将内部指针指向该参数指向节点即可
+
+```cpp
 // one argument constructor
 template<typename T>
 BST<T>::iterator::iterator(TreeNode<T>* n) {
     node = n;
     lastNode = nullptr;
 }
+```
 
+> `iterator`赋值构造函数
+
+```cpp
 // assignment constructor
 template<typename T>
 const typename BST<T>::iterator& BST<T>::iterator::operator=(const iterator &other) {
     this->node = other.node;
     return *this;
 }
+```
 
+> `iterator`类`operator*`重载，返回内部指针指向node的值
+
+```cpp
 template<typename T>
 T& BST<T>::iterator::operator*() const {
     return this->node->val;
 }
+```
 
+> `iterator`类`operator==`重载, 比较内部node是否相同
+
+```cpp
 // overload operator ==
 template<typename T>
 bool BST<T>::iterator::operator==(const BST<T>::iterator &other) const {
     return this->node == other.node;
 }
+```
 
+> `iterator`类`operator!=`重载, 比较内部node是否相同
+
+```cpp
 // overload operator !=
 template<typename T>
 bool BST<T>::iterator::operator!=(const BST<T>::iterator &other ) const {
     return this->node != other.node;
 }
+```
 
+> `iterator`类`operator++`重载, 返回类型是引用，因此是前缀`++`。对于`BST<T>`，实际就是实现`in order traversal`。借助于`parent`指针可以不借用`stack`。
+
+```cpp
 // overload prefix ++
 template<typename T>
 typename BST<T>::iterator& BST<T>::iterator::operator++() {
@@ -188,7 +214,11 @@ typename BST<T>::iterator& BST<T>::iterator::operator++() {
     }
     return *this;
 }
+```
 
+> `iterator`类`operator++`重载, 返回类型是值，因此是后缀`++`。与前缀`++`类似，实际就是实现`in order traversal`。
+
+```cpp
 // overload postfix ++
 template<typename T>
 typename BST<T>::iterator BST<T>::iterator::operator++(int) {
@@ -218,6 +248,8 @@ typename BST<T>::iterator BST<T>::iterator::operator++(int) {
 
 * `BST`类构造函数
 
+> `BST<T>`无参数构造函书
+
 ```cpp
 // default constructor -- only initialize the private variable
 template<typename T>
@@ -225,7 +257,11 @@ BST<T>::BST() {
     cnt = 0;
     root = nullptr;
 }
+```
 
+> `BST<T>`复制构造函数，需要实现*deep copy*。借助`queue`,使用`bfs`来复制`BST<T>`中每一个node
+
+```cpp
 // copy constructor -- deep copy every element of the other BST
 template<typename T>
 BST<T>::BST(const BST &other) {
@@ -250,7 +286,11 @@ BST<T>::BST(const BST &other) {
         }
     }
 }
+```
 
+> `BST<T>`赋值构造函数，与复制构造函数一样，只是需要返回当前对象的引用
+
+```cpp
 // assignment constructor
 template<typename T>
 const BST<T>& BST<T>::operator=(const BST &other) {
@@ -276,7 +316,11 @@ const BST<T>& BST<T>::operator=(const BST &other) {
     }
     return *this;
 }
+```
 
+> `BST<T>`析构函数，当对象不需要时，释放节点空间。与上面复制构造函数类似，也是借助`queue`来实现`bfs`。
+
+```cpp
 // destructor
 template<typename T>
 BST<T>::~BST() {
@@ -301,6 +345,8 @@ BST<T>::~BST() {
 
 * `begin()`及`end()`函数
 
+> `BST<T>`类`begin()`函数，返回`BST<T>`最左节点的`iterator`实例
+
 ```cpp
 // iterator begin() and end()
 template<typename T>
@@ -310,15 +356,20 @@ typename BST<T>::iterator BST<T>::begin() const {
         node = node->left;
     return iterator(node);
 }
+```
 
+> `BST<T>`类`end()`函数，返回`null iterator`实例
+
+```cpp
 template<typename T>
 typename BST<T>::iterator BST<T>::end() const {
     return iterator();
 }
-
 ```
 
 * `size()`及`empty()`函数
+
+> `size()`函数返回当前`BST<T>`中元素个数
 
 ```cpp
 // return the size of BST
@@ -326,16 +377,21 @@ template<typename T>
 const std::size_t BST<T>::size() const {
     return cnt;
 }
+```
 
+> `empty()`函数返回`true`当`BST<T>`中不存在元素时 
+
+```cpp
 // check whether the BST is nullptr
 template<typename T>
 const bool BST<T>::empty() const {
     return cnt == 0;
 }
-
 ```
 
 * 实现`insert(T v)`来插入一个新的数据
+
+> 作为`BST<T>`的接口函数，插入新元素计数变量加一，然后调用`private insert(T v, TreeNode<T> *r)`函数
 
 ```cpp
 // insert an element into BST
@@ -345,7 +401,11 @@ void BST<T>::insert(T v) {
     // increase cnt
     ++cnt;
 }
+```
 
+> 对于`BST<T>`来说，我们需要插入一个新的元素最简单的方法就是通过二分查找，找到一个`leaf node`，然后把当前值作为左节点或右节点。
+
+```cpp
 // private : insert an element into BST
 template<typename T>
 void BST<T>::insert(T v, TreeNode<T> *&r, TreeNode<T> * const &p) {
@@ -356,7 +416,6 @@ void BST<T>::insert(T v, TreeNode<T> *&r, TreeNode<T> * const &p) {
     else
         insert(v, r->right,r);
 }
-
 ```
 
 * `find(T v)`查找数据是否存在
@@ -380,9 +439,10 @@ typename RBT<T>::iterator RBT<T>::find(const T& v) const {
 
 * `erase(iterator itr)`删除一个数据，可以分为三种情况：
 
-> * 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据
-  * 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点
-  * 要删掉的数据节点存在左右子树，
+>
+* 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据  
+* 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点  
+* 要删掉的数据节点存在左右子树，我们可以用`in-order traversal`的`predecessor`或`postdecessor`来替换要删掉的node,然后删除`predecessor`或`postdecessor`，这样就回到上面的情况了  
   ![erase](https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Binary_search_tree_delete.svg/320px-Binary_search_tree_delete.svg.png)
 
 ```cpp
@@ -407,7 +467,11 @@ void BST<T>::erase(iterator itr) {
         delete itr.node;
     }
 }
+```
 
+> 当要删除节点有左子树或右子树时，我们用其子树替换掉该节点。当该节点是`root`节点时，要更新`root`节点到新的节点
+
+```cpp
 template<typename T>
 void BST<T>::replace_node_in_parent(TreeNode<T> *node, TreeNode<T> *newNode) {
     if( node->parent ) {
@@ -421,14 +485,17 @@ void BST<T>::replace_node_in_parent(TreeNode<T> *node, TreeNode<T> *newNode) {
     if( newNode )
         newNode->parent = node->parent;
 }
+```
 
+> 当要删除节点同时存在有左子树和右子树时，我们找到`in order traversal`的`predecessor`来替换该节点
+
+```cpp
 template<typename T>
 TreeNode<T> *BST<T>::findMax(TreeNode<T> *node) {
     while( node && node->right )
         node = node->right;
     return node;
 }
-
 ```
 
 # __Red-Black Tree__
@@ -669,7 +736,7 @@ typename RBT<T>::iterator RBT<T>::iterator::operator++(int) {
 
 ```
 
-* `RBT<T>无参数构造函数
+* `RBT<T>`无参数构造函数
 
 ```cpp
 // default constructor -- only initialize the private variable
@@ -767,13 +834,19 @@ RBT<T>::~RBT() {
 
 * `RBT<T>`的`size()`和`empty()`函数
 
+> `size()`函数返回当前`BST<T>`中的元素个数
+
 ```cpp
 // return the size of RBT
 template<typename T>
 const std::size_t RBT<T>::size() const {
     return cnt;
 }
+```
 
+> `empty()`函数， 当`BST<T>`没有数据时返回`true`
+
+```cpp
 // check whether the RBT is nullptr
 template<typename T>
 const bool RBT<T>::empty() const {
@@ -782,6 +855,8 @@ const bool RBT<T>::empty() const {
 ```
 
 * `RBT<T>`的`begi()`和`end()`函数，分别返回对应的`iterator`
+
+> `begin()`函数需要首先找到`BST<T>`类的最左节点，然后返回其`iterator`实例
 
 ```cpp
 // iterator begin() and end()
@@ -792,7 +867,11 @@ typename RBT<T>::iterator RBT<T>::begin() const {
         node = node->left;
     return iterator(node);
 }
+```
 
+> `end()`直接返回`null iterator`即可
+
+```cpp
 template<typename T>
 typename RBT<T>::iterator RBT<T>::end() const {
     return iterator();
@@ -801,6 +880,8 @@ typename RBT<T>::iterator RBT<T>::end() const {
 ```
 
 * 实现`insert(T v)`来插入一个新的数据
+
+> 对于`insert(T v)`来说，我们可以和`BST<T>`一样，将
 
 ```cpp
 // insert an element into RBT
@@ -880,7 +961,11 @@ typename RBT<T>::TreeNode* RBT<T>::sibling(TreeNode * const &r) const {
     else
         return r->parent->left;
 }
+```
 
+![insert case3](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Red-black_tree_insert_case_3.svg/320px-Red-black_tree_insert_case_3.svg.png)
+
+```cpp
 // this handles when both the parent and the uncle are red
 template<typename T>
 void RBT<T>::insert_case3(TreeNode *r) {
@@ -896,7 +981,11 @@ void RBT<T>::insert_case3(TreeNode *r) {
     } else
         insert_case4(r);
 }
+```
 
+![insert case4](https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Red-black_tree_insert_case_4.svg/320px-Red-black_tree_insert_case_4.svg.png)
+
+```cpp
 // this handles when current node's parent is red but the uncle is black
 template<typename T>
 void RBT<T>::insert_case4(TreeNode *r) {
@@ -913,7 +1002,11 @@ void RBT<T>::insert_case4(TreeNode *r) {
     }
     insert_case5(r);
 }
+```
 
+![insert case5](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Red-black_tree_insert_case_5.svg/320px-Red-black_tree_insert_case_5.svg.png)
+
+```cpp
 // this handles that the parent is red but uncle is black
 template<typename T>
 void RBT<T>::insert_case5(TreeNode *r) {
@@ -951,6 +1044,9 @@ void RBT<T>::rotate_left(TreeNode *r) {
     if( saved_right_left )
         saved_right_left->parent = r;
 }
+```
+
+```cpp
 // thi rotate the current node to the right
 template<typename T>
 void RBT<T>::rotate_right(TreeNode *r) {
@@ -973,6 +1069,8 @@ void RBT<T>::rotate_right(TreeNode *r) {
 }
 ```
 
+* `find(T v)`查找数据是否存在, 与`BST`一致，只需要二分查找即可
+
 ```cpp
 // find an element
 template<typename T>
@@ -988,8 +1086,9 @@ typename RBT<T>::iterator RBT<T>::find(const T& v) const {
     }
     return end();
 }
-
 ```
+
+* `erase(iterator itr)`删除数据
 
 ```cpp
 // remove one element
@@ -1022,14 +1121,22 @@ void RBT<T>::erase(iterator itr) {
         delete itr.node;
     }
 }
+```
 
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case1(TreeNode *node) {
     // when current node is the new root , it's okay
     if( node->parent != nullptr )
         delete_case2(node);
 }
+```
 
+
+![delete case2](https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Red-black_tree_delete_case_2_as_svg.svg/320px-Red-black_tree_delete_case_2_as_svg.svg.png)
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case2(TreeNode *node) {
     // in this case when current node's sibling is RED, we should replace its
@@ -1045,7 +1152,11 @@ void RBT<T>::delete_case2(TreeNode *node) {
     }
     delete_case3(node);
 }
+```
 
+![delete case3](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Red-black_tree_delete_case_3_as_svg.svg/320px-Red-black_tree_delete_case_3_as_svg.svg.png)
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case3(TreeNode *node) {
     // in this case current node and its parent, its sibling and its sibling's
@@ -1060,7 +1171,11 @@ void RBT<T>::delete_case3(TreeNode *node) {
         delete_case4(node);
     }
 }
+```
 
+![delete case4](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Red-black_tree_delete_case_4_as_svg.svg/320px-Red-black_tree_delete_case_4_as_svg.svg.png)
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case4(TreeNode *node) {
     // in this case current node and its sibling and its sibling's two children
@@ -1076,7 +1191,11 @@ void RBT<T>::delete_case4(TreeNode *node) {
         delete_case5(node);
     }
 }
+```
 
+![delete case5](https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Red-black_tree_delete_case_5_as_svg.svg/320px-Red-black_tree_delete_case_5_as_svg.svg.png)
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case5(TreeNode *node) {
     // in this case current node's sibling has a left red child and right black
@@ -1098,7 +1217,11 @@ void RBT<T>::delete_case5(TreeNode *node) {
     }
     delete_case6(node);
 }
+```
 
+![delete case6](https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Red-black_tree_delete_case_6_as_svg.svg/320px-Red-black_tree_delete_case_6_as_svg.svg.png)
+
+```cpp
 template<typename T>
 void RBT<T>::delete_case6(TreeNode *node) {
     // in this case current node's sibling has a right red child
@@ -1115,7 +1238,10 @@ void RBT<T>::delete_case6(TreeNode *node) {
         rotate_right(node->parent);
     }
 }
+```
 
+
+```cpp
 template<typename T>
 void RBT<T>::replace_node_in_parent(TreeNode *node, TreeNode *newNode) {
     if( node->parent ) {
@@ -1129,41 +1255,18 @@ void RBT<T>::replace_node_in_parent(TreeNode *node, TreeNode *newNode) {
     if( newNode )
         newNode->parent = node->parent;
 }
+```
 
+
+```cpp
 template<typename T>
 typename RBT<T>::TreeNode *RBT<T>::findMax(TreeNode *node) {
     while( node && node->right )
         node = node->right;
     return node;
 }
-
 ```
 
-![insert case3](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Red-black_tree_insert_case_3.svg/320px-Red-black_tree_insert_case_3.svg.png)
-
-![insert case4](https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Red-black_tree_insert_case_4.svg/320px-Red-black_tree_insert_case_4.svg.png)
-
-![insert case5](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Red-black_tree_insert_case_5.svg/320px-Red-black_tree_insert_case_5.svg.png)
-
-* `find(T v)`查找数据是否存在
-
-```cpp
-```
-
-* `erase(iterator itr)`删除数据
-
-```cpp
-```
-
-![delete case2](https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Red-black_tree_delete_case_2_as_svg.svg/320px-Red-black_tree_delete_case_2_as_svg.svg.png)
-
-![delete case3](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Red-black_tree_delete_case_3_as_svg.svg/320px-Red-black_tree_delete_case_3_as_svg.svg.png)
-
-![delete case4](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Red-black_tree_delete_case_4_as_svg.svg/320px-Red-black_tree_delete_case_4_as_svg.svg.png)
-
-![delete case5](https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Red-black_tree_delete_case_5_as_svg.svg/320px-Red-black_tree_delete_case_5_as_svg.svg.png)
-
-![delete case6](https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Red-black_tree_delete_case_6_as_svg.svg/320px-Red-black_tree_delete_case_6_as_svg.svg.png)
 
 # 测试程序
 
