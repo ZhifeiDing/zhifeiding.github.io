@@ -881,7 +881,7 @@ typename RBT<T>::iterator RBT<T>::end() const {
 
 * 实现`insert(T v)`来插入一个新的数据
 
-> 对于`insert(T v)`来说，我们可以和`BST<T>`一样，将
+> 对于`insert(T v)`来说，我们可以和`BST<T>`一样，使用二分法将数据作为`leaf node`插入`RBT<T>`。和`BST<T>`不同的是，插入元素默认是`RED node`之后还要满足`RBT`的规则要求
 
 ```cpp
 // insert an element into RBT
@@ -906,7 +906,7 @@ void RBT<T>::insert(T v, TreeNode *&r, TreeNode * const &p) {
 }
 ```
 
-
+> 当插入的元素作为`root`节点，我们只需要将节点改成`BLACK`
 
 ```cpp
 // this function handle case that the current node is the root
@@ -918,7 +918,11 @@ void RBT<T>::insert_case1(TreeNode *r) {
     else
         insert_case2(r);
 }
+```
 
+> 当插入节点的父节点是`BLACK node`,新插入节点没有违反`RBT`规则，不需要操作
+
+```cpp
 // this handles when the node's parent is black
 template<typename T>
 void RBT<T>::insert_case2(TreeNode *r) {
@@ -928,41 +932,9 @@ void RBT<T>::insert_case2(TreeNode *r) {
     else
         insert_case3(r);
 }
-
-// get current node's grandparent
-template<typename T>
-typename RBT<T>::TreeNode* RBT<T>::grandParent(TreeNode * const &r) const {
-    if( r && r->parent )
-        return r->parent->parent;
-    else
-        return nullptr;
-}
-
-// get current node's uncle
-template<typename T>
-typename RBT<T>::TreeNode* RBT<T>::uncle(TreeNode * const &r) const {
-    TreeNode *g = grandParent(r);
-    // if no grandParent then no uncle
-    if( g == nullptr )
-        return nullptr;
-    if( r->parent == g->left )
-        return g->right;
-    else
-        return g->left;
-}
-
-// get current node's silbing
-template<typename T>
-typename RBT<T>::TreeNode* RBT<T>::sibling(TreeNode * const &r) const {
-    if( r == nullptr || r->parent == nullptr )
-        return nullptr;
-    if( r->parent->left == r )
-        return r->parent->right;
-    else
-        return r->parent->left;
-}
 ```
 
+> 如下图所示，当插入节点`parent node`和`uncle node`都是`RED`时，我们可以将`parent node`和`uncle node`改成`BLACK`,`grandparent node`改成`RED`,这样只有`grandparent node`违反`RBT`规则。所以需要从`insert_case1()`开始检查`grandparent node`。
 ![insert case3](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Red-black_tree_insert_case_3.svg/320px-Red-black_tree_insert_case_3.svg.png)
 
 ```cpp
@@ -983,6 +955,7 @@ void RBT<T>::insert_case3(TreeNode *r) {
 }
 ```
 
+> 如下图所示，当插入节点`parent node`是`RED`，而`uncle node`都是`BLACK`时，如果当前节点是左子树而其父节点是右子树，我们可以在父节点上进行`rotate_right()`操作。如果相反，则进行`rotate_left()`操作。
 ![insert case4](https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Red-black_tree_insert_case_4.svg/320px-Red-black_tree_insert_case_4.svg.png)
 
 ```cpp
@@ -1004,24 +977,7 @@ void RBT<T>::insert_case4(TreeNode *r) {
 }
 ```
 
-![insert case5](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Red-black_tree_insert_case_5.svg/320px-Red-black_tree_insert_case_5.svg.png)
-
-```cpp
-// this handles that the parent is red but uncle is black
-template<typename T>
-void RBT<T>::insert_case5(TreeNode *r) {
-    TreeNode *g = grandParent(r);
-    // in this case we just paint the parent to BLACK and grandParent to RED
-    // then rotate left or right
-    g->color = RED;
-    r->parent->color = BLACK;
-    if( r == r->parent->left )
-        rotate_right(g);
-    else
-        rotate_left(g);
-}
-
-```
+> `rotate_left(TreeNode *r)`操作，就是将当前节点的右子树作为父节点而当前节点作为其左子树。
 
 ```cpp
 // this rotate the current node to the left
@@ -1046,6 +1002,8 @@ void RBT<T>::rotate_left(TreeNode *r) {
 }
 ```
 
+> `rotate_right(TreeNode *r)`操作，就是将当前节点的左子树作为父节点而当前节点作为其右子树。
+
 ```cpp
 // thi rotate the current node to the right
 template<typename T>
@@ -1066,6 +1024,56 @@ void RBT<T>::rotate_right(TreeNode *r) {
     r->left = saved_left_right;
     if( saved_left_right )
         saved_left_right->parent = r;
+}
+```
+
+> 如下图所示，当插入节点`parent node`是`RED`，而`uncle node`都是`BLACK`时，我们可以将`grandparent node`变成`RED`,而父节点变成`BLACK`。如果当前节点和父节点都是左子树，对`grandparent node`进行`rotate_right()`操作，这样整个`RBT<T>`就满足所有平衡规则了。如果当前节点和父节点都是右子树则相反。
+![insert case5](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Red-black_tree_insert_case_5.svg/320px-Red-black_tree_insert_case_5.svg.png)
+
+```cpp
+// this handles that the parent is red but uncle is black
+template<typename T>
+void RBT<T>::insert_case5(TreeNode *r) {
+    TreeNode *g = grandParent(r);
+    // in this case we just paint the parent to BLACK and grandParent to RED
+    // then rotate left or right
+    g->color = RED;
+    r->parent->color = BLACK;
+    if( r == r->parent->left )
+        rotate_right(g);
+    else
+        rotate_left(g);
+}
+
+```
+
+> `grandParent(TreeNode * const &r)`函数得到当前节点的`grandparent node`
+
+```cpp
+// get current node's grandparent
+template<typename T>
+typename RBT<T>::TreeNode* RBT<T>::grandParent(TreeNode * const &r) const {
+    if( r && r->parent )
+        return r->parent->parent;
+    else
+        return nullptr;
+}
+```
+
+> `uncle(TreeNode * const &r)`函数得到父节点的兄弟节点
+
+```cpp
+// get current node's uncle
+template<typename T>
+typename RBT<T>::TreeNode* RBT<T>::uncle(TreeNode * const &r) const {
+    TreeNode *g = grandParent(r);
+    // if no grandParent then no uncle
+    if( g == nullptr )
+        return nullptr;
+    if( r->parent == g->left )
+        return g->right;
+    else
+        return g->left;
 }
 ```
 
@@ -1267,6 +1275,20 @@ typename RBT<T>::TreeNode *RBT<T>::findMax(TreeNode *node) {
 }
 ```
 
+> `sibling(TreeNode * const &r)`函数得到当前节点的兄弟节点
+
+```cpp
+// get current node's silbing
+template<typename T>
+typename RBT<T>::TreeNode* RBT<T>::sibling(TreeNode * const &r) const {
+    if( r == nullptr || r->parent == nullptr )
+        return nullptr;
+    if( r->parent->left == r )
+        return r->parent->right;
+    else
+        return r->parent->left;
+}
+```
 
 # 测试程序
 
@@ -1275,5 +1297,5 @@ typename RBT<T>::TreeNode *RBT<T>::findMax(TreeNode *node) {
 
 # 参考
 
-1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)
-2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)
+1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)  
+2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)  
