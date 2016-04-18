@@ -574,7 +574,7 @@ private:
 };
 ```
 
-* `RBT<T>::iterator`实现
+* `RBT<T>::iterator`实现, 这一部分与`BST`一样
 
 ```cpp
 // RBT<T>::iterator
@@ -669,6 +669,8 @@ typename RBT<T>::iterator RBT<T>::iterator::operator++(int) {
 
 ```
 
+* `RBT<T>无参数构造函数
+
 ```cpp
 // default constructor -- only initialize the private variable
 template<typename T>
@@ -676,7 +678,11 @@ RBT<T>::RBT() {
     cnt = 0;
     root = nullptr;
 }
+```
 
+* `RBT<T>`复制构造函数，需要实现*deep copy*
+
+```cpp
 // copy constructor -- deep copy every element of the other RBT
 template<typename T>
 RBT<T>::RBT(const RBT &other) {
@@ -701,7 +707,11 @@ RBT<T>::RBT(const RBT &other) {
         }
     }
 }
+```
 
+* `RBT<T>`赋值构造函数， 与复制构造函数一样
+
+```cpp
 // assignment constructor
 template<typename T>
 const RBT<T>& RBT<T>::operator=(const RBT &other) {
@@ -727,7 +737,11 @@ const RBT<T>& RBT<T>::operator=(const RBT &other) {
     }
     return *this;
 }
+```
 
+* `RBT<T> destructor`函数，当对象不需要时释放内存
+
+```cpp
 // destructor
 template<typename T>
 RBT<T>::~RBT() {
@@ -751,6 +765,8 @@ RBT<T>::~RBT() {
 
 ```
 
+* `RBT<T>`的`size()`和`empty()`函数
+
 ```cpp
 // return the size of RBT
 template<typename T>
@@ -763,7 +779,11 @@ template<typename T>
 const bool RBT<T>::empty() const {
     return cnt == 0;
 }
+```
 
+* `RBT<T>`的`begi()`和`end()`函数，分别返回对应的`iterator`
+
+```cpp
 // iterator begin() and end()
 template<typename T>
 typename RBT<T>::iterator RBT<T>::begin() const {
@@ -803,7 +823,11 @@ void RBT<T>::insert(T v, TreeNode *&r, TreeNode * const &p) {
     else
         insert(v, r->right,r);
 }
+```
 
+
+
+```cpp
 // this function handle case that the current node is the root
 template<typename T>
 void RBT<T>::insert_case1(TreeNode *r) {
