@@ -1,5 +1,5 @@
 ---
-title : Binary Search Tree and RedBlack Tree
+title : Binary Search Tree
 category : programming
 tags : [c++,data structure]
 ---
