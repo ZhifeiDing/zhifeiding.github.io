@@ -91,11 +91,11 @@ int longestIncreasingSubsequence(vector<int> nums) {
 
 假设`dist[m+1][n+1]`用来记录两个字符串的距离则:
 
-> dist(i+1,j+1) = min(dist[i+1][j] , // delete s2[j]
-		      dist[i][j+1] , // insert s1[i]
-		      dist[i][j]+1 , // substitution
-		      dist[i][j] // no change
-		      )
+> dist(i+1,j+1) = min(dist[i+1][j] , // delete s2[j]  
+		      dist[i][j+1] , // insert s1[i]  
+		      dist[i][j]+1 , // substitution  
+		      dist[i][j] // no change  
+		      )  
 
 ```cpp
 int LevenshteinDistance(string &s1, string &s2) {
