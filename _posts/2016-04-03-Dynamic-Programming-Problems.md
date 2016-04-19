@@ -83,6 +83,20 @@ int longestIncreasingSubsequence(vector<int> nums) {
 
 ## Edit Distance
 
+`Edit Distance`（即_Levenshtein distance_)是用来表示字符串之间的编辑距离： 
+
+> 通过插入，删除，替换将一个字符串变成另一个字符串的最小操作数
+
+同样的假如我们知道子串的编辑距离，我们可以得到整个字符串的距离。因此这个问题是符合上面的*Overlapping Subproblems*和*Optimal Substructure*的。
+
+假设`dist[m+1][n+1]`用来记录两个字符串的距离则:
+
+> dist(i+1,j+1) = min(dist[i+1][j] , // delete s2[j]
+		      dist[i][j+1] , // insert s1[i]
+		      dist[i][j]+1 , // substitution
+		      dist[i][j] // no change
+		      )
+
 ```cpp
 int LevenshteinDistance(string &s1, string &s2) {
 	if( s1.empty() )
