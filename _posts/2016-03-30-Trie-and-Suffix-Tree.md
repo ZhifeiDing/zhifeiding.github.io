@@ -1,7 +1,7 @@
 ---
 title : Trie And Suffix Tree
 categories : programming
-tags : [c++,data structure，tree]
+tags : [c++,data structure,tree]
 ---
 
 # Trie
