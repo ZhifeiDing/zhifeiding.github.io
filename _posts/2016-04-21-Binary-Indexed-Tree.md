@@ -4,11 +4,11 @@ categories : programming
 tags : [c++,tree,data structure]
 ---
 
-# 什么是__Binary Indexed Tree__
+# 什么是**Binary Indexed Tree**
 
-# __Binary Indexed Tree__应用
+# **Binary Indexed Tree**应用
 
-# __Binary Indexed Tree__实现
+# **Binary Indexed Tree**实现
 
 # 参考
 
