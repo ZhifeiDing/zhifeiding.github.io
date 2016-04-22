@@ -1,4 +1,4 @@
----
+--
 title : Binary Search Tree
 category : programming
 tags : [c++,data structure]
@@ -379,7 +379,7 @@ const std::size_t BST<T>::size() const {
 }
 ```
 
-> `empty()`函数返回`true`当`BST<T>`中不存在元素时 
+> `empty()`函数返回`true`当`BST<T>`中不存在元素时
 
 ```cpp
 // check whether the BST is nullptr
@@ -440,9 +440,9 @@ typename RBT<T>::iterator RBT<T>::find(const T& v) const {
 * `erase(iterator itr)`删除一个数据，可以分为三种情况：
 
 >
-* 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据  
-* 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点  
-* 要删掉的数据节点存在左右子树，我们可以用`in-order traversal`的`predecessor`或`postdecessor`来替换要删掉的node,然后删除`predecessor`或`postdecessor`，这样就回到上面的情况了  
+* 要删除数据节点没有左右子树，这种情况我们可以直接删掉该数据
+* 要删除的数据只有左子树或右子树，这种情况下我们可以用左子树或右子树来替换要删掉的节点
+* 要删掉的数据节点存在左右子树，我们可以用`in-order traversal`的`predecessor`或`postdecessor`来替换要删掉的node,然后删除`predecessor`或`postdecessor`，这样就回到上面的情况了
   ![erase](https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Binary_search_tree_delete.svg/320px-Binary_search_tree_delete.svg.png)
 
 ```cpp
@@ -501,8 +501,132 @@ TreeNode<T> *BST<T>::findMax(TreeNode<T> *node) {
 # 测试程序
 
 ```cpp
+template<typename T>
+void testTree() {
+    cout << endl;
+    int n = rand()%5;
+    int i = 0;
+    while( i++ < n ) {
+        T bst;
+        cout << "###########" << endl;
+        cout << "Test step : " << i << endl;
+        int m = rand()%10;
+        cout << "insert : ";
+        int v;
+        while( m-- ) {
+            v = rand()%100;
+            cout << v << "\t";
+            bst.insert(v);
+        }
+        cout << endl << "bst = ";
+        typename T::iterator itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        itr = bst.begin();
+        if( itr != bst.end() ) {
+            cout << endl << "after erase " << *itr << endl << "bst =";
+            bst.erase(itr);
+        }
+        itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        int x = v;
+        itr = bst.find(x);
+        if( itr != bst.end() ) {
+            cout << "\nFound " << x << ", now delete it" << endl;
+            bst.erase(itr);
+        } else {
+            cout << "\nCouldn't find " << x << endl;
+        }
+        cout << "bst = ";
+        itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        cout << "\nbst.size() = " << bst.size();
+        cout << endl << "###########" << endl;
+        cout << endl;
+    }
+}
+
+int main() {
+    srand((unsigned int)time(NULL));
+    cout << "Test BST<int>\n";
+    testTree<BST<int> >();
+    cout << "Test RBT<int>\n";
+    testTree<RBT<int> >();
+    return 0;
+}
+```
+
+测试程序输出:
+
+```cpp
+Test BST<int>
+
+###########
+Test step : 1
+insert : 86	58	84	93	48	41
+bst = 41	48	58	84	86	93
+after erase 41
+bst =48	58	84	86	93
+Couldn't find 41
+bst = 48	58	84	86	93
+bst.size() = 5
+###########
+
+###########
+Test step : 2
+insert : 69	1	65	51	43	13	69
+bst = 1	13	43	51	65	69	69
+after erase 1
+bst =13	43	51	65	69	69
+Found 69, now delete it
+bst = 13	43	51	65	69
+bst.size() = 4
+###########
+
+###########
+Test step : 3
+insert : 86
+bst = 86
+after erase 86
+bst =
+Couldn't find 86
+bst =
+bst.size() = 0
+###########
+
+###########
+Test step : 4
+insert : 40	45	93	72	70	13	36
+bst = 13	36	40	45	70	72	93
+after erase 13
+bst =36	40	45	70	72	93
+Found 36, now delete it
+bst = 40	45	70	72	93
+bst.size() = 5
+###########
+
+Test RBT<int>
+
+###########
+Test step : 1
+insert : 86	93	58	97
+bst = 58	86	93	97
+after erase 58
+bst =86	93	97
+Found 97, now delete it
+bst = 86	93
+bst.size() = 2
+###########
 ```
 
 # 参考
 
-1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)  
+1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)
