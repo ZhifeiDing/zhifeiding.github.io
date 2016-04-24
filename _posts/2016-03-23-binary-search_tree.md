@@ -588,7 +588,7 @@ after erase 1
 bst =13	43	51	65	69	69
 Found 69, now delete it
 bst = 13	43	51	65	69
-bst.size() = 4
+bst.size() = 5
 ###########
 
 ###########
