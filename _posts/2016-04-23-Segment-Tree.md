@@ -6,7 +6,15 @@ tags : [c++,tree,data structure]
 
 # 什么是*Segment Tree*?
 
+> `segment tree`(线段树)每个leaf node都是输入数据，而internal node则是子节点特点的总结。
+
 # *Segment Tree*实现
+这儿以实现一个*sum range*的*segment tree*为例。
+
+* 首先，需要一个`SegmentTreeNode`来表示每个节点
+    1. `left`和`right`节点指向左右子节点
+    2. `start`和`end`表示当前节点包含`nums[start:end]`
+    3. `sum`表示`nums[start:end]`之和
 
 ```cpp
 // SegmentTreeNode definition
@@ -17,7 +25,11 @@ struct SegmentTreeNode {
     // constructor
     SegmentTreeNode(int a, int b):start(a),end(b),sum(0),left(nullptr),right(nullptr){}
 };
+```
 
+* 
+
+```cpp
 // SegmentTree definition
 class SegmentTree {
 public:
