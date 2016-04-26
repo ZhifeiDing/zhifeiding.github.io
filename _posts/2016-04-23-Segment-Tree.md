@@ -27,7 +27,9 @@ struct SegmentTreeNode {
 };
 ```
 
-* 
+* 使用上面的`SegmentTreeNode`来定义`SegmentTree`:
+    * `update(int i, int val)`来更新指定位置的值
+    * `sumRange(int i, int j)`得到nums从`i`到`j`的和
 
 ```cpp
 // SegmentTree definition
