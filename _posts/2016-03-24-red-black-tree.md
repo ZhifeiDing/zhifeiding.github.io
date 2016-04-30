@@ -808,9 +808,142 @@ typename RBT<T>::TreeNode* RBT<T>::sibling(TreeNode * const &r) const {
 # 测试程序
 
 ```cpp
+template<typename T>
+void testTree() {
+    cout << endl;
+    int n = rand()%5;
+    int i = 0;
+    while( i++ < n ) {
+        T bst;
+        cout << "###########" << endl;
+        cout << "Test step : " << i << endl;
+        int m = rand()%10;
+        cout << "insert : ";
+        int v;
+        while( m-- ) {
+            v = rand()%100;
+            cout << v << "\t";
+            bst.insert(v);
+        }
+        cout << endl << "bst = ";
+        typename T::iterator itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        itr = bst.begin();
+        if( itr != bst.end() ) {
+            cout << endl << "after erase " << *itr << endl << "bst =";
+            bst.erase(itr);
+        }
+        itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        int x = v;
+        itr = bst.find(x);
+        if( itr != bst.end() ) {
+            cout << "\nFound " << x << ", now delete it" << endl;
+            bst.erase(itr);
+        } else {
+            cout << "\nCouldn't find " << x << endl;
+        }
+        cout << "bst = ";
+        itr = bst.begin();
+        while( itr != bst.end() ) {
+            cout << *itr << "\t";
+            itr++;
+        }
+        cout << "\nbst.size() = " << bst.size();
+        cout << endl << "###########" << endl;
+        cout << endl;
+    }
+}
+
+int main() {
+    srand((unsigned int)time(NULL));
+    cout << "Test BST<int>\n";
+    testTree<BST<int> >();
+    cout << "Test RBT<int>\n";
+    testTree<RBT<int> >();
+    return 0;
+}
+```
+
+测试程序输出:
+
+```cpp
+Test BST<int>
+
+###########
+Test step : 1
+insert : 78	17
+bst = 17	78
+after erase 17
+bst =78
+Couldn't find 17
+bst = 78
+bst.size() = 1
+###########
+
+###########
+Test step : 2
+insert :
+bst =
+Couldn't find 17
+bst =
+bst.size() = 0
+###########
+
+Test RBT<int>
+
+###########
+Test step : 1
+insert : 13	40	78	34	14	96	32	24	82
+bst = 13	14	24	32	34	40	78	82	96
+after erase 13
+bst =14	24	32	34	40	78	82	96
+Found 82, now delete it
+bst = 14	24	32	34	40	78	96
+bst.size() = 6
+###########
+
+###########
+Test step : 2
+insert : 4	82	42	87	81	28	74	54	95
+bst = 4	28	42	54	74	81	82	87	95
+after erase 4
+bst =28	42	54	74	81	82	87	95
+Found 95, now delete it
+bst = 28	42	54	74	81	82	87
+bst.size() = 7
+###########
+
+###########
+Test step : 3
+insert : 60	14	69
+bst = 14	60	69
+after erase 14
+bst =60	69
+Found 69, now delete it
+bst = 60
+bst.size() = 1
+###########
+
+###########
+Test step : 4
+insert : 62	23	15	31	34	31	22
+bst = 15	22	23	31	31	34	62
+after erase 15
+bst =22	23	31	31	34	62
+Found 22, now delete it
+bst = 23	31	31	34	62
+bst.size() = 5
+###########
 ```
 
 # 参考
 
-1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)  
-2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)  
+1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)
+2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)
