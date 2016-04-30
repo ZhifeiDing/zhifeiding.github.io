@@ -12,4 +12,5 @@ title : Links
 * [kramdown](http://http://kramdown.gettalong.org/) kramdown fast, pure-Ruby Markdown-superset converter
 * [linux-tools](http://linuxtools-rst.readthedocs.org/) linux tools usage
   introduction
-* [project euler](https://projecteuler.net)  project euler, programming problems archive
+* [project euler](https://projecteuler.net)  project euler, programming problems archive  
+* [python-guide](http://docs.python-guide.org/) python guide
