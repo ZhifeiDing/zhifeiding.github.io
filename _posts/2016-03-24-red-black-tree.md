@@ -906,7 +906,7 @@ after erase 13
 bst =14	24	32	34	40	78	82	96
 Found 82, now delete it
 bst = 14	24	32	34	40	78	96
-bst.size() = 6
+bst.size() = 7
 ###########
 
 ###########
@@ -945,5 +945,5 @@ bst.size() = 5
 
 # 参考
 
-1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)
-2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)
+1.[wikipedia - binary search tree](https://en.wikipedia.org/wiki/Binary_search_tree)  
+2.[wikipedia - red black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)  
