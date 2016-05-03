@@ -25,28 +25,36 @@ tags : [c++, data structure]
 Filter*用来查询记录是否存在，因此需要实现操作就包括插入记录和查询记录。我们可以声明如下的*BloomFilter*类：
 
 ```cpp
-template<typename T, typename Hash = std::hash<T> >
+#include<vector>
+#include "MurmurHash3.h"
+#include<array>
+
+template<typename T>
 class BloomFilter {
 public:
    // constructor
-   BloomFilter(int size, int numHashes);
+   BloomFilter(int size, int num);
    // insert element
-   void inser(T v);
+   void insert(const T *v, size_t len) const;
    // check whether the bloom filter contains the element
-   bool exists(T v);
+   bool exists(const T *v, size_t len) const;
 private:
    std::vector<bool> bloomFilter;
    int numHashes;
    // generate the nth hash values
-   vector<int> nthHash(vector<int> &hashA, vector<int> &hashB);
+   uint64_t nthHash(int n, std::array<uint64_t,2> &hashVals) const;
+   // generate 128bit hash value using MurmurHash3
+   std::array<uint64_t,2> hash(const T *data, size_t len) const;
 };
 ```
 
 * *BloomFilter*类构造函数， 初始化内部变量：
 
 ```cpp
-template<typename T, typename Hash = std::hash<T> >
-BloomFilter::BloomFilter(int size, int numHashes) : numHashes(numHashes) {
+// constructor
+template<typename T>
+BloomFilter<T>::BloomFilter(int size, int num) {
+   numHashes = num;
    bloomFilter.resize(size);
 }
 ```
@@ -54,22 +62,25 @@ BloomFilter::BloomFilter(int size, int numHashes) : numHashes(numHashes) {
 * *BloomFilter*类成员函数`insert(T v)`
 
 ```cpp
-template<typename T, typename Hash = std::hash<T> >
-void BloomFilter::insert(T v) {
-   auto hashValues = Hash(v);
+// insert element
+template<typename T>
+void BloomFilter<T>::insert(const T *v,size_t len) const {
+   std::array<uint64_t,2> hashValues = hash(v,len);
    for(int i = 0; i < numHashes; ++i)
       bloomFilter[nthHash(i,hashValues)];
 }
+
 ```
 
 * *BloomFilter*类成员函数`exists(T v)`
 
 ```cpp
-template<typename T, typename Hash = std::hash<T> >
-bool BloomFilter::exists(T v) {
-   auto hashValues = Hash(v);
+// check if element exists in BloomFilter
+template<typename T>
+bool BloomFilter<T>::exists(const T *v,size_t len) const {
+   std::array<uint64_t,2> hashValues = hash(v,len);
    for(int i = 0; i < numHashes; ++i) {
-      if( bloomFilter[nthHash(i,hashValues)] == false )
+      if( bloomFilter[static_cast<int>(nthHash(i,hashValues))] == false )
          return false;
    }
    return true;
@@ -79,9 +90,17 @@ bool BloomFilter::exists(T v) {
 * *BloomFilter*类私有函数`nthHash()`
 
 ```cpp
-template<typename T, typename Hash = std::hash<T> >
-vector<int> BloomFilter::nthHash(int n, vector<int> &hashValues) {
+// private function : generate nth hash value
+template<typename T>
+uint64_t BloomFilter<T>::nthHash(int n, std::array<uint64_t,2> &hashValues) const {
    return ( hashValues[0] + n * hashValues[1]) % bloomFilter.size();
+}
+
+template<typename T>
+std::array<uint64_t,2> BloomFilter<T>::hash(const T *data, size_t len) const {
+    std::array<uint64_t,2> hashValues;
+    MurmurHash3_x64_128(data, len, 0, hashValues.data());
+    return hashValues;
 }
 ```
 
