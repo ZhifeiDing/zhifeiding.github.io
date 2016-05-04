@@ -35,7 +35,7 @@ public:
    // constructor
    BloomFilter(int size, int num);
    // insert element
-   void insert(const T *v, size_t len) const;
+   void insert(const T *v, size_t len);
    // check whether the bloom filter contains the element
    bool exists(const T *v, size_t len) const;
 private:
@@ -64,10 +64,10 @@ BloomFilter<T>::BloomFilter(int size, int num) {
 ```cpp
 // insert element
 template<typename T>
-void BloomFilter<T>::insert(const T *v,size_t len) const {
+void BloomFilter<T>::insert(const T *v,size_t len) {
    std::array<uint64_t,2> hashValues = hash(v,len);
    for(int i = 0; i < numHashes; ++i)
-      bloomFilter[nthHash(i,hashValues)];
+      bloomFilter[nthHash(i,hashValues)] = true;
 }
 
 ```
@@ -89,13 +89,20 @@ bool BloomFilter<T>::exists(const T *v,size_t len) const {
 
 * *BloomFilter*类私有函数`nthHash()`
 
+*BloomFilter*最重要的是`hash`函数之间相互独立，实际中我们采用的是*double
+hash*来获得多个相互独立的`hash`值
+
 ```cpp
 // private function : generate nth hash value
 template<typename T>
 uint64_t BloomFilter<T>::nthHash(int n, std::array<uint64_t,2> &hashValues) const {
    return ( hashValues[0] + n * hashValues[1]) % bloomFilter.size();
 }
+```
 
+`hash`函数使用了128bit的*MurmurHash3*函数：
+
+```cpp
 template<typename T>
 std::array<uint64_t,2> BloomFilter<T>::hash(const T *data, size_t len) const {
     std::array<uint64_t,2> hashValues;
@@ -104,6 +111,48 @@ std::array<uint64_t,2> BloomFilter<T>::hash(const T *data, size_t len) const {
 }
 ```
 
+# 测试程序
+
+简单的测试了一下`BloomFilter`类的实现:
+
+```cpp
+#include <iostream>
+#include "BloomFilter.hpp"
+
+using namespace std;
+
+int main() {
+    vector<string> s = {"hello", "world", "good", "morning"};
+    int size = 25, num = 3;
+    BloomFilter<char> bf(size,num);
+    cout << "Insert : ";
+    for(auto itr : s) {
+        cout << itr << "\t";
+        bf.insert(itr.c_str(),itr.size());
+    }
+    cout << endl;
+    vector<string> test = {"world", "morning", "China", "Red"};
+    for(auto itr : test) {
+        cout << itr << " : ";
+        if( bf.exists(itr.c_str(), itr.size()) )
+            cout << "maybe exist in BloomFilter";
+        else
+            cout << "don't in BloomFilter";
+        cout << endl;
+    }
+    return 0;
+}
+```
+
+测试输出:
+
+```cpp
+Insert : hello	world	good	morning
+world : maybe exist in BloomFilter
+morning : maybe exist in BloomFilter
+China : don't in BloomFilter
+Red : don't in BloomFilter
+```
 
 # 参考
 
