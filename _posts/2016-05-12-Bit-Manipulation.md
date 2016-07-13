@@ -18,15 +18,16 @@ tags : [c++,skills]
 *Bit Manipulation*的核心是为运算符：`& (and)`, `| (or)`, `~ (not)` ，`^ (xor)` 和 `移位运算 a << b和a >> b`.
 
 > 一些*Bit Manipulation*的意义：
-> 并集： A | B
-> 交集： A & B
-> 集合减法： A & ~B
-> 位取反： ^ A or ~A
-> `bit`置1: A |= 1 << bit
-> `bit`清0: A &= ~(1 << bit)
-> 测试`bit`: (A & 1 << bit) != 0
-> 提取最后一个`1-bit`: A&-A or A&~(A-1) or x^(x&(x-1))
-> 清零最后一个`1-bit`: A&(A-1)
+
+* 并集： `A | B`
+* 交集： `A & B`
+* 集合减法： `A & ~B`
+* 位取反： `^ A or ~A`
+* `bit`置`1`: `A |= 1 << bit`
+* `bit`清`0`: `A &= ~(1 << bit)`
+* 测试`bit`: `(A & 1 << bit) != 0`
+* 提取最后一个`1-bit`: `A&-A or A&~(A-1) or x^(x&(x-1))`
+* 清零最后一个`1-bit`: `A&(A-1)`
 
 ## *Bit Manipulation*示例
 
@@ -129,10 +130,13 @@ int rangeBitwiseAnd(int m, int n)
 }
 ```
 
-> All DNA is composed of a series of nucleotides abbreviated as A, C, G, and T, for example: "ACGAATTCCG". When studying DNA, it is sometimes useful to identify repeated sequences within the DNA. Write a function to find all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule.
-For example,
-Given s = "AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT",
-Return: ["AAAAACCCCC", "CCCCCAAAAA"].
+> 所有DNA序列都是由*A, C, G* 和 *T* 组成, 例如: *"ACGAATTCCG"*. 识别*DNA*内重复序列是一项重要研究. 找到*DNA*序列里重复且长度为10的子串.
+
+> 例如,
+
+> `s = "AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT"`
+
+> 返回`["AAAAACCCCC", "CCCCCAAAAA"]`
 
 ```cpp
 class Solution {
@@ -229,4 +233,4 @@ int main ()
 
 # 参考
 
-* 1.[a-summary-how-to-use-bit-manipulation-to-solve-problems-easily-and-efficiently](https://discuss.leetcode.com/topic/50315/a-summary-how-to-use-bit-manipulation-to-solve-problems-easily-and-efficiently)  
+* 1. [a-summary-how-to-use-bit-manipulation-to-solve-problems-easily-and-efficiently](https://discuss.leetcode.com/topic/50315/a-summary-how-to-use-bit-manipulation-to-solve-problems-easily-and-efficiently)  
