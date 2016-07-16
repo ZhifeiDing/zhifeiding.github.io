@@ -77,7 +77,6 @@ sudo docker run hello-world
 * 创建*Dockerfile*
 
 > `Dockerfile`描述的是*image*里应该包含的应用以及环境,*Dockerfile*里内容如下:
-
     - 指定基于哪个*image*
 
     ```shell
