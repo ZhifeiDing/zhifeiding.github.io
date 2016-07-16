@@ -76,33 +76,25 @@ sudo docker run hello-world
 
 * 创建*Dockerfile*
 
-> `Dockerfile`描述的是*image*里应该包含的应用以及环境
-
-```shell
-# run these commands in terminal
-mkdir mydockerbuild
-touch Dockerfile
-```
-
-*Dockerfile*里内容如下:
+> `Dockerfile`描述的是*image*里应该包含的应用以及环境,*Dockerfile*里内容如下:
 
     - 指定基于哪个*image*
 
-```shell
-FROM docker/whalesay:latest
-```
+    ```shell
+    FROM docker/whalesay:latest
+    ```
 
     - *image*中需要安装的应用
 
-```shell
-RUN apt-get -y update && apt-get install -y fortunes
-```
+    ```shell
+    RUN apt-get -y update && apt-get install -y fortunes
+    ```
 
     - 指定运行的应用
 
-```shell
-CMD /usr/games/fortune -a | cowsay
-```
+    ```shell
+    CMD /usr/games/fortune -a | cowsay
+    ```
 
 * 基于*Dockerfile*生成*image*
 
