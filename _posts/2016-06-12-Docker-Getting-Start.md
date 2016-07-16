@@ -58,25 +58,32 @@ sudo docker run hello-world
 
 # Basic Usage/Perception
 
-##
+## *Docker*使用到的底层技术
 
 * Namespace
 
+> *Docker*利用*Namespace*来创建一个隔离的环境或者*Container*
+
 * Control Groups
 
+> *Docker*利用*Control Group*来对*Container*里的资源(CPU/MEMORY/NETWORKING)来进行限制
+
 * Union File Systems
+
+> *Docker*利用*Union File Systems*来轻量化*Container*
 
 ## How To Build An Image
 
 * 创建*Dockerfile*
 
-> `Dockerfile`描述的是*image*里应该包含的应用以及环境，一个简单的`Dockerfile`如下:
+> `Dockerfile`描述的是*image*里应该包含的应用以及环境
 
 ```shell
 # run these commands in terminal
 mkdir mydockerbuild
 touch Dockerfile
 ```
+
 *Dockerfile*里内容如下:
 
     * 指定基于哪个*image*
