@@ -86,19 +86,19 @@ touch Dockerfile
 
 *Dockerfile*里内容如下:
 
-    * 指定基于哪个*image*
+    - 指定基于哪个*image*
 
 ```shell
 FROM docker/whalesay:latest
 ```
 
-    * *image*中需要安装的应用
+    - *image*中需要安装的应用
 
 ```shell
 RUN apt-get -y update && apt-get install -y fortunes
 ```
 
-    * 指定运行的应用
+    - 指定运行的应用
 
 ```shell
 CMD /usr/games/fortune -a | cowsay
