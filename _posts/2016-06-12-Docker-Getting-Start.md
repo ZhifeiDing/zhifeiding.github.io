@@ -44,7 +44,7 @@ sudo apt-get install docker-engine
 
 ```
 
-* 然后可以启动*docker*
+* 然后可以启动*Docker*
 
 ```shell
 sudo service docker start
@@ -58,11 +58,66 @@ sudo docker run hello-world
 
 # Basic Usage/Perception
 
+##
+
 * Namespace
 
 * Control Groups
 
 * Union File Systems
+
+## How To Build An Image
+
+* 创建*Dockerfile*
+
+> `Dockerfile`描述的是*image*里应该包含的应用以及环境，一个简单的`Dockerfile`如下:
+
+```shell
+# run these commands in terminal
+mkdir mydockerbuild
+touch Dockerfile
+```
+*Dockerfile*里内容如下:
+
+    * 指定基于哪个*image*
+
+```shell
+FROM docker/whalesay:latest
+```
+
+    * *image*中需要安装的应用
+
+```shell
+RUN apt-get -y update && apt-get install -y fortunes
+```
+
+    * 指定运行的应用
+
+```shell
+CMD /usr/games/fortune -a | cowsay
+```
+
+* 基于*Dockerfile*生成*image*
+
+> 在*Dockerfile*所在目录执行下面`command`:
+
+```shell
+sudo docker build -t docker-whale .
+```
+
+上面`command`会根据*Dockerfile*生成一个名为`docker-whale`的*image*
+
+* 运行上面创建的*imgae*
+
+```shell
+sudo docker run docker-whale
+```
+
+* 其他*Docker*命令
+
+    * `docker ps` - 列出运行的*container*
+    * `docker logs` - 输出*container*标准输出
+    * `docker stop` - 停止运行的*Docker*
 
 # Reference
 
