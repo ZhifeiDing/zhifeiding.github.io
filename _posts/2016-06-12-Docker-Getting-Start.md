@@ -116,7 +116,32 @@ sudo docker run docker-whale
     * `docker logs` - 输出*container*标准输出
     * `docker stop` - 停止运行的*Docker*
 
+# What is *Kubernetes* ?
+
+> an open-source system for automating deployment, scaling, and management of containerized applications.It groups containers that make up an application into logical units for easy management and discovery
+
+官网上是这样描述的。简而言之，
+我们可以把*Kubernetes*当成*Docker*的一个管理工具。下面图描述了*Kubernetes*的工作状态:
+![Kubernetes](http://kubernetes.io/images/hellonode/image_13.png)
+
+# *Kubernetes*基本组成
+
+* Pod
+    > *Pod*是一个或多个*Container*组成的，共同管理, 可以使用下面命令来创建*Pod*
+
+    ```shell
+    kubectl run hello-node --image=gcr.io/PROJECT_ID/hello-node:v1 --port=8080
+    ```
+    *Kubernetes*命令和*Docker*类似， 比如:
+    * 可以使用`kubectl get pods`来查看创建的*Pod*
+    * 可以使用`kubectl logs <POD-NAME>`来查看*Pod*的标准熟输出
+
+* Service
+
+> *Service* 是一组*Pod*以及相关的访问接口集合
+
 # Reference
 
 * 1.[Docker - User Guide](https://docs.docker.com)
+* 2.[Kubernetes - User Guide](http://kubernetes.io/docs/user-guide)
 
