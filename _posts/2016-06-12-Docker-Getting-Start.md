@@ -121,7 +121,6 @@ sudo docker run docker-whale
 ```
 
 * 其他*Docker*命令
-
     * `docker ps` - 列出运行的*container*
     * `docker logs` - 输出*container*标准输出
     * `docker stop` - 停止运行的*Docker*
