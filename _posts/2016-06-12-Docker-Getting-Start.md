@@ -127,6 +127,7 @@ sudo docker run docker-whale
 # *Kubernetes*基本组成
 
 * Pod
+
     > *Pod*是一个或多个*Container*组成的，共同管理, 可以使用下面命令来创建*Pod*
 
     ```shell
