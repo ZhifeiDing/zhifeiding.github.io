@@ -5,7 +5,7 @@ title : Links
 
 # 个人
 
-* [zhifei](http://zhifeiding.github.io) 自己，山东大学
+* [Preshing on Programming](http://preshing.com/) A blog about C++/Python 
 
 # 网站
 
