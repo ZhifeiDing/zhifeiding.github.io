@@ -8,15 +8,24 @@ tags: [c++, algorithm]
 
 书里对于要删除容器内元素的情况分成了下面三类：
 
-* 对于删除特定值的所有对象
-* 只删除满足特定条件的对象
+* 删除特定值的所有对象
+* 删除满足特定条件的对象
 * 删除对象同时还需要其它操作
 
 对于每一类都有不同的方法来处理， 下面分别介绍。
 
-## 对于删除特定值的所有对象
+## 删除特定值的所有对象
 
 * 对于`vector`,`string`或`deque`使用`erase-remove`
+
+这一条其实对于连续内存的容器都适用，一般使用下面方法:
+
+```cpp
+c.erase(remove(c.begin(), c.end(), removeVal), c.end);
+```
+
+其中`remove`是`algorithm`库中提供的方法，功能是使用*move assignment*来将不是`removeValue`的元素移到前面，最后返回前面不是`removeValue`的元素组成的新范围的`end`迭代器。然后可以使用容器提供的`erase`函数来删掉`remove`返回迭代器后面所有值。
+
 
 * 对于`list`，则使用`list::remove`
 
