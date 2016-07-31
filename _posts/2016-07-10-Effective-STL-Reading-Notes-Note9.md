@@ -61,12 +61,11 @@ c.remove_if(badValue);
 
 * 对于关联容器`set`/`map` 
 
-我们不能简单地使用`erase`, 可以使用:
+ 我们不能简单地使用`erase`, 可以使用:
 
 
  + `remove_copy_if`和`swap`
   
-
   这种方法直接简单但是效率比较低，因为要移动元素
   
   
