@@ -1,7 +1,7 @@
 ---
 title: [Reading Notes][Effective STL] Note 9 : 选择删除元素的方法
-categories: programming
-tags: [c++, algorithm]
+categories : programming
+tags : [c++, algorithm]
 ---
 
 # 结论
