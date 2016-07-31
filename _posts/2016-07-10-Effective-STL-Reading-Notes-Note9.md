@@ -24,7 +24,7 @@ tags : [c++, algorithm]
 c.erase(remove(c.begin(), c.end(), removeVal), c.end);
 ```
 
-其中[`remove`][^1]是`algorithm`库中提供的方法，功能是使用*move assignment*来将不是`removeVal`的元素移到前面，最后返回前面不是`removeVal`的元素组成的新范围的`end`迭代器。然后可以使用容器提供的`erase`函数来删掉`remove`返回迭代器后面所有值。
+其中[`remove`][1]是`algorithm`库中提供的方法，功能是使用*move assignment*来将不是`removeVal`的元素移到前面，最后返回前面不是`removeVal`的元素组成的新范围的`end`迭代器。然后可以使用容器提供的`erase`函数来删掉`remove`返回迭代器后面所有值。
 
 * 对于`list`，则使用`list::remove`
 
@@ -63,20 +63,22 @@ c.remove_if(badValue);
 
 我们不能简单地使用`erase`, 可以使用:
 
-  1. `remove_copy_if`和`swap`
+  * `remove_copy_if`和`swap`
   
   这种方法直接简单但是效率比较低，因为要移动元素
   
   ```cpp
   AssocContainer<int> c;
   AssocContainer<int> goodValues;
-  remove_copy_if(c.begin(), c.end(), inserter(goodValues, goodValues.end()), badValue);
+  remove_copy_if(c.begin(), c.end(), 
+                inserter(goodValues, goodValues.end()), 
+                badValue);
   c.swap(goodValues);
   ```
   
   其中`remove_copy_if`功能是将`c`中满足`badValue`的元素复制到`goodValues`中。
   
-  2. 循环遍历时对于传给`erase`的迭代器要进行后缀递增
+  * 循环遍历时对于传给`erase`的迭代器要进行后缀递增
   
   ```cpp
   for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
