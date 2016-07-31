@@ -27,8 +27,12 @@ tags: [c++, algorithm]
 
 * 删除对象同时还需要其它操作
 
+> 对于`vector`,`string`，`deque`或`list`标准序列容器，需要循环遍历容器中元素，需要注意的是每次调用`erase`时，需要用返回值更新迭代器
+
+> 对于关联容器`set`/`map`,循环遍历时对于传给`erase`的迭代器要进行后缀递增
 
 # 参考
 
 * [remove/remove_if](http://en.cppreference.com/w/cpp/algorithm/remove)  
-* [vector::erase](http://en.cppreference.com/w/cpp/container/vector/erase)
+* [vector::erase](http://en.cppreference.com/w/cpp/container/vector/erase)  
+* [remove_copy/remove_copy_if](http://en.cppreference.com/w/cpp/algorithm/remove_copy)  
