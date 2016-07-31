@@ -59,16 +59,12 @@ c.erase(remove_if(c.begin(), c.end(), removeVal), c.end);
 c.remove_if(badValue);
 ```
 
-* 对于关联容器`set`/`map` 
+* 对于关联容器`set`/`map` , 我们不能简单地使用`erase`, 可以使用:
 
- 我们不能简单地使用`erase`, 可以使用:
+1. `remove_copy_if`和`swap`
+  
+     这种方法直接简单但是效率比较低，因为要移动元素  
 
-
- + `remove_copy_if`和`swap`
-  
-     这种方法直接简单但是效率比较低，因为要移动元素
-  
-  
      ```cpp
      AssocContainer<int> c;
      AssocContainer<int> goodValues;
@@ -80,18 +76,17 @@ c.remove_if(badValue);
   
      其中`remove_copy_if`功能是将`c`中满足`badValue`的元素复制到`goodValues`中。
  
- + 循环遍历时对于传给`erase`的迭代器要进行后缀递增
+2. 循环遍历时对于传给`erase`的迭代器要进行后缀递增
   
-     ```cpp
-     for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
-       if( badValue(*i) )
-         c.erase(i++);
-       else
-         ++i;
-     }
-     ```
-  
-     其中关键点就在于传递给`erase`的迭代器要使用后缀递增， 而不能放在`for`循环里， 因为删除元素之后，指向该元素的所有迭代器都变得无效。
+    ```cpp
+    for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
+      if( badValue(*i) )
+        c.erase(i++);
+      else
+        ++i;
+    }
+    ```
+    其中关键点就在于传递给`erase`的迭代器要使用后缀递增， 而不能放在`for`循环里， 因为删除元素之后，指向该元素的所有迭代器都变得无效。
 
 ## 删除对象同时还需要其它操作
 
