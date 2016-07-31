@@ -1,5 +1,5 @@
 ---
-title:  Reading Notes - Effective STL Note 9 - 选择删除元素的方法
+title:  Reading Notes - Effective STL Note 9 - Choose the Method of deleting elements carefully
 categories : programming
 tags : [c++, algorithm]
 ---
@@ -63,9 +63,12 @@ c.remove_if(badValue);
 
 我们不能简单地使用`erase`, 可以使用:
 
-  * `remove_copy_if`和`swap`
+
+ + `remove_copy_if`和`swap`
   
+
   这种方法直接简单但是效率比较低，因为要移动元素
+  
   
   ```cpp
   AssocContainer<int> c;
@@ -78,7 +81,8 @@ c.remove_if(badValue);
   
   其中`remove_copy_if`功能是将`c`中满足`badValue`的元素复制到`goodValues`中。
   
-  * 循环遍历时对于传给`erase`的迭代器要进行后缀递增
+  
+ + 循环遍历时对于传给`erase`的迭代器要进行后缀递增
   
   ```cpp
   for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
@@ -88,6 +92,7 @@ c.remove_if(badValue);
       ++i;
   }
   ```
+  
   其中关键点就在于传递给`erase`的迭代器要使用后缀递增， 而不能放在`for`循环里， 因为删除元素之后，指向该元素的所有迭代器都变得无效。
 
 ## 删除对象同时还需要其它操作
