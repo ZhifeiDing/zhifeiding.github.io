@@ -52,7 +52,7 @@ bool badValue(int );
 
 * 对于`vector`,`string`或`deque`使用`erase-remove_if`, 对于`list`，则使用`list::remove_if`
 
-比较简单， 我们可以直接将上面的`remove`算法换成[`remove_if`][^1]:
+比较简单， 我们可以直接将上面的`remove`算法换成[`remove_if`][1]:
 
 ```cpp
 c.erase(remove_if(c.begin(), c.end(), removeVal), c.end);
@@ -69,9 +69,9 @@ c.remove_if(badValue);
                    badValue);
      c.swap(goodValues);
 ```
-  这种方法直接简单但是效率比较低，因为要移动元素  
-  其中`remove_copy_if`功能是将`c`中满足`badValue`的元素复制到`goodValues`中。
-  或者循环遍历时对于传给`erase`的迭代器要进行后缀递增
+这种方法直接简单但是效率比较低，因为要移动元素。其中`remove_copy_if`功能是将`c`中满足`badValue`的元素复制到`goodValues`中。
+
+或者循环遍历时对于传给`erase`的迭代器要进行后缀递增
   
 ```cpp
     for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
@@ -81,7 +81,7 @@ c.remove_if(badValue);
         ++i;
     }
 ```
-    其中关键点就在于传递给`erase`的迭代器要使用后缀递增， 而不能放在`for`循环里， 因为删除元素之后，指向该元素的所有迭代器都变得无效。
+其中关键点就在于传递给`erase`的迭代器要使用后缀递增， 而不能放在`for`循环里， 因为删除元素之后，指向该元素的所有迭代器都变得无效。
 
 ## 删除对象同时还需要其它操作
 
@@ -115,7 +115,7 @@ for(AssocContainer<int>::iterator i = c.begin(); i != c.end(); ) {
 
 # 参考
 
-[1]: http://en.cppreference.com/w/cpp/algorithm/remove "remove"
+[1]: http://en.cppreference.com/w/cpp/algorithm/remove "remove function definition"
 * [remove/remove_if](http://en.cppreference.com/w/cpp/algorithm/remove)  
 * [vector::erase](http://en.cppreference.com/w/cpp/container/vector/erase)  
 * [remove_copy/remove_copy_if](http://en.cppreference.com/w/cpp/algorithm/remove_copy)  
