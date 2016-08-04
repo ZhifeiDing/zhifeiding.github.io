@@ -31,6 +31,12 @@ tags: [c++,algorithm,memory]
 void* malloc(size_t size);
 ```
 
+从上面*Heap Segment*示意图中能够知道*Heap Segment*是由*starting address*, *break point*和*maximum limit*定义的一段连续内存空间。如果我们在*Heap*里分配内存，那我们必须知道*break point*的地址。我们可以借助`brk`和`sbrk`系统调用。
+
+* `brk`将*break point*设置到指定的地址，如果成功返回0，否则返回1。
+* `sbrk`则将*break point*向前移动指定的字节大小。失败则返回`(void*)-1`,执行成功后的返回值根据不同实现而不同。
+> 当增加地址为零时(`sbrk(0)`)，返回值是实际的*break point*地址
+
 `brk`以及`sbrk`的函数原型
 
 ```cpp
@@ -40,7 +46,11 @@ void* sbrk(intptr_t incr);
 
 # `malloc`实现
 
+有了上面背景知识，我们可以开始一步一步实现`malloc`。
+
 ## 一个简单的`malloc`实现
+
+首先，借助于上面的`sbrk`我们可以很容易想到一个实现`malloc`的方法，即首先用`sbrk(0)`得到*break point*地址，然后调用`sbrk`来调整大小，如果成功则返回之前得到的*break point*的地址。代码如下:
 
 ```cpp
 #include <sys/types.h>
@@ -55,8 +65,11 @@ void *malloc(size_t size) {
   return p;
 }
 ```
+一个简单的`malloc`函数就这么实现了。我们可以用这个简易版`malloc`来动态分配内存。但是很快问题就出现了，分配的内存我们没有办法去释放，还需要继续改进。
 
 ## `malloc`
+
+
 
 ## `calloc`,`free`,`ralloc`实现
 
