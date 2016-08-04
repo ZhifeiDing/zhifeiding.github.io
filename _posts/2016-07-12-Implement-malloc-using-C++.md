@@ -35,6 +35,7 @@ void* malloc(size_t size);
 
 * `brk`将*break point*设置到指定的地址，如果成功返回0，否则返回1。
 * `sbrk`则将*break point*向前移动指定的字节大小。失败则返回`(void*)-1`,执行成功后的返回值根据不同实现而不同。
+
 > 当增加地址为零时(`sbrk(0)`)，返回值是实际的*break point*地址
 
 `brk`以及`sbrk`的函数原型
@@ -67,9 +68,24 @@ void *malloc(size_t size) {
 ```
 一个简单的`malloc`函数就这么实现了。我们可以用这个简易版`malloc`来动态分配内存。但是很快问题就出现了，分配的内存我们没有办法去释放，还需要继续改进。
 
-## `malloc`
+## 更实际的`malloc`实现
 
+* 首先，为了让我们`malloc`的memory能够`free`,我们需要定义`free`含义，如果一块memory能够再次被`malloc`分配使用，我们就说这块memory是`free`掉的。这样，我们很容易就想到使用一个结构体来保存当前分配memory的大小，释放等信息。
 
+```cpp
+typedef struct s_block *t_block;
+
+struct s_block {
+  size_t size;      // size of current block
+  t_block next;     // pointer to next block
+  int free;         // sign to indicate free or not
+};
+```
+需要注意的是我们每次调用`sbrk`的时候需要加上`s_block`的大小。使用`s_block`之后*Heap Segment*是下面这样分布的:
+
+![]()
+
+* 有了上面的`s_block`之后，每次需要分配内存时我们简单的遍历`s_block`找到`free`并且大小满足的`s_block`就可以了。
 
 ## `calloc`,`free`,`ralloc`实现
 
