@@ -80,12 +80,43 @@ struct s_block {
   t_block next;     // pointer to next block
   int free;         // sign to indicate free or not
 };
+
+#define BLOCK_SIZE sizeof(struct s_block)
 ```
 需要注意的是我们每次调用`sbrk`的时候需要加上`s_block`的大小。使用`s_block`之后*Heap Segment*是下面这样分布的:
 
 ![]()
 
 * 有了上面的`s_block`之后，每次需要分配内存时我们简单的遍历`s_block`找到`free`并且大小满足的`s_block`就可以了。
+
+```cpp
+t_block find_block(t_block *last , size_t size) {
+  t_block b=base;     // start from the heap starting point
+  while (b && !(b->free && b->size >= size)) {
+    *last = b;
+    b = b->next;
+  }
+  return (b);
+}
+```
+
+* 如果找不到合适的`s_block`,我们需要调用`sbrk()`来分配内存
+
+```cpp
+t_block extend_heap(t_block last , size_t s){
+  t_block b;
+  b = sbrk (0);
+  if (sbrk(BLOCK_SIZE + s) == (void*)-1)
+    /* sbrk fails , go to die */
+    return (NULL);
+  b->size = s;
+  b->next = NULL;
+  if (last)
+    last ->next = b;
+  b->free = 0;
+  return (b);
+}
+```
 
 ## `calloc`,`free`,`ralloc`实现
 
