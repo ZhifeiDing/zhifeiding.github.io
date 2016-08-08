@@ -82,6 +82,8 @@ struct s_block {
 };
 
 #define BLOCK_SIZE sizeof(struct s_block)
+
+void *base=NULL;  // global pointer to the 
 ```
 需要注意的是我们每次调用`sbrk`的时候需要加上`s_block`的大小。使用`s_block`之后*Heap Segment*是下面这样分布的:
 
@@ -118,7 +120,97 @@ t_block extend_heap(t_block last , size_t s){
 }
 ```
 
+## `malloc`实现
+
+根据之前的思路，为了实现`malloc`需要下面这些操作:
+
+* 如果是第一次调用`malloc`,则调用`extend_heap`来分配内存并且设置全局变量`base`
+* 否则就调用`find_block`
+
+```cpp
+void *malloc(size_t size) {
+  t_block b,last;
+  if (base) {
+    /* First find a block */
+    last = base;
+    b = find_block(&last ,s);
+    if (b) {
+      b->free=0;
+    } else {
+      /* No fitting block , extend the heap */
+      b = extend_heap(last ,s);
+      if (!b)
+        return(NULL);
+    }
+  } else {
+    /* first time */
+    b = extend_heap(NULL ,s);
+    if (!b)
+      return NULL;
+    base = b;
+  }
+  return b+1;
+}
+```
+
 ## `calloc`,`free`,`ralloc`实现
+
+`malloc`类似函数还有:
+
+* `calloc` ：除了实现`malloc`功能之外，还会初始化分配内存的值
+
+```cpp
+void *calloc(size_t nelem, size_t size) {
+  size = nelem * size;
+  void *ptr = malloc(size);
+  memset(ptr, 0, size);
+  return p;
+}
+```
+
+* `free` : 释放`malloc`,`calloc`或`ralloc`分配的内存区域,简单的实现方式就是将`s_block`里的`free`标志位置为1
+
+```cpp
+void *get_block_ptr(void *ptr) {
+  return (t_block)ptr - 1;
+}
+
+void free(void *ptr) {
+  if( !ptr )
+    return;
+  
+  t_block p = get_block_ptr(ptr);
+  assert(p->free == 0);
+  p->free = 1;
+}
+```
+
+* `ralloc` : 调整之前分配的内存大小， 对于新的`size`小于当前`size`的，我们可以直接返回，否则重新分配并释放之前的内存
+
+```cpp
+void *ralloc(void *ptr, size_t size) {
+  if( !ptr )
+    return malloc(size);
+  
+  // if request size is smaller than current size, just return
+  t_block p = get_block_ptr(ptr);
+  if( p->size >= size )
+    return ptr;
+    
+  // or request size is larger than current size, we need
+  // malloc the new size, copy old data and free old space
+  void *new_ptr = malloc(size);
+  if( !new_ptr )
+    return NULL;
+  memcpy(new_ptr, ptr, p->size);
+  free(ptr);
+  return new_ptr;
+}
+```
+
+# 总结
+
+上面实现了一个基本功能的`malloc`, 不过还有一些功能还需要完善，比如memory 对齐，分配时memory split和释放时memory fragment处理等
 
 # 参考
 
