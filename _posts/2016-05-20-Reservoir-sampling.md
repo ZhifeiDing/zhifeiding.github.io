@@ -74,7 +74,7 @@ private:
 
 第 *i-1* 轮时元素被选择概率为 *k/(i-1)* ,第 *i* 轮时元素不被选择的概率是 *1/i* ,所以继续被选择的概率是 *k/(i-1) * (1 - 1/i) = k/i* , 所以第 *n* 轮时每个元素被选择的概率是 *k/n* 。 该算法也被称作*Algorithm R* 。
 
-假设上面的 *leetcode* 的问题变成随机选择 *k* 个元素则代码：
+假设上面的 *leetcode* 的问题变成随机选择 *k* 个元素, 代码为：
 
 ```cpp
 class Solution {
@@ -91,7 +91,7 @@ public:
         int cnt = 1;
         ListNode *h = head;
         vector<int> res;
-        while( h ) {
+        while( cnt <= k ) {
            res.push_back(h->val);
            h = h->next;
            ++cnt;
@@ -117,10 +117,98 @@ private:
 
 * 所有元素权重是 *W* , 则某一个权重为*w*的元素被选择的概率 *p = w/W*
 
-对于这种情况 *Efraimidis* 和 *Spirakis* 给出了 *Algorithm A-Res* 算法，使用一个 *priority queue* 来保存 *k* 个元素，
+对于这种情况 *Efraimidis* 和 *Spirakis* 给出了 *Algorithm A-Res* 算法，使用一个 *priority queue* 来保存 *k* 个元素，每个元素以 *rand(0,1) ^ (1/w)* 来排序， 当 *priority queue* 已经有 *k* 个元素并且最小的小于当前的概率则用当前元素替换概率最小的元素
+
+假设上面的 *leetcode* 的问题变成根据权重随机选择 *k* 个元素，代码为：
+
+```cpp
+class Solution {
+public:
+    /** @param head The linked list's head. Note that the head is guanranteed to be not null, 
+     * so it contains at least one node.
+     */
+    Solution(ListNode* head) {
+        this->head = head;
+    }
+    
+    /** Returns a random node's value. */
+    vector<int> getRandom(int k) {
+        ListNode *h = head;
+        vector<int> res;
+        auto comp = [](pair<double,int> p1, pair<double,int> p2) {
+            return p1.first > p2.first;
+        };
+        priority_queue<pair<double,int>, vector<pair<double, int> >, decltype(comp) > pq(comp);
+        
+        while( h ) {
+            // key point to calculate the priority_queue's sorting key : inclusive range
+            double idx = (static_cast<double>(rand()%1000) / 1000.0) ^ h->weight;
+            if( pq.size() < k )
+                pq.push(make_pair(idx,h->val));
+            else {
+                if( idx < pq.top().first ) {
+                    pq.pop();
+                    pq.push(make_pair(idx,h->val));
+                }
+            }
+            h = h->next;
+        }
+        for(auto &p : pq)
+            res.push_back(p.second);
+        return res;
+    }
+private:
+    ListNode *head;
+};
+```
 
 * 假设元素 *i* 权重是 *wi*, 元素 *j* 的权重是 *wj*, 元素 *i* 被选择的概率是 *pi*, 我们定义元素 *j* 的概率是 *pj = pi * max(1, wj/wi)*
 
+对于这种问题 *M. T. Chao* 给出了下面的算法：
+
+> 先选择前面的 *k* 个元素，并记录其总 *probability*, 之后根据元素 *probability* 和随机产生的数来选择是否替换 *reservior* 元素。
+
+假设上面的 *leetcode* 的问题变成根据权重随机选择 *k* 个元素，代码为：
+
+```cpp
+class Solution {
+public:
+    /** @param head The linked list's head. Note that the head is guanranteed to be not null, 
+     * so it contains at least one node.
+     */
+    Solution(ListNode* head) {
+        this->head = head;
+    }
+    
+    /** Returns a random node's value. */
+    vector<int> getRandom(int k) {
+        int cnt = 1;
+        ListNode *h = head;
+        vector<int> res;
+        double WSum = 0;
+        while( cnt <= k ) {
+           res.push_back(h->val);
+           WSUM += h->weight/k;
+           h = h->next;
+           ++cnt;
+        }    
+        while( h ) {
+            // calculate current element's probability
+            double p = h->weight / WSUM;
+            // calculate inclusive range random value
+            double idx = static_cast<double>(rand()%1000) / 1000.0;
+            if( idx < p )   // select item according to the probability
+                res[rand()%k] = h->val;   // uniform selection in reservior for replacement
+            h = h->next;
+            WSUM += h->weight/k;
+        }
+
+        return res;
+    }
+private:
+    ListNode *head;
+};
+```
 
 # 参考
 
