@@ -11,9 +11,19 @@ tags : [consensus, reading notes]
 
 ## *Paxos* 基本假设和概念
 
-* 
+*Paxos* 算法工作先决条件是数据存储没有错误和丢失(消息可以丢失和乱序)， 在此基础上， *Paxos* 有几个概念：
+
+* *Proposer* : 发起请求并请求*Acceptor*接受
+* *Acceptor* ：作为*Paxos*存储节点，接受和存储数据，一半以上节点*Acceptor*组成*Quorums*。而且消息必须发给一个*Quorums*或者被一个*Quorums*发出
+* *Quorums* : 至少一半*(n/2 + 1)* *Acceptors*, 保证了消息的可靠性
+* *Proposal Number* 和 *Agreed Value* : *Agreed Value*是每次*Proposer*要写的数据，*Proposal Number*是每次*Proposer*的一个全局唯一的值， 并且单调递增。
+
+## *Typical Deployment*
+
 
 ## *Basic Paxos*
+
+
 
 ## *MultiPaxos*
 
