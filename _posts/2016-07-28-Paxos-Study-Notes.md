@@ -42,7 +42,13 @@ AcceptReq   agreeVal     ---------->  1, 2,
 Accepted                              1, 2, agreeVal
 ```
 
-## *MultiPaxos*
+## *Multi Paxos*
+
+上面的*Basic Paxos*每次都需要2个round， 4个delay来完成一次*Paxos*。而*Multi Paxos*则省掉了上面的*Phase 1*过程， 也就是相当于只有一个*Proposer*, 上面已经提到过， *Paxos*可以看成加了约束来保证可靠性的主从复制机制， 而*Multi Paxos*更加说明这一点。
+
+## *Fast Paxos*
+
+上面的*Multi Paxos*一次*Paxos*只需要2个delay，但是却只能有一个*Proposer*。*Fast Paxos*则结合上面两个协议， 在没有冲突时类似*Multi Paxos*协议，*Proposer*只进行*Phase 2*， 当有冲突发生时则回退到*Basic Paxos*。有区别的是为了保证可靠性*Fast Paxos*中的*Quorum*不再是*n/2+1*, 而变成了*n * 3/4*。
 
 # 参考
 
