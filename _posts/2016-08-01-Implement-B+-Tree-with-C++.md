@@ -1,10 +1,21 @@
 ---
 title : Implement B+ Tree with C++
 categories : programming
-tags : [data structure,c++]
+tags : [data structure,c++，tree]
 ---
 
 # 什么是*B+ Tree*？
+
+说道*B+ Tree*不能不提*B Tree*， 所以下面先介绍*B Tree*结构和性质，在重点描述*B+ Tree*。
+
+## *B Tree* 的结构和性质
+
+## *B+ Tree* 的结构和性质
+
+# *B+ Tree* 实现
+
+```cpp
+```
 
 # 参考
 
