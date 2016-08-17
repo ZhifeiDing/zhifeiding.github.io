@@ -4,6 +4,8 @@ categories: programming
 tags: [c++,algorithm,memory]
 ---
 
+*Note:* 本文基本上是[Malloc Tutorial](http://www.inf.udec.cl/~leo/Malloc_tutorial.pdf)的整理和翻译。
+
 # `malloc`是做什么的?
 
 `malloc`是*C*程序中用来分配内存的一个库函数。*C++*里的*new*也是调用`malloc`实现的。为了清楚内存是怎么分配的，我们用*C*来实现一个简单的`malloc`函数.
@@ -87,7 +89,7 @@ void *base=NULL;  // global pointer to the
 ```
 需要注意的是我们每次调用`sbrk`的时候需要加上`s_block`的大小。使用`s_block`之后*Heap Segment*是下面这样分布的:
 
-![]()
+![Heap List](/assets/images/HeapList.png)
 
 * 有了上面的`s_block`之后，每次需要分配内存时我们简单的遍历`s_block`找到`free`并且大小满足的`s_block`就可以了。
 
