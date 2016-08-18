@@ -51,10 +51,22 @@ tags : [data structure,c++，tree]
 
 ## *B+ Tree* 插入算法实现
 
+![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertLeaf.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit0.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit1.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit2.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit3.png)
+
 ```cpp
 ```
 
 ## *B+ Tree* 删除算法实现
+
+![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteLeaf.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge0.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge1.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge2.png)
+![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge3.png)
 
 ```cpp
 ```
