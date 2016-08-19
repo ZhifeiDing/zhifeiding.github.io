@@ -51,10 +51,16 @@ tags : [data structure,c++，tree]
 
 ## *B+ Tree* 插入算法实现
 
+以上面的*M = 5 L = 4*的*B+ Tree*为例：
+* 当插入*16*时，查找到*LeafNode*有3个*key*， 插入之后是4个*key*，满足*LeafNode*要求，所以直接插入就可
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertLeaf.png)
+* 当我们继续插入*19*之后，*LeafNode*的*Key = 5 > L = 4*，所以我们插入之后需要将这个*LeafNode*进行*Split*
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit0.png)
+*Split*方法是将*LeafNode*从*[L/2]*处分成左右两个*LeafNode*， 并将*[L/2]*处*Key*传递到父节点，父节点重复上面的插入动作
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit1.png)
+* 当我们向下面*B+ Tree*插入*9*时，*LeafNode*需要*Split*
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit2.png)
+同时父节点插入传递上来的*5*之后也需要*Split*，同时传递*10*到根节点
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_InsertSplit3.png)
 
 ```cpp
@@ -62,10 +68,16 @@ tags : [data structure,c++，tree]
 
 ## *B+ Tree* 删除算法实现
 
+同样以上面插入之后的*M = 5 L = 4*的*B+ Tree*为例：
+* 当删除*18*时，*18*所在*LeafNode*有3个*Key*，删掉之后*Key = 2 >= L/2 = 2*,所以直接删掉*18*即可
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteLeaf.png)
+* 当继续删除*16*时，*LeafNode*只有1个*Key*了，这时我们首先需要尝试从*Neighbor*吸收元素。但是左右*Neighbor*都只有*L/2 = 2*个*Key*，我们只能将当前*LeafNode*与*Neighbor*合并并更新父节点
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge0.png)
+更新父节点之后发现父节点*Key = 1 < [L/2]*,需要重复上面的删除动作(这儿也只能和*Neighbor*合并)
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge1.png)
+合并之后需要将父节点的*10*传递下来，最终树结构如下图：
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge2.png)
+* 当继续删除*17*时，需要从*Neighbor*吸收元素15，同时更新父节点
 ![B+ Tree InsertLeaf](/assets/images/B+Tree_DeleteMerge3.png)
 
 ```cpp
