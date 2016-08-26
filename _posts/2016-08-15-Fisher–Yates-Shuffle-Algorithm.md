@@ -73,6 +73,7 @@ private:
     vector<int> data, val;
 };
 ```
+
 ## *Sattolo's algorithm*
 
 *Sattolo's algorithm*是上面*Fisher-Yates*洗牌算法的一个变种, 不同于*Fisher-Yates*洗牌算法能够产生*n!* 个序列， *Sattolo's algorithm*只能产生*(n-1)!* 中序列。
