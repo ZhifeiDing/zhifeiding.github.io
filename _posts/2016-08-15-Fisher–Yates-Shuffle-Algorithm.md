@@ -37,7 +37,14 @@ tags : [algorithm,c++]
 4. 重复步骤*2-3*只到所有数字都被划掉
 5. 步骤*3*得到的集合就是原始集合的一个随机序列
 
+上面算法很好证明，对于第*i*个数来说：
+* 之前不被选中的概率是*P1 = (N-1)/N * (N-2)/(N-1) * (N-i+1)/(N-i+2)*
+* 而本次被选中的概率是*P2 = 1/(N-i+1)*
+* 所以第*i*个数字被选中的概率为*P1 * P2 = 1/N*， 即对于所有集合中元素来说其概率都是*1/N*。
+
 ## *Fisher-Yates*洗牌算法实现
+
+上面的*Fisher-Yates*洗牌算法原始实现的空间复杂度是*O(2*N)*，对于较大的集合来说不是很友好，下面实现采用*in-place*的*Fisher-Yates*洗牌算法。 代码如下：
 
 ```cpp
 class Solution {
@@ -57,7 +64,7 @@ public:
     /** Returns a random shuffling of the array. */
     vector<int> shuffle() {
         for(int i = data.size()-1; i > 0; --i) {
-            int j = rand()%(i+1);
+            int j = rand()%(i+1);  // key point, generate random in 0 - i
             swap(data[i], data[j]);
         }
         return data;
@@ -65,6 +72,20 @@ public:
 private:
     vector<int> data, val;
 };
+```
+## *Sattolo's algorithm*
+
+*Sattolo's algorithm*是上面*Fisher-Yates*洗牌算法的一个变种, 不同于*Fisher-Yates*洗牌算法能够产生*n!* 个序列， *Sattolo's algorithm*只能产生*(n-1)!* 中序列。
+
+```cpp
+/** Returns a random shuffling of the array. */
+vector<int> shuffle() {
+    for(int i = data.size()-1; i > 0; --i) {
+        int j = rand()%i;  // key point, different from Fisher-Yates shufff algorithm
+        swap(data[i], data[j]);
+    }
+    return data;
+}
 ```
 
 # 参考 
