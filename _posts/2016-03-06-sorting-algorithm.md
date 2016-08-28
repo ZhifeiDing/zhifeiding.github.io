@@ -229,3 +229,5 @@ void quickSort(std:vector<T> &nums) {
   而堆排序，合并排序和快排平均时间复杂度都是`O(nlogn)`。
 
 # 参考
+
+* [wikipedia -sorting algorithm(https://en.wikipedia.org/wiki/Sorting_algorithm)
