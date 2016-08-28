@@ -230,4 +230,4 @@ void quickSort(std:vector<T> &nums) {
 
 # 参考
 
-* [wikipedia -sorting algorithm(https://en.wikipedia.org/wiki/Sorting_algorithm)
+* [wikipedia -sorting algorithm](https://en.wikipedia.org/wiki/Sorting_algorithm)
