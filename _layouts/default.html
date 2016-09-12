@@ -6,15 +6,6 @@
         <header>
         <h1> {{ page.title }} </h1>
         </header>
-        <!--
-        <section class="meta">
-        <script type="text/javascript" src="/assets/styles/xepOnline.jqPlugin.js"></script>
-        <a href="#" onclick="return xepOnline.Formatter.Format('Usage',
-            {pageWidth:'216mm', pageHeight:'279mm',render:'download'});">
-          <img src="/assets/images/pdf_icon.jpg">
-        </a>
-        </section>
-        -->
 
     {% include navigator.html %}
     <article class="content">
@@ -82,7 +73,7 @@ var duoshuoQuery = {short_name:"dzhf21"};
 	})();
 	</script>
 <!-- 多说公共JS代码 end -->
-<div class="ds-share" data-thread-key="{{ page.title }}" data-title="{{ page.title }}" data-images="此处请替换为分享时显示的图片的链接地址" data-content="此处请替换为分享时显示的内容" data-url="此处请替换为分享时显示的链接地址">
+<div class="ds-share" data-thread-key="{{ page.title }}" data-title="{{ page.title }}" data-images="" data-content="{{ page.title }}" data-url="http://zhifeiding.github.io{{ page.url  }}">
     <div class="ds-share-inline">
       <ul  class="ds-share-icons-16">
       	
