@@ -8,9 +8,21 @@ tags : [data structure]
 
 下面主要回顾*Linux* 上使用的文件系统：
 
-1. 1992年*ext[^1]* 是第一个专门为*Linux* 设计的文件系统， 有*Unix File System
-   (UFS)[^3]* 类似的*metedata* , 并且是第一个使用*VFS[^4]* 的。
-2. 1993年*ext2[^5]*
+1. 1992.04 *ext[^1]* 是第一个专门为*Linux* 设计的文件系统， 有*Unix File System
+   (UFS)[^3]* 类似的*metedata* , 并且是第一个使用*VFS[^4]* 。解决了之前*Minix*
+   里64M
+   最大容量和14个字符文件名的限制(支持2G容量和255个字符的文件名)，但是不支持单独时间戳的文件访问以及数据修改
+
+2. 1993.01 *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext*
+   成为*Linux* 文件系统。
+
+3. 2001.12 *ext3[^6]* 取代*ext2*成为*Linux*
+   文件系统，主要是加入日志功能，提高了系统的可靠性
+
+4. 2008.10 *ext4[^9]* 加入*Linux*， 相对于*ext3*，加入了一些新的特性， 比如：Delayed allocation， Journal checksumming， Extents等
+
+5. 2009.03 *Btrfs[^8]* 加入*Linux*, 增强了*ooling, snapshots,
+   checksums*。
 
 
 ZFS[^2]
