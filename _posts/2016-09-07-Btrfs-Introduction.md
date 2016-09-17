@@ -6,9 +6,13 @@ tags : [data structure]
 
 # 文件系统历史回顾
 
-##
+下面主要回顾*Linux* 上使用的文件系统：
 
-ext[^1]
+1. 1992年*ext[1]* 是第一个专门为*Linux* 设计的文件系统， 有*Unix File System
+   (UFS)[3]* 类似的*metedata* , 并且是第一个使用*VFS[4]* 的。
+2.
+
+
 ZFS[^2]
 
 # Btrfs特性
