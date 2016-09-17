@@ -6,6 +6,8 @@ tags : [data structure]
 
 # 文件系统历史回顾
 
+##
+
 ext[^1]
 ZFS[^2]
 
@@ -19,5 +21,5 @@ ZFS[^2]
 * [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext3)
 * [wikipedia - Ext4](https://en.wikipedia.org/wiki/Ext4)
 
-[^1] : https://en.wikipedia.org/wiki/Extended_file_system
-[^2] : https://en.wikipedia.org/wiki/ZFS
+[1]: https://en.wikipedia.org/wiki/Extended_file_system
+[2]: https://en.wikipedia.org/wiki/ZFS
