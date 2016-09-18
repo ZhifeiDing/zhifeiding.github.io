@@ -15,6 +15,7 @@ tags : [data structure]
 
 2. 1993.01 *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext*
    成为*Linux* 文件系统。
+![ext2 structure](https://upload.wikimedia.org/wikipedia/commons/a/a2/Ext2-inode.gif)
 
 3. 2001.12 *ext3[^6]* 取代*ext2*成为*Linux*
    文件系统，主要是加入日志功能，提高了系统的可靠性
