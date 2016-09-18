@@ -31,14 +31,16 @@ ZFS[^2]
 
 # 参考
 
-* [^1]: [wikipedia - ext](https://en.wikipedia.org/wiki/Extended_file_system)
-* [^2]: [wikipedia - ZFS](https://en.wikipedia.org/wiki/ZFS)
-* [^3]: [wikipedia - UFS](https://en.wikipedia.org/wiki/Unix_file_system)
-* [^4]: [wikipedia - VFS](https://en.wikipedia.org/wiki/Virtual_file_system)
-* [^5]: [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext2)
-* [^6]: [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext3)
-* [^7]: [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext3)
-* [^8]: [wikipedia - Btrfs](https://en.wikipedia.org/wiki/Btrfs)
-* [^9]: [wikipedia - Ext4](https://en.wikipedia.org/wiki/Ext4)
-* [Btrfs homepage](https://btrfs.wiki.kernel.org/index.php/Main_Page)
-* [IBM - 新一代 Linux 文件系统 btrfs 简介](http://www.ibm.com/developerworks/cn/linux/l-cn-btrfs/index.html)
+* [Btrfs homepage](https://btrfs.wiki.kernel.org/index.php/Main_Page)  
+* [IBM - 新一代 Linux 文件系统 btrfs 简介](http://www.ibm.com/developerworks/cn/linux/l-cn-btrfs/index.html)  
+
+[^1]: [wikipedia - ext](https://en.wikipedia.org/wiki/Extended_file_system)  
+[^2]: [wikipedia - ZFS](https://en.wikipedia.org/wiki/ZFS)  
+[^3]: [wikipedia - UFS](https://en.wikipedia.org/wiki/Unix_file_system)  
+[^4]: [wikipedia - VFS](https://en.wikipedia.org/wiki/Virtual_file_system)  
+[^5]: [wikipedia - Ext2](https://en.wikipedia.org/wiki/Ext2)  
+[^6]: [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext3)  
+[^7]: [wikipedia - Ext3](https://en.wikipedia.org/wiki/Ext3)  
+[^8]: [wikipedia - Btrfs](https://en.wikipedia.org/wiki/Btrfs)  
+[^9]: [wikipedia - Ext4](https://en.wikipedia.org/wiki/Ext4)  
+
