@@ -14,8 +14,8 @@ tags : [data structure]
    最大容量和14个字符文件名的限制(支持2G容量和255个字符的文件名)，但是不支持单独时间戳的文件访问以及数据修改
 
 2. 1993.01 *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext*
-   成为*Linux* 文件系统。
-![ext2 structure](https://upload.wikimedia.org/wikipedia/commons/a/a2/Ext2-inode.gif)
+   成为*Linux* 文件系统。*ext2 *文件系统结构图如下所示：
+![ext2 structure](/assets/images/ext2fs.png)
 
 3. 2001.12 *ext3[^6]* 取代*ext2*成为*Linux*
    文件系统，主要是加入日志功能，提高了系统的可靠性
