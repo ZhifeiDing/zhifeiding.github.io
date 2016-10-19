@@ -35,7 +35,7 @@ tags : [data structure, file system, linux]
 
 *ext3*在实际中使用不多，主要是由于和*ext2*兼容，导致性能和特性没有优势，而且由于删除文件时会删掉文件的*Inode*而不支持*undelete*，不支持快照和日志没有效验等。
 
-* 2008.10 *ext4[^9]* 加入*Linux*， 相对于*ext3*，加入了一些新的特性， 比如：*Delayed allocation， Journal checksumming， Extents* 等
+* 2008.10 *ext4[^9]* 加入*Linux*， 对于*ext3*上述的一些缺点，*ext4* 加入了一些新的特性， 比如：*Delayed allocation， Journal checksumming， Extents* 等, 但仍然与*ext2*, *ext3*兼容，　整体结构上也是一致的。对于*defragmentation* 和*performance*等相对于其他新的文件系统仍然有差距。
 
 * 2009.03 *Btrfs[^8]* 加入*Linux*, 增强了*pooling, snapshots,checksums*。
 
