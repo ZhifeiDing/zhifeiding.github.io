@@ -1,10 +1,14 @@
 ---
-title: Concurrent Linked List Introduction and Implementation
-categories:[programming]
-tags:[data structure, c++, concurrent, lock-free]
+title : Concurrent Linked List Introduction and Implementation
+categories : programming
+tags : [data structure, c++, concurrent, lock-free]
 ---
 
-# 
+# Generic Linked List
+
+# Linked List using Lock
+
+# Lock-free Linked List
 
 # Reference
 

@@ -12,11 +12,11 @@ tags : [data structure, file system, linux]
 
 * 1993.01 *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext* 成为*Linux* 文件系统。基本单位是*Block*,　以*Inode*管理并组成*Block Group*。
    *ext2* 文件系统结构图如下所示：
-![ext2 structure](/assets/images/ext2fs.png) 
+![ext2 structure](/assets/images/ext2fs.png)
 
 可以看到，*ext2* 文件系统主要由*Boot record* 和*Block Groups* 组成，而后者包含*Super block* , *Block Group Descriptor Table* , *Block Bitmap*, *Inode Bitmap*, *Inode table*, *Data blocks* , 其中：　
 
-1. *Boot record* : 主要是系统启动引导纪录，每一个逻辑分区都有，并占据其开始的512B空间　   
+1. *Boot record* : 主要是系统启动引导纪录，每一个逻辑分区都有，并占据其开始的512B空间　
 2. *Super Block* : 纪录当前*ext2* 文件系统的基本信息，包括*Block Size*, *Block Groups*个数，每个*Block Group*的*Blocks*数量和*Blocks* 已使用数量等。每个*Block Group* 前1KB空间用来存储*Super Block*　信息。(除了*Block Group 0*必须有*Super Block*，其他可以不存储。并且*Block Group 0*总是从逻辑分区的第二个1KB开始)
 3. *Block Group Descriptor Table* : 紧随*Super Block* 之后, 纪录每个*Block Group*的信息，包括每个*Group Block* 的第一个*Block Bitmap*, *Inode Bitmap*以及*Inode Table*的地址。q其大小由文件系统中*Block Groups*数量决定, 并且与*Super Block* 一样，在每个*Block Group*里都有备份。
 4. *Block Bitmap*和*Inode Bitmap*　: 两者都是用来*bit*值来指示其对应的*Block*或*Inode*是否使用。其中*Block Bitmap*大小始终是1个*Data Block*。可以参见下面示意图:
@@ -39,6 +39,7 @@ tags : [data structure, file system, linux]
 
 * 2009.03 *Btrfs[^8]* 加入*Linux*, 增强了*pooling, snapshots,checksums*。
 
+![Btrfs](/assets/images/Btrfs.png)
 
 ZFS[^2]
 
@@ -46,11 +47,11 @@ ZFS[^2]
 
 # 参考
 
-* [Btrfs homepage](https://btrfs.wiki.kernel.org/index.php/Main_Page)  
-* [Oracle - Btrfs Introduction](https://oss.oracle.com/projects/btrfs/dist/documentation/btrfs-ukuug.pdf)  
+* [Btrfs homepage](https://btrfs.wiki.kernel.org/index.php/Main_Page)
+* [Oracle - Btrfs Introduction](https://oss.oracle.com/projects/btrfs/dist/documentation/btrfs-ukuug.pdf)
 * [IBM - BtrFS Research](http://domino.research.ibm.com/library/cyberdig.nsf/papers/6E1C5B6A1B6EDD9885257A38006B6130/$File/rj10501.pdf)
 
-[^1]: [wikipedia - ext](https://en.wikipedia.org/wiki/Extended_file_system)  
+[^1]: [wikipedia - ext](https://en.wikipedia.org/wiki/Extended_file_system)
 [^2]: [wikipedia - ZFS](https://en.wikipedia.org/wiki/ZFS)
 [^3]: [wikipedia - UFS](https://en.wikipedia.org/wiki/Unix_file_system)
 [^4]: [wikipedia - VFS](https://en.wikipedia.org/wiki/Virtual_file_system)
