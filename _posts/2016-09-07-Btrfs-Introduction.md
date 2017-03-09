@@ -43,15 +43,15 @@ tags : [data structure, file system, linux]
 
 # *Btrfs* 特性
 
-## *Btrfs* 使用的*B+Tree* 结构 
-  
+## *Btrfs* 使用的*B+Tree* 结构
+
   在[Implement-B+-Tree-with-C++](http://zhifeiding.github.io/programming/2016/08/01/Implement-B+-Tree-with-C++/)一文中我详细介绍了标准*B+-Tree* 的结构及其实现， 可以知道*B+-Tree* 的*leaf node*是组成一个链表的， 这种结构不利于*COW*, 所以*Btrfs* 相对于标准*B+-Tree* 去掉了*leaf-chaining*的结构。*Btrfs* 使用*B+-Tree* 结构如下所示:
 ![Btrfs_B+_Tree](/assets/images/Btrfs_B+_Tree.png)
 
 ## *Btrfs* 的整体结构
   
 * 从整体上看，*Btrfs* 是由一系列的*B+-Tree* 组成的*Forest* 构成。类似的，在固定位置有一块*Superblock* 区域， 指向一个*tree of tree root*, 然后这个*tree of tree root* 可以索引组成文件系统的*B+-Tree*。 *Btrfs* 整体架构如下:
-  
+
 ![Btrfs_full](/assets/images/Btrfs_full.png)
 
 * 由上图可知，*Btrfs* 整体上是由如下*B+-Tree* 结构组成：
@@ -74,6 +74,7 @@ tags : [data structure, file system, linux]
 
 # 参考
 
+以下是一些参考信息:
 * [Btrfs homepage](https://btrfs.wiki.kernel.org/index.php/Main_Page)
 * [Oracle - Btrfs Introduction](https://oss.oracle.com/projects/btrfs/dist/documentation/btrfs-ukuug.pdf)
 * [IBM - BtrFS Research](http://domino.research.ibm.com/library/cyberdig.nsf/papers/6E1C5B6A1B6EDD9885257A38006B6130/$File/rj10501.pdf)
