@@ -8,9 +8,9 @@ tags : [data structure, file system, linux]
 
 为了能够更好的理解*Btrfs*　的特性，下面首先回顾以一下*Linux* 上使用的各个文件系统历史及其特点：
 
-* 1992.04 *ext[^1]* 是第一个专门为*Linux* 设计的文件系统， 有*Unix File System(UFS)[^3]* 类似的*metedata* , 并且是第一个使用*VFS[^4]* 。解决了之前*Minix* 里64M最大容量和14个字符文件名的限制(支持2G容量和255个字符的文件名)，但是不支持单独时间戳的文件访问以及数据修改
+* __1992.04__ *ext[^1]* 是第一个专门为*Linux* 设计的文件系统， 有*Unix File System(UFS)[^3]* 类似的*metedata* , 并且是第一个使用*VFS[^4]* 。解决了之前*Minix* 里64M最大容量和14个字符文件名的限制(支持2G容量和255个字符的文件名)，但是不支持单独时间戳的文件访问以及数据修改
 
-* 1993.01 *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext* 成为*Linux* 文件系统。基本单位是*Block*,　以*Inode*管理并组成*Block Group*。
+* __1993.01__ *ext2[^5]* 基于*Berkely Fast File System* 同样的原则开发并取代*ext* 成为*Linux* 文件系统。基本单位是*Block*,　以*Inode*管理并组成*Block Group*。
    *ext2* 文件系统结构图如下所示：
 ![ext2 structure](/assets/images/ext2fs.png)
 
@@ -27,7 +27,7 @@ tags : [data structure, file system, linux]
 了解上面一些概念之后，可以参考下面示意图来理解*ext2*　是怎么保存`/etc/vim/vimrc`:
 ![ext2 file](/assets/images/ext2-file.png)
 
-* 2001.12 *ext3[^6]* 取代*ext2*成为*Linux*文件系统，兼容*ext2*。主要是加入日志功能，提高了系统的可靠性，能够支持文件系统在线扩容，对大目录使用*HTree*进行索引。*ext3*支持三种日志级别：
+* __2001.12__ *ext3[^6]* 取代*ext2*成为*Linux*文件系统，兼容*ext2*。主要是加入日志功能，提高了系统的可靠性，能够支持文件系统在线扩容，对大目录使用*HTree*进行索引。*ext3*支持三种日志级别：
 
 1. *Journal* : *metadata*和数据先纪录在日志之后再写入文件系统。这种风险最低，但是性能会有下降。
 2. *Ordered* : 日志里*metadata*在数据写入文件系统之后会更新。对于写或追加文件过程中发生故障，这种级别可以保证文件系统不会被破坏。但是对于修改文件过程中发生的故障，文件系统会被破坏。
@@ -35,15 +35,32 @@ tags : [data structure, file system, linux]
 
 *ext3*在实际中使用不多，主要是由于和*ext2*兼容，导致性能和特性没有优势，而且由于删除文件时会删掉文件的*Inode*而不支持*undelete*，不支持快照和日志没有效验等。
 
-* 2008.10 *ext4[^9]* 加入*Linux*， 对于*ext3*上述的一些缺点，*ext4* 加入了一些新的特性， 比如：*Delayed allocation， Journal checksumming， Extents* 等, 但仍然与*ext2*, *ext3*兼容，　整体结构上也是一致的。对于*defragmentation* 和*performance*等相对于其他新的文件系统仍然有差距。
+* __2008.10__ *ext4[^9]* 加入*Linux*， 对于*ext3*上述的一些缺点，*ext4* 加入了一些新的特性， 比如：*Delayed allocation*， *Journal checksumming*， *Extents* 等, 但仍然与*ext2*, *ext3*兼容，　整体结构上也是一致的。对于*defragmentation* 和*performance*等相对于其他新的文件系统仍然有差距。
 
-* 2009.03 *Btrfs[^8]* 加入*Linux*, 增强了*pooling, snapshots,checksums*。
+* __2009.03__ 受*ZFS[^2]* 启发， *Btrfs[^8]* 加入*Linux*, 增强了*Snapshots*, *Checksums*等功能。与之前的*ext* 系列*Inode*不同的是， *Btrfs* 采用了*Copy-On-Write*的*B+Tree*的结构来索引和存储文件。
+
+以上简单的回顾了*Linux*上文件系统的历史和结构， 下面重点讲解*Btrfs* 的一些特性和相应实现结构。
+
+# *Btrfs*特性
+
+## *Btrfs* 使用的*B+Tree*结构 
+  
+  在[Implement-B+-Tree-with-C++](http://zhifeiding.github.io/programming/2016/08/01/Implement-B+-Tree-with-C++/)一文中我详细介绍了标准*B+-Tree*的结构及其实现， 可以知道*B+-Tree*的*leaf node*是组成一个链表的， 这种结构不利于*COW*, 所以*Btrfs*相对于标准*B+-Tree* 去掉了*leaf-chaining*的结构。
+  
+## *Btrfs*的整体结构
+  
+* 从整体上看，*Btrfs*是由一系列的*B+-Tree*组成的*Forest*构成。类似的，在固定位置有一块*Superblock*区域， 指向一个*tree of tree root*, 然后这个*tree of tree root* 可以索引组成文件系统的*B+-Tree*。 *Btrfs*整体架构如下:
+  
+![Btrfs_full](/assets/images/Btrfs_full.png)
+
+* 由上图可知，*Btrfs*整体上是由如下*B+-Tree*结构组成：
+1. __Sub-volumes Tree__ : 
+2. __Extent Allocation Tree__ :
+3. __Checksum Tree__ :
+4. __Chunk and Device Tree__ :
+5. __Reloc Tree__ :
 
 ![Btrfs](/assets/images/Btrfs.png)
-
-ZFS[^2]
-
-# Btrfs特性
 
 # 参考
 
