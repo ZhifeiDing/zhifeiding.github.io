@@ -6,19 +6,25 @@ tags: [data structure,probability]
 
 # 什么是*Skip List* ？
 
-## *skip list*定义和特性
+## *Skip List*定义和特性
 
-> __skip list__是一种可以对有序的元素序列进行快速搜索的数据结构。其结构如下图所示:
+> 
+__Skip List__ 是一种可以对有序的元素序列进行快速搜索的数据结构。其结构如下图所示:
 ![skiplist](https://upload.wikimedia.org/wikipedia/commons/8/86/Skip_list.svg)
 
-可以看到，*skip list* 是由多层*list* 组成的。 其最底层是普通的有序地链表。而上面每一层都是作为下面层的链表的快速查找通道。对于在第`i`层的元素，其出现在`i+1`层的概率是固定的`p`。
+可以看到，*Skip List* 是由多层*list* 组成的。 其最底层是普通的有序地链表。而上面每一层都是作为下面层的链表的快速查找通道。对于在第`i`层的元素，其出现在`i+1`层的概率是`p`。
 
-## *skip list* 查找操作
-## *skip list* 插入操作
+## *Skip List* 查找操作
+## *Skip List* 插入操作
 
 ![skiplist insertion](https://upload.wikimedia.org/wikipedia/commons/2/2c/Skip_list_add_element-en.gif)
 
 # *Skip List* 实现
+
+根据上面对*skiplist* 结构及其操作的介绍， 我们用`C++11`来实现一个简单的`skiplist`类。
+
+## `skiplist`类声明
+
 
 ```cpp
 template<typename Key, typename Comparator>
@@ -31,7 +37,8 @@ public:
     // skiplist search method
     bool contains(const Key& key);
     // erase method
-    void erase(const Key& key);
+    // TODO:
+    void erase(const Key& key);
     // insert an item into skiplist
     // don't allowed duplicate items
     void insert(const Key& key);
@@ -54,6 +61,8 @@ private:
     unsigned int getHeight();
 };
 ```
+
+## `skiplist::Node`类实现
 
 ```cpp
 // class Node implementation
@@ -78,6 +87,10 @@ private:
 };
 ```
 
+## `skiplist`构造函数实现
+
+* 辅助函数`skiplist::newNode`实现
+
 ```cpp
 // construct new node
 template<typename Key, typename Comparator>
@@ -86,6 +99,8 @@ typename skiplist<Key, Comparator>::Node* skiplist<Key, Comparator>::newNode(con
     return new (mem) Node(key);
 }
 ```
+
+* `skiplist`构造函数
 
 ```cpp
 // skiplist constructor
@@ -125,7 +140,12 @@ typename skiplist<Key, Comparator>::Node* skiplist<Key, Comparator>::findGreater
         }
     }
 }
+```
 
+
+## 
+
+```cpp
 // insert an item into skiplist
 // don't allowed duplicate items
 template<typename Key, typename Comparator>
@@ -158,7 +178,9 @@ void skiplist<Key, Comparator>::insert(const Key& key) {
         prev[i]->setNext(i, t);
     }
 }
+```
 
+```cpp
 // skiplist search method
 template<typename Key, typename Comparator>
 bool skiplist<Key, Comparator>::contains(const Key& key) {
@@ -179,8 +201,9 @@ unsigned int skiplist<Key, Comparator>::getHeight() {
 }
 ```
 
-## test
+## 测试程序
 
+下面简单的测试了上面实现的*skiplist* *class* 的构造及其成员函数:    
 ```cpp
 #include "skiplist.hpp"
 #include <iostream>
@@ -222,7 +245,6 @@ int main() {
 
 # 参考
 
-以下是一些参考信息
-
-1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)  
-2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)  
+以下是一些参考信息            
+1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)      
+2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)       
