@@ -8,7 +8,7 @@ tags: [data structure,probability]
 
 ## *Skip List*定义和特性
 
-> 
+>
 __Skip List__ 是一种可以对有序的元素序列进行快速搜索的数据结构。其结构如下图所示:
 ![skiplist](https://upload.wikimedia.org/wikipedia/commons/8/86/Skip_list.svg)
 
@@ -22,6 +22,8 @@ __Skip List__ 是一种可以对有序的元素序列进行快速搜索的数据
 
 对于*Skip List*的插入操作，可以借鉴上面的查找操作，不同点是我们需要在每一次向下层查找是纪录当前`Node`。 这样最后得到一个比要插入`key`小的`Node`集合，我们只需要将其指向要插入`key`的`Node`即可。 可以参考下图：
 ![skiplist insertion](https://upload.wikimedia.org/wikipedia/commons/2/2c/Skip_list_add_element-en.gif)
+
+***
 
 # *Skip List* 实现
 
@@ -49,7 +51,7 @@ public:
     // skiplist search method
     bool contains(const Key& key);
     // erase method
-    // TODO:
+    // TODO:
     void erase(const Key& key);
     // insert an item into skiplist
     // don't allowed duplicate items
@@ -117,8 +119,8 @@ private:
 template<typename Key, typename Comparator>
 typename skiplist<Key, Comparator>::Node* skiplist<Key, Comparator>::newNode(const Key& key, const unsigned int height) {
     char* mem = (char*)malloc(sizeof(Node) + sizeof(Node*) * (height - 1));
-    // 使用placement new
-    return new (mem) Node(key);
+    // 使用placement new
+    return new (mem) Node(key);
 }
 ```
 
@@ -251,7 +253,7 @@ bool skiplist<Key, Comparator>::contains(const Key& key) {
 
 ## 测试程序
 
-下面简单的测试了上面实现的*skiplist* *class* 的构造及其成员函数:    
+下面简单的测试了上面实现的*skiplist* *class* 的构造及其成员函数:
 ```cpp
 #include "skiplist.hpp"
 #include <iostream>
@@ -293,6 +295,6 @@ int main() {
 
 # 参考
 
-以下是一些参考信息            
-1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)      
-2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)       
+以下是一些参考信息
+1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)
+2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)  

@@ -6,19 +6,41 @@ tags : [data structure, c++, concurrent, lock-free]
 
 # 背景介绍
 
-## `RMW` - Read-Modify-Write
+在具体实现之前， 现解释一下在*Concurrent Programming* 中需要用到的一些概念。
 
-## `CAS` - Compare-And-Swap
+* `RMW` - [Read-Modify-Write](https://en.wikipedia.org/wiki/Read-modify-write)
 
-## Sequential Consistency
+> `RMW`是指在一个操作中读取*memory* 的值，然后写入新的值的原子操作(*Atomic*)。这些指令能防止在多线程编程中出现竞争。
 
-## Memory Order
+* `CAS` - [Compare-And-Swap](https://en.wikipedia.org/wiki/Compare-and-swap)
 
-`Memory Order`是指执行指令时`Load`和`Store`的顺序。
+> `CAS`是上面的`RMW`指令中的一种，具体就是要修改一个*memory* 地址的值时，先用当前的值和之前写入的值进行比较，如果一致，则写入新值。否则写入失败。由于`CAS`是原子操作，所以在多线程中可以保证同时只被一个线程修改。用`C++`可以表示如下:
 
-## Memory Model
+```cpp
+bool cas(int *ptr, int oldVal, int newVal) {
+    if( *ptr == oldVal ) {
+        *ptr = newVal;
+        return true;
+    }
+    return false;
+}
+```
 
-`Memory Model`是指能够执行`Out-of-Order`的`CPU`能够对`Load`和`Store`指令进行`Reorder`的方式。不同的`CPU`对应各自的`Memory Order`, 根据能够`Reorder`的总类， 一般可以分为`Strong Memory Order`和`Relaxed Memory Order`。 一般的， *X86*系列的是`Strong Memory Order`, 而`ARM`系列的则属于`Relaxed Memory Order`。 具体可见下表:
+* Sequential Consistency
+
+> *Sequential Consistency* 是指对*memory* 的读写操作的顺序在所有线程中都是和程序代码中一致的。具体的理解就是在所有线程都运行在单核,并且程序是在关掉编译器优化功能后编译的。这样对于`CPU`，所有的*memory* 读写访问操作都是确定的。
+
+* Memory Order
+
+> `Memory Order`是指执行指令时`Load`和`Store`的顺序。影响*memory*
+的读写指令顺序因素有两个 :
+
+1. `compiler reordering` :
+2. `processor reordering` :
+
+* Memory Model
+
+> `Memory Model`是指能够执行`Out-of-Order`的`CPU`能够对`Load`和`Store`指令进行`Reorder`的方式。不同的`CPU`对应各自的`Memory Order`, 根据能够`Reorder`的总类， 一般可以分为`Strong Memory Order`和`Relaxed Memory Order`。 一般的， *X86*系列的是`Strong Memory Order`, 而`ARM`系列的则属于`Relaxed Memory Order`。 具体可见下表:
 
 | Reordering Activity	| x86 and x64	| ARM |
 | ------------------- |:-----------:|:----|
@@ -37,8 +59,8 @@ tags : [data structure, c++, concurrent, lock-free]
 
 # Reference
 
-* [Techniques for Implementing Concurrent Data Structures on Modern Multicore Machines](https://people.eecs.berkeley.edu/~stephentu/presentations/workshop.pdf)           
-* [Generic Concurrent Lock-free Linked list](https://people.csail.mit.edu/bushl2/rpi/project_web/page5.html)       
-* [Lock Free Linked Lists and Skip Lists](http://www.cse.yorku.ca/~ruppert/papers/lfll.pdf)            
-* [Lockless Programming Considerations for Xbox 360 and Microsoft Windows](https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx)         
-* [An Introduction to Lock-Free Programming](http://preshing.com/20120612/an-introduction-to-lock-free-programming/)           
+* [Techniques for Implementing Concurrent Data Structures on Modern Multicore Machines](https://people.eecs.berkeley.edu/~stephentu/presentations/workshop.pdf)
+* [Generic Concurrent Lock-free Linked list](https://people.csail.mit.edu/bushl2/rpi/project_web/page5.html)
+* [Lock Free Linked Lists and Skip Lists](http://www.cse.yorku.ca/~ruppert/papers/lfll.pdf)
+* [Lockless Programming Considerations for Xbox 360 and Microsoft Windows](https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650(v=vs.85).aspx)
+* [An Introduction to Lock-Free Programming](http://preshing.com/20120612/an-introduction-to-lock-free-programming/)
