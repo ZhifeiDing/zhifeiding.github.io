@@ -295,6 +295,6 @@ int main() {
 
 # 参考
 
-以下是一些参考信息
-1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)
-2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)  
+以下是一些参考信息   
+1.[wikipedia - skip list](https://en.wikipedia.org/wiki/Skip_list)      
+2.[leveldb - skiplist](https://github.com/google/leveldb/blob/master/db/skiplist.h)     
