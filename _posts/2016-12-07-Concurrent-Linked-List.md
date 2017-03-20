@@ -236,6 +236,8 @@ public:
     }
 
     T& back() {
+        // first obtain the unique_lock
+        unique_lock lock(mutex_);
         assert( tail_ != nullptr );
         assert( tail_->next_ == nullptr );
         return tail_->val_;
@@ -249,6 +251,20 @@ public:
         head_ = head_->next_;
         if( head_ == nullptr )
             tail_ = head_;
+    }
+
+    // pop the front element and return the pair
+    std::pair<bool,T> try_pop_front() {
+        // first obtain the unique_lock
+        unique_lock lock(mutex_);
+        //assert( head_ );
+        if( head_ == nullptr )
+            return std::make_pair(false,T());
+        T v = head_->val_;
+        head_ = head_->next_;
+        if( head_ == nullptr )
+            tail_ = head_;
+        return std::make_pair(true, v);
     }
 
     // push back element

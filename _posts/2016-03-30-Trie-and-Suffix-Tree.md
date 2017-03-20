@@ -37,7 +37,7 @@ public:
 		return isLeaf;
 	}
 private:
-	// here only consider lowercase alphabetic 
+	// here only consider lowercase alphabetic
 	vector<TrieNode*> node;
 	// indicate whether the node is leaf
 	bool isLeaf;
@@ -65,7 +65,7 @@ private:
 ```cpp
 Trie::Trie() {
 	root = new TrieNode();
-	root->setLeaf() = true;
+	root->setLeaf();
 }
 ```
 
@@ -122,6 +122,6 @@ bool Trie::exists(const string &s) {
 
 # 参考
 
-[wikipedia - Trie](https://en.wikipedia.org/wiki/Trie)  
-[wikipedia - Suffix Tree](https://en.wikipedia.org/wiki/Suffix_tree)  
+[wikipedia - Trie](https://en.wikipedia.org/wiki/Trie)
+[wikipedia - Suffix Tree](https://en.wikipedia.org/wiki/Suffix_tree)
 
