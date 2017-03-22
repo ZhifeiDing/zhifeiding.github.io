@@ -327,6 +327,180 @@ private:
 ## node locked linked list
 
 ```cpp
+// per-node lock linklist implementation
+// this implementation add lock for the node which is different
+// from the glock lock
+template<typename T>
+class linklist_nodelock {
+public:
+    // empty-argument constructor
+    explicit linklist_nodelock() : head_(new node()), tail_(nullptr) { }
+
+    // return whether the list is empty
+    bool empty() const {
+        return size() == 0;
+    }
+    // return the size of list
+    std::size_t size() const {
+        std::size_t size = 0;
+        // first obtain the unique_lock of head_
+        head_->mutex_.lock();
+        node* prev = head_;
+        node* p = head_->next_;
+        while( p ) {
+
+            // if we don't lock current node
+            // it may be deleted after we unlock prev
+            // node
+            p->mutex_.lock();
+            prev->mutex_.unlock();
+            ++size;
+
+            prev = p;
+            p = p->next_;
+        }
+        prev->mutex_.unlock();
+        return size;
+    }
+
+    // return the front element
+    T& front() {
+        // first obtain the unique_lock of head_
+        unique_lock lock(head_->mutex_);
+        node* p = head_->next_;
+        assert( p != nullptr );
+        return p->val_;
+    }
+
+    T& back() {
+        // first obtain the unique_lock of tail_
+        unique_lock lock(tail_->mutex_);
+        assert( tail_ != nullptr );
+        assert( tail_->next_ == nullptr );
+        return tail_->val_;
+    }
+
+    // pop the front element
+    void pop_front() {
+        // first obtain the unique_lock of head_
+        unique_lock lock(head_->mutex_);
+        node* p = head_->next_;
+        assert( p );
+
+        // lock current node
+        unique_lock lock0(p->mutex_);
+        bool isTail = !p->next_;
+
+        if( isTail ) {
+
+            assert( head_->next_ == p );
+            if( p->next_ ) {
+                // no longer tail, retry
+                return pop_front();
+            }
+            assert( tail_ == p );
+        }
+        head_->next_ = p->next_;
+        if( isTail ) {
+            tail_ = head_->next_;
+        }
+    }
+
+    // pop the front element and return the pair
+    std::pair<bool,T> try_pop_front() {
+        // first obtain the unique_lock
+        unique_lock lock(head_->mutex_);
+        node* p = head_->next_;
+        //assert( head_ );
+        if( p == nullptr )
+            return std::make_pair(false,T());
+        unique_lock lock0(p->mutex_);
+
+        T v = p->val_;
+        bool isTail = !p->next_;
+        if( isTail ) {
+            assert(head_->next_ == p);
+            if( p->next_ ) {
+                // no longer tail, retry
+                return try_pop_front();
+            }
+            assert( tail_ == p );
+        }
+
+        head_->next_ = p->next_;
+        if( isTail )
+            tail_ = head_;
+        return std::make_pair(true, v);
+    }
+
+    // push back element
+    void push_back(const T& val) {
+        // first obtain the unique_lock
+        unique_lock lock(head_->mutex_);
+        node* n = new node(val, nullptr);
+        if( !tail_ ) {
+            assert( !head_->next_ );
+            head_->next_ = tail_ = n;
+        } else {
+            unique_lock lock(tail_->mutex_);
+            tail_->next_ = n;
+            tail_ = tail_->next_;
+        }
+    }
+
+    void remove(const T& val) {
+        // first obtain the unique_lock
+        head_->mutex_.lock();
+
+        node* prev = head_;
+        node* p = head_->next_;
+
+        while( p ) {
+            p->mutex_.lock();
+            if( p->val_ == val ) {
+                bool isTail = !p->next_;
+                if( isTail ) {
+                    assert(tail_ == p);
+                }
+                prev->next_ = p->next_;
+                if( isTail ) {
+                    tail_ = prev;
+                }
+                p->mutex_.unlock();
+                p = prev->next_;
+            } else {
+                prev->mutex_.unlock();
+                prev = p;
+                p = p->next_;
+            }
+        }
+        prev->mutex_.unlock();
+    }
+private:
+    // typedef unique_lock
+    typedef std::unique_lock<std::mutex> unique_lock;
+    // mutex definition
+    mutable std::mutex mutex_;
+    // node class definition
+    struct node;
+    struct node {
+        // mutex definition
+        mutable std::mutex mutex_;
+        T val_;
+        node *next_;
+        // constructor
+        node() : val_(), next_(nullptr) {}
+        node(const T& value, node* next)
+            : val_(value), next_(next) {}
+        // non-copyable
+        node(const node&) = delete;
+        node(node &&) = delete;
+        node &operator=(const node&) = delete;
+    };
+    node* head_; // head is a sentinel node
+    node* tail_;
+};
+
 ```
 
 # Lock-free Linked List
@@ -337,6 +511,260 @@ private:
 # 测试程序
 
 ```cpp
+#include "linklist.hpp"
+#include <iostream>
+#include <thread>
+#include <atomic>
+#include <vector>
+#include <functional>
+#include <algorithm>
+
+using namespace std;
+
+template<typename list>
+void single_threaded_test() {
+    list l;
+    assert(l.empty());
+
+    l.push_back(1);
+    assert( l.front() == 1 );
+    assert( l.back() == 1 );
+    assert( l.size() == 1 );
+
+    l.push_back(2);
+    assert( l.front() == 1 );
+    assert( l.back() == 2 );
+    assert( l.size() == 2 );
+
+    l.pop_front();
+    assert( l.front() == 2 );
+    assert( l.back() == 2 );
+    assert( l.size() == 1 );
+
+    l.pop_front();
+    assert( l.empty() );
+
+    l.push_back(10);
+    l.push_back(10);
+    l.push_back(20);
+    l.push_back(30);
+    l.push_back(10);
+    assert( l.front() == 10 );
+    assert( l.back() == 10 );
+    assert( l.size() == 5 );
+
+    l.remove(10);
+    while( !l.empty() ) {
+        assert( l.front() != 10 );
+        l.pop_front();
+    }
+}
+
+template<typename list, typename T>
+void getElemsOfList(list &l, vector<T> &res) {
+    while( !l.empty() ) {
+        res.push_back(l.front());
+        l.pop_front();
+    }
+}
+
+template<typename T>
+void rangeCompare(vector<T>& res, int start, int end) {
+    assert( res.size() == end - start );
+    for(int i = start; i < end; ++i)
+        assert(res[i-start] == i);
+}
+
+inline void nop_pause() {
+    __asm__ volatile ("pause" ::);
+}
+
+template<typename list, typename T>
+void list_insert(list &l, atomic<bool> &f, T start, T end) {
+    while( !f.load() )
+        nop_pause();
+    for(T i = start; i < end; ++i)
+        l.push_back(i);
+}
+
+template<typename list, typename T>
+void list_pop_front(list &l, atomic<bool> &f, vector<T> &res) {
+    while( !f.load() )
+        nop_pause();
+    while( !l.empty() ) {
+        auto val = l.try_pop_front();
+        if( val.first == false )
+            break;
+        res.push_back(val.second);
+    }
+}
+
+template<typename list, typename T>
+void list_remove(list &l, atomic<bool> &f, T start, T end) {
+    while( !f.load() )
+        nop_pause();
+    for(T i = start; i < end; ++i)
+        l.remove(i);
+}
+
+
+template<typename list>
+void multiple_threaded_test() {
+    // try a bunch of concurrent inserts
+    // make sure no value lost
+    {
+        list l;
+        const int NUM_ELEMENTS_PER_THREAD = 2000;
+        const int NUM_THREADS = 8;
+        vector<thread> threads;
+        atomic<bool> start_flag(false);
+        for(int i = 0; i < NUM_THREADS; ++i) {
+            thread t(list_insert<list, int>, ref(l), ref(start_flag),
+                i * NUM_ELEMENTS_PER_THREAD, (i+1) * NUM_ELEMENTS_PER_THREAD);
+            threads.push_back(move(t));
+        }
+        start_flag.store(true);
+
+        for(auto &t : threads)
+            t.join();
+        vector<int> list_elems;
+        getElemsOfList(l, list_elems);
+        sort(list_elems.begin(), list_elems.end());
+        rangeCompare(list_elems, 0, NUM_ELEMENTS_PER_THREAD * NUM_THREADS);
+    }
+
+    // try a bunch of concurrent pop_front
+    {
+        list l;
+        const int NUM_ELEMENTS_PER_THREAD = 2000;
+        const int NUM_THREADS = 8;
+        for(int i = 0; i < NUM_ELEMENTS_PER_THREAD; ++i)
+            l.push_back(i);
+        vector<thread> threads;
+        vector<vector<int> > res;
+        res.resize(NUM_THREADS);
+        atomic<bool> start_flag(false);
+        for(int i = 0; i < NUM_THREADS; ++i) {
+            thread t(list_pop_front<list, int>, ref(l), ref(start_flag),
+                ref(res[i]));
+            threads.push_back(move(t));
+        }
+        start_flag.store(true);
+
+        for(auto &t : threads)
+            t.join();
+        assert( l.empty() );
+        vector<int> list_elems;
+        for(auto &r : res)
+            list_elems.insert(list_elems.end(), r.begin(), r.end());
+        sort(list_elems.begin(), list_elems.end());
+        rangeCompare(list_elems, 0, NUM_ELEMENTS_PER_THREAD);
+    }
+
+    // try a bunch of concurrent remove
+    {
+        list l;
+        const int NUM_ELEMENTS_PER_THREAD = 2000;
+        const int NUM_THREADS = 8;
+        for(int i = 0; i < NUM_THREADS * NUM_ELEMENTS_PER_THREAD; ++i)
+            l.push_back(i);
+        assert( l.size() == NUM_ELEMENTS_PER_THREAD * NUM_THREADS );
+
+        vector<thread> threads;
+        atomic<bool> start_flag(false);
+
+        for(int i = 0; i < NUM_THREADS; ++i) {
+            thread t(list_remove<list, int>, ref(l), ref(start_flag),
+                i * NUM_ELEMENTS_PER_THREAD, (i + 1) * NUM_ELEMENTS_PER_THREAD);
+            threads.push_back(move(t));
+        }
+        start_flag.store(true);
+
+        for(auto &t : threads)
+            t.join();
+        assert( l.empty() );
+    }
+
+    // try remove with push_back
+    {
+        list l;
+        const int NUM_ELEMENTS_PER_THREAD = 2000;
+        const int NUM_THREADS = 8;
+
+        for(int i = 0; i < NUM_THREADS * NUM_ELEMENTS_PER_THREAD; ++i)
+            l.push_back(i);
+        assert( l.size() == NUM_ELEMENTS_PER_THREAD * NUM_THREADS );
+
+        vector<thread> threads;
+        atomic<bool> start_flag(false);
+        // remove first
+        for(int i = 0; i < NUM_THREADS; ++i) {
+            thread t(list_remove<list, int>, ref(l), ref(start_flag),
+                i * NUM_ELEMENTS_PER_THREAD, (i+1) * NUM_ELEMENTS_PER_THREAD);
+            threads.push_back(move(t));
+        }
+
+        // then push_back
+        for(int i = 0; i < NUM_THREADS; ++i) {
+            thread t(list_insert<list, int>, ref(l), ref(start_flag),
+                (i+NUM_THREADS) * NUM_ELEMENTS_PER_THREAD, (i+1+NUM_THREADS) * NUM_ELEMENTS_PER_THREAD);
+            threads.push_back(move(t));
+        }
+        start_flag.store(true);
+
+        for(auto &t : threads)
+            t.join();
+        vector<int> list_elems;
+        getElemsOfList(l, list_elems);
+        sort(list_elems.begin(), list_elems.end());
+        rangeCompare(list_elems, NUM_ELEMENTS_PER_THREAD * NUM_THREADS,NUM_ELEMENTS_PER_THREAD * NUM_THREADS * 2);
+    }
+
+    // try a producer/consumer queue
+    {
+        list l;
+
+        atomic<bool> start_flag(false);
+
+        thread producer(list_insert<list, int>, ref(l), ref(start_flag),0,10000);
+
+        vector<int> res;
+        thread consumer(list_pop_front<list, int>, ref(l), ref(start_flag),ref(res));
+        start_flag.store(true);
+
+        producer.join();
+        consumer.join();
+
+        rangeCompare(res, 0, 10000);
+        assert( l.empty() );
+    }
+
+}
+
+template<typename Function>
+void Test(Function &&f, const string &name) {
+    f();
+    cout << "Test -- " << name << " passed" << endl;
+}
+
+int main(int argc, char **argv) {
+    // generic linklist which doesn't support multithread
+    Test(single_threaded_test<linklist<int> >, "single-thread-generic-linklist");
+    //Test(multiple_threaded_test<linklist<int> >, "multiple-thread-generic-linklist");
+
+    // glock lock linklist
+    Test(single_threaded_test<linklist_glock<int> >, "single-thread-linklist-glock");
+    Test(multiple_threaded_test<linklist_glock<int> >, "multiple-thread-linklist-glock");
+    //
+    // per-node lock
+    Test(single_threaded_test<linklist_nodelock<int> >, "single-thread-linklist-nodelock");
+    Test(multiple_threaded_test<linklist_nodelock<int> >, "multiple-thread-linklist-nodelock");
+
+    // lock free linklist
+    Test(single_threaded_test<linklist_lockfree<int> >, "single-thread-linklist-lockfree");
+    Test(multiple_threaded_test<linklist_lockfree<int> >, "multiple-thread-linklist-lockfree");
+    return 0;
+}
 ```
 
 # Reference
