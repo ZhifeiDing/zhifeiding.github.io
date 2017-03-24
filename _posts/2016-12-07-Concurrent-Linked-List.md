@@ -16,7 +16,9 @@ __RMW__ 是指在一个操作中读取*memory* 的值，然后写入新的值的
 * __CAS__ - [Compare-And-Swap](https://en.wikipedia.org/wiki/Compare-and-swap)
 
 >
-__CAS__ 是上面的`RMW`指令中的一种，具体就是要修改一个*memory* 地址的值时，先用当前的值和之前写入的值进行比较，如果一致，则写入新值。否则写入失败。由于 __CAS__ 是原子操作，所以在多线程中可以保证同时只被一个线程修改。用`C++`可以表示如下:
+__CAS__ 是上面的`RMW`指令中的一种，具体就是要修改一个*memory* 地址的值时，先用当前的值和之前写入的值进行比较，如果一致，则写入新值。否则写入失败。由于 __CAS__ 是原子操作，所以在多线程中可以保证同时只被一个线程修改。
+
+用`C++`功能描述如下:
 
 ```cpp
 bool cas(int *ptr, int oldVal, int newVal) {
@@ -26,6 +28,12 @@ bool cas(int *ptr, int oldVal, int newVal) {
     }
     return false;
 }
+```
+
+对于`x86`上`gcc`, 提供了以下`builtin`的原子调用:
+
+```cpp
+__sync_bool_compare_and_swap
 ```
 
 * __Sequential Consistency__
@@ -74,10 +82,11 @@ __Memory Model__ 是指能够执行`Out-of-Order`的`CPU`能够对`Load`和`Stor
 * __[ABA Problem](https://en.wikipedia.org/wiki/ABA_problem)__
 
 >
-上面提到的 __CAS__ 中我们读取一个值并与其之前值进行比较， 当两者一致时，我们认为在这之间状态没有变化。但是，其他线程可能已经对数据进行一系列操作，致使最后退出时将该值修改为之前的值。 这种出现在__Lock-Free__ 结构里的现象，就被称为__ABA Problem__ 。
+上面提到的 __CAS__ 中我们读取一个值并与其之前值进行比较， 当两者一致时，我们认为在这之间状态没有变化。但是，其他线程可能已经对数据进行一系列操作，致使最后退出时将该值修改为之前的值。 这种出现在 __Lock-Free__ 结构里的现象，就被称为 __ABA Problem__ 。
+
 具体可以看下面__linklist__ `head->NodeA->NodeB->NodeC`的例子:
 
-1. __Thread 1__ 从*memory* 里读取 `NodeA`值， 然后__Thread 1__ 被调度出，__Thread 2__ 开始执行
+1. __Thread 1__ 从*memory* 里读取 `NodeA`值， 然后 __Thread 1__ 被调度出，__Thread 2__ 开始执行
 2. __Thread 2__ 删除`NodeA`和`NodeB`, 然后插入`NodeA`, 变成`head->NodeA->NodeC`
 3. __Thread 1__ 继续执行， 删除`NodeA`, 将`head->next = NodeB`， 这是就会出现访问未分配的地址
 
@@ -95,11 +104,23 @@ __Read Acquire__ 和 __Write Release__ Barrier是 *Lock-Free* 里经常提到的
 
 同样的， 当我们对*memory* 执行操作结束之后，通常都要对*memory* 进行写操作来通知其他线程当前*memory* 可用。 因此只能在当前成功完成对*memory* 操作之后才能执行该写操作。所以称之为 __Write Release__ 。
 
-上面__Memory Order__ 提到的`MemoryBarrier()`可以用来作为阻止`Load/Store` *Reordering* 的指令。
+上面 __Memory Order__ 提到的`MemoryBarrier()`可以用来作为阻止`Load/Store` *Reordering* 的指令。
 
 ***
 
 # Generic Linked List
+
+为了更清楚区别于支持并发的编程思想， 我们先不考虑多线程， 先实现一个基本的`linklist`数据结构， 要求基本接口和`C++`里的`list`一致:
+
+* `bool empty()`可以用来判断`list`是否为空
+* `size_t size()`可以返回`list`的大小
+* `T& front()`可以得到`list`第一个值
+* `T& back()`可以返回`list`最后一个值
+* `void pop_front()`删除`list`第一个值
+* `void push_back(const T& val)`往`list`尾部插入一个值
+* `void remove(const T& val)`删掉`list`里所有`val`
+
+基于上述接口的`linklist`实现如下:
 
 ```cpp
 // generic linklist without multi-thread support
@@ -196,7 +217,16 @@ private:
 
 # Linked List using Lock
 
+上面我们实现了一个基本结构的`linklist`，但是上面结构不支持多线。多线程编程中常见的方式是对操作进行加锁。对于`linklist`  ，我们有两种加锁方式:
+
+* 对`linklist`整体加锁， 在进行任何操作之前加锁， 操作结束释放锁   
+* 对`node`进行加锁，只针对操作的`node`, 可以更好控制锁的细粒度  
+
+下面分别实现两种方式:
+
 ## global locked linked list
+
+实现比较简单，我们使用`C++11`的`mutex`和`unique_lock`来对`list`进行加锁操作，具体就是在每一个操作之前， 获得全局锁， 阻止其他线程对`list`进行操作。
 
 ```cpp
 // global lock linklist implementation
@@ -325,6 +355,8 @@ private:
 ```
 
 ## node locked linked list
+
+和上面的全局锁不同， `list`里每一个`node`都有一个锁， 只针对操作的`node`进行加锁。
 
 ```cpp
 // per-node lock linklist implementation
@@ -505,9 +537,16 @@ private:
 
 # Lock-free Linked List
 
+__LOck-free__ 区别于上述加锁实现的区别是在操作之前不需要加锁操作，同时对于`node`的修改操作使用下面的原子操作完成:
+
 ```cpp
 #define CAS(addr, oldVal, newVal) __sync_bool_compare_and_swap(addr, oldVal, newVal)
+```
+为了避免上面提到的 __ABA Problem__ , 下面实现中使用指针最后一位来作为`mark bit`，当`mark bit`为1时， 表示当前`node`要被其他线程删除， 我们需要重新开始当前操作。
 
+具体代码如下:
+
+```cpp
 template<typename T>
 class linklist_lockfree {
 public:
@@ -675,6 +714,11 @@ private:
 ```
 
 # 测试程序
+
+* 针对单线程，分别测试了上述实现的接口函数。
+* 针对多线程，分别使用`8`个线程同时去测试接口函数
+
+代码如下:
 
 ```cpp
 #include "linklist.hpp"
