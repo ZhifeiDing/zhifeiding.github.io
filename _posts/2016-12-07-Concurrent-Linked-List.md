@@ -506,6 +506,172 @@ private:
 # Lock-free Linked List
 
 ```cpp
+#define CAS(addr, oldVal, newVal) __sync_bool_compare_and_swap(addr, oldVal, newVal)
+
+template<typename T>
+class linklist_lockfree {
+public:
+    // empty-argument constructor
+    explicit linklist_lockfree() : head_(new node()), tail_(nullptr) { }
+
+    // return whether the list is empty
+    bool empty() const {
+        return size() == 0;
+    }
+    // return the size of list
+    std::size_t size() const {
+        std::size_t size = 0;
+        node* p = head_->next();
+        while( p ) {
+            if( !p->isMarked() )
+                ++size;
+            else{
+            }
+            p = p->next();
+        }
+        return size;
+    }
+
+    // return the front element
+    T& front() {
+        assert( !head_->isMarked() );
+        node* p = head_->next();
+        assert( p != nullptr );
+        if( p->isMarked() )
+            return front();
+        T& val = p->val_;
+        if( p->isMarked() )
+            return front();
+
+        if( !p->next() && tail_ != p )
+            tail_ = p;
+        return val;
+    }
+
+    T& back() {
+        assert( !head_->isMarked() );
+        assert( tail_ != nullptr );
+        if( tail_->next() )
+            return back();
+        if( tail_->isMarked() )
+            return back();
+        return tail_->val_;
+    }
+
+    // pop the front element
+    void pop_front() {
+
+        assert( !head_->isMarked() );
+        node* p = head_->next();
+        //assert( p );
+
+        if( p == nullptr )
+            return;
+        if( p->isMarked() )
+            return pop_front();
+        // mark current node
+        p->mark();
+        if( !p->isMarked() )
+            return pop_front();
+
+        //node* pp = head_->next();
+        if( !CAS(&head_->next_ , p, p->next()) )
+            return pop_front();
+
+        CAS(&tail_, p, head_->next());
+    }
+
+    // pop the front element and return the pair
+    std::pair<bool,T> try_pop_front() {
+
+        assert( !head_->isMarked() );
+        node* p = head_->next();
+        //assert( p );
+        if( p == nullptr )
+            return std::make_pair(false,T());
+        if( p->isMarked() )
+            return try_pop_front();
+
+        p->mark();
+        if( !p->isMarked() )
+            return try_pop_front();
+        //node* pp = head_->next();
+        if( !CAS(&head_->next_, p, p->next()) )
+            return try_pop_front();
+        CAS(&tail_, p, head_->next());
+
+        return std::make_pair(true, p->val_);
+    }
+
+    // push back element
+    void push_back(const T& val) {
+
+        //assert( !head_->isMarked() );
+
+        node* n = new node(val, nullptr);
+        if( !tail_ ) {
+            if( !head_->next() ) {
+                if( !CAS(&head_->next_, tail_, n) )
+                    return push_back(val);
+                tail_ = head_->next_;
+            } else
+                return push_back(val);
+        } else {
+            if( tail_->next() || tail_->isMarked() )
+                return push_back(val);
+            tail_->setNext(n);
+            tail_ = tail_->next();
+        }
+    }
+
+    void remove(const T& val) {
+
+        node* prev = head_;
+        node* p = head_->next();
+
+        while( p ) {
+            if( p->val_ == val ) {
+                p->mark();
+                if( !CAS(&prev->next_, p, p->next()) )
+                    return remove(val);
+                CAS(&tail_, p, head_->next());
+                p = prev->next();
+            } else {
+                prev = p;
+                p = p->next();
+            }
+        }
+    }
+private:
+    // node class definition
+    struct node;
+    struct node {
+        T val_;
+        node* next_;
+        // constructor
+        node() : val_() , next_(nullptr) {}
+        node(const T& value,node* p) : val_(value), next_(p) {}
+        // return if current node is marked
+        inline bool isMarked() {
+            return intptr_t(next_) & 0x1;
+        }
+        inline void mark() {
+           next_ = (node*)(intptr_t(next_) | 0x1);
+        }
+        inline node* next() {
+            return (node*)(intptr_t(next_) & ~0x1);
+        }
+        inline void setNext(node* ptr) {
+            next_ = ptr;
+        }
+        // non-copyable
+        node(const node&) = delete;
+        node(node &&) = delete;
+        node &operator=(const node&) = delete;
+    };
+    node* head_; // head is a sentinel node
+    node* tail_;
+};
 ```
 
 # 测试程序
@@ -588,14 +754,15 @@ void list_insert(list &l, atomic<bool> &f, T start, T end) {
 }
 
 template<typename list, typename T>
-void list_pop_front(list &l, atomic<bool> &f, vector<T> &res) {
+void list_pop_front(list &l, atomic<bool> &f, atomic<bool> &stop, vector<T> &res) {
     while( !f.load() )
         nop_pause();
-    while( !l.empty() ) {
+    while( true ) {
         auto val = l.try_pop_front();
-        if( val.first == false )
+        if( val.first == false && stop.load() )
             break;
-        res.push_back(val.second);
+        if( val.first )
+            res.push_back(val.second);
     }
 }
 
@@ -644,8 +811,9 @@ void multiple_threaded_test() {
         vector<vector<int> > res;
         res.resize(NUM_THREADS);
         atomic<bool> start_flag(false);
+        atomic<bool> stop(true);
         for(int i = 0; i < NUM_THREADS; ++i) {
-            thread t(list_pop_front<list, int>, ref(l), ref(start_flag),
+            thread t(list_pop_front<list, int>, ref(l), ref(stop), ref(start_flag),
                 ref(res[i]));
             threads.push_back(move(t));
         }
@@ -725,14 +893,17 @@ void multiple_threaded_test() {
         list l;
 
         atomic<bool> start_flag(false);
+        atomic<bool> stop(false);
 
         thread producer(list_insert<list, int>, ref(l), ref(start_flag),0,10000);
 
         vector<int> res;
-        thread consumer(list_pop_front<list, int>, ref(l), ref(start_flag),ref(res));
+        thread consumer(list_pop_front<list, int>, ref(l), ref(start_flag),ref(stop), ref(res));
         start_flag.store(true);
 
         producer.join();
+        stop.store(true);
+
         consumer.join();
 
         rangeCompare(res, 0, 10000);
