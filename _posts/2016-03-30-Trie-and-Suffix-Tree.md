@@ -108,6 +108,7 @@ bool Trie::exists(const string &s) {
 * Suffix Tree类声明
 
 ```cpp
+//TODO
 ```
 
 * Suffix Tree类构造函数
@@ -122,6 +123,6 @@ bool Trie::exists(const string &s) {
 
 # 参考
 
-[wikipedia - Trie](https://en.wikipedia.org/wiki/Trie)
-[wikipedia - Suffix Tree](https://en.wikipedia.org/wiki/Suffix_tree)
+* [wikipedia - Trie](https://en.wikipedia.org/wiki/Trie)
+* [wikipedia - Suffix Tree](https://en.wikipedia.org/wiki/Suffix_tree)
 

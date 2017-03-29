@@ -39,13 +39,14 @@ tags : [data structure,c++，tree]
 
 ## __B+ Tree__ 类声明
 
-类似 __[BST](zhifeiding.github.io/programming/2016/03/23/binary-search_tree/)__ , __B+ Tree__ 主要实现以下接口:
+类似 __[BST](http://zhifeiding.github.io/programming/2016/03/23/binary-search_tree/)__ , __B+ Tree__ 主要实现以下接口:
 
 * `std::pair<bool, std::pair<_key, _data> > find(const _key& key) const` : 查找`key`是否存在
 * `void insert(const _key &key, const _data &data)` : 插入`<key,data>`
 * `void erase(const _key& val)` : 删除`val`
 * `const bool empty() const` ： 判断是否为空
 
+完整代码可参考[github - B+Tree](https://github.com/ZhifeiDing/dataStructure/blob/master/btree.hpp)
 
 ```cpp
 // BPlus Tree declaration
