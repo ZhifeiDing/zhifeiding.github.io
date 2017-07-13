@@ -28,6 +28,8 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 *skiplist* 内部数据是有序的， 也就是我们存储在 __memtable__ 里的数据会根据`userkey` 和 `sequence_number`来排序， 基本原则是先比较`userkey`，之后再根据`sequence_number`大的在前。
 
 ## __write batch__ 格式
+
+当调用`Put`和`Delete`
 ![write_batch](/assets/images/leveldb/write_batch.png)
 
 ![log](/assets/images/leveldb/log.png)
