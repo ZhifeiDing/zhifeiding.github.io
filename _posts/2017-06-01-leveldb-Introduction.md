@@ -41,29 +41,50 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 
 ![log](/assets/images/leveldb/log.png)
 
-由上图可知，`log`文件是以`kBlockSize`来
+由上图可知，`log`文件是以`kBlockSize`来存储数据， 其中一个`kBlockSize`多个`kHeader`和`data`, 只有一个`kBlockSize`剩下不到`kHeader`的空间才会填充`trailer(ox00)`。存储的`data`就是上面介绍的`WriteBatch`的数据。其中`type`可能值是:
+
+* `kFullType` : 表示`data`全部存储在当前`kBlockSize`内
+* `kFirstType` : 表示当前`kBlockSize`存储的是`data`的第一部分
+* `kMiddleType`：表示当前`kBlockSize`存储的是`data`的中间部分
+* `kLastType` ：表示当前`kBlockSize`存储的是`data`的最后一部分
 
 ## __sstable__ 格式
 
+当`memtable`占用内存空间大小超过`options_.write_buffer_size( default = 4MB)`时， __leveldb__ 会将`memtable`写到`sstable`文件中。`sstable`文件存储的基本格式如下图所示:
+
 ![sstable](/assets/images/leveldb/sstable.png)
+
+由上图可知， ``sstable`文件中是以`options_.block_size(default = 4KB)`来组织数据的， 首先存储数据库数据。 如果有使用`FilterPolicy`， 接下来就存储`FilterPolicy`的数据。然后接下来存储数据库的信息，接下来就是用来索引`data block`的`index block`。文件最后会存储`footer`。上述各自具体格式下面会详细介绍。
 
 ## __block__ 格式
 
+上面不管是`data block`, `index block`, `metaindex block`还是`filter block`， 其基本结构都如下图所示：
+
 ![block](/assets/images/leveldb/block.png)
+
+
 
 ## __footer__ 格式
 
+`footer`保存在``sstable`文件最后，其保存数据及其格式如下图所示:
+
 ![footer](/assets/images/leveldb/footer.png)
 
-## ____ 格式
+其中分别保存了`metaindex_handle`和`index_handle`对象， 可以通过这两个对象来访问`sstable`里`metaindex block`和`index block`。
+
+## __metaindex block__ 格式
+
+`metaindex block`当前只保存了`filter name`及`filter_block_handle`， 具体格式参见下图：
 
 ![metaindex_block](/assets/images/leveldb/metaindex_block.png)
 
-## ____ 格式
+通过`filter_block_handle`可以访问`sstable`里的`filter block`。 
+
+## __index block__ 格式
 
 ![index_block](/assets/images/leveldb/index_block.png)
 
-## ____ 格式
+## __filter block__ 格式
 
 ![filter_block](/assets/images/leveldb/filter_block.png)
 
