@@ -58,11 +58,17 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 
 ## __block__ 格式
 
-上面不管是`data block`, `index block`, `metaindex block`还是`filter block`， 其基本结构都如下图所示：
+上面不管是`data block`, `index block`还是 `metaindex block`， 其基本结构都如下图所示：
 
 ![block](/assets/images/leveldb/block.png)
 
+其中,
+* `crc`是对`block`中除`crc`之外数据的校验
+* `type`表示数据是否压缩
+* `num_restarts`表示`restarts`数组的个数, `restarts`数组记录的是对应的使用共享编码的`key-value`的偏移
+* `shared_bytes`表示当前`key`相同的部分大小，`unshared_bytes`是`key`里差异的大小，`value_length`是`value`的长度， `key_delta`是差异的`key`值，`value`就是实际的值 
 
+对于`index block`和`metaindex block`来说, `num_restart_interval`都是1也就是说所有`shared_bytes = 0`, 而对于`data block`来说， 是受`options_.num_restart_interval`控制的， 默认是16, 也就是16个`key-value`会进行共享编码。
 
 ## __footer__ 格式
 
@@ -82,11 +88,26 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 
 ## __index block__ 格式
 
+`index block`是用来索引`sstable`里的`data block`, 具体格式如下：
+
 ![index_block](/assets/images/leveldb/index_block.png)
+
+其中
+* `last_key`是其所对应的`data block`所保存的数据中最后一个`key-value`的`key`值， 由于`memtable`里值是有序的， 所以`last key`也是有序的
+* `offset`和`size`则分别是对应的`data block`在`sstable`的偏移值和大小。
 
 ## __filter block__ 格式
 
+`filter block`和`data block`不一样，不是利用`block`的结构来存储数据的， 而是使用下面的格式:
+
 ![filter_block](/assets/images/leveldb/filter_block.png)
+
+其中
+* `crc`是整个`filter block`除了`crc`部分的校验
+* `type`, 表示是否压缩，存储的是`nocompressed`
+* `kFilterBaseLog`， 表示是对多大数据创建`filter`, 默认是2KB ( `2^kFilterBaseLg` )
+* `array_offset`, 表示`offset`数组在`filter block`里的偏移
+* `offset[N]`和`filter[N]`, `offset`数组分别记录的是对应`filter`数组在`filter block`的偏移
 
 # 参考
 
