@@ -10,6 +10,20 @@ tags : [database, file system]
 
 # __leveldb__ 基本结构
 
+__leveldb__ 的基本结构如下所示:
+
+![leveldb structure](/assets/images/leveldb/leveldb_structure.png)
+
+由上图可以知道:
+
+* *memtable* 和 *immutable memtable* ：这两个是 __leveldb__ 用来在 *memory* 里存储数据的结构。__leveldb__ 首先在 *memtable*里存储数据， 当`memtable`使用*memory* 的大小超过`options_.write_buffer_size`时，将其作为*immutable memtable* 并写入*disk*, 然后释放`immutable memtable`。
+* *LOG* : 记录 __leveldb__ 运行中进行的操作，可以用来分析数据库状态
+* *LOCK*: 当`Recover`或者`DestroyDB`时用来锁定文件
+* *MANIFEST-* : 记录了当前 __leveldb__ 的一些属性， 格式与下面介绍的`log`一致
+* *CURRENT* : 记录了当前`MANIFEST-*`文件的`FileNumber`, 可以用来查找当前`MANIFEST-*`文件
+* `*.log`文件， 记录当前`WriteBatch`里的数据
+* `*.ldb`文件， 记录 __leveldb__ 存储的`key-value`， 文件分多层来组织， 由`kNumLevels`来控制， 默认7
+
 了解 __leveldb__ 基本操作之前， 下面先介绍其使用的数据结构
 
 ## __memtable__
