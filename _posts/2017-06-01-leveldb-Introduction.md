@@ -21,7 +21,7 @@ __leveldb__ 的基本结构如下所示:
 * *LOCK*: 当`Recover`或者`DestroyDB`时用来锁定文件
 * *MANIFEST-* : 记录了当前 __leveldb__ 的一些属性， 格式与下面介绍的`log`一致
 * *CURRENT* : 记录了当前`MANIFEST-*`文件的`FileNumber`, 可以用来查找当前`MANIFEST-*`文件
-* `*.log`文件， 记录当前`WriteBatch`里的数据
+* `*.log`文件， 记录当前`memtable`里的数据
 * `*.ldb`文件， 记录 __leveldb__ 存储的`key-value`， 文件分多层来组织， 由`kNumLevels`来控制， 默认7
 
 了解 __leveldb__ 基本操作之前， 下面先介绍其使用的数据结构
@@ -68,7 +68,7 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 
 ![sstable](/assets/images/leveldb/sstable.png)
 
-由上图可知， ``sstable`文件中是以`options_.block_size(default = 4KB)`来组织数据的， 首先存储数据库数据。 如果有使用`FilterPolicy`， 接下来就存储`FilterPolicy`的数据。然后接下来存储数据库的信息，接下来就是用来索引`data block`的`index block`。文件最后会存储`footer`。上述各自具体格式下面会详细介绍。
+由上图可知， `sstable`文件中是以`options_.block_size(default = 4KB)`来组织数据的， 首先存储数据库数据。 如果有使用`FilterPolicy`， 接下来就存储`FilterPolicy`的数据。然后接下来存储数据库的信息，接下来就是用来索引`data block`的`index block`。文件最后会存储`footer`。上述各自具体格式下面会详细介绍。
 
 ## __block__ 格式
 
@@ -86,7 +86,7 @@ __memtable__ 是用来在 *in-memory* 中存储*key-value* 的数据结构， �
 
 ## __footer__ 格式
 
-`footer`保存在``sstable`文件最后，其保存数据及其格式如下图所示:
+`footer`保存在`sstable`文件最后，其保存数据及其格式如下图所示:
 
 ![footer](/assets/images/leveldb/footer.png)
 
