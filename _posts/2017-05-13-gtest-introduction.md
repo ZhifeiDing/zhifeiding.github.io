@@ -380,6 +380,17 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
         gtest_ar_, text, #actual, #expected).c_str())
 ```  
 
+```cpp
+// Macro for referencing flags.
+#define GTEST_FLAG(name) FLAGS_gtest_##name
+
+// Macros for declaring flags.
+#define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
+#define GTEST_DECLARE_int32_(name) \
+    GTEST_API_ extern ::testing::internal::Int32 GTEST_FLAG(name)
+#define GTEST_DECLARE_string_(name) \
+    GTEST_API_ extern ::std::string GTEST_FLAG(name)
+```
 
 
 # 测试实例
