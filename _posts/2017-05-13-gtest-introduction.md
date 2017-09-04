@@ -363,8 +363,8 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
 #define ASSERT_FALSE(condition) \
   GTEST_TEST_BOOLEAN_(!(condition), #condition, true, false, \
                       GTEST_FATAL_FAILURE_)
-```                      
-                   
+```
+
 
 ```cpp
 // Implements Boolean test assertions such as EXPECT_TRUE. expression can be
@@ -378,8 +378,62 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
   else \
     fail(::testing::internal::GetBoolAssertionFailureMessage(\
         gtest_ar_, text, #actual, #expected).c_str())
-```  
+```
 
 
 
 # 测试实例
+
+```cpp
+#include "gtest.h"
+
+/*
+ * TEST example
+ */
+TEST(test, EXPECT) {
+    EXPECT_TRUE(1);
+}
+
+/*
+ * TEST_F test example
+ */
+class testFixture : public testing::Test {};
+
+TEST_F(testFixture, AssertEQ) {
+    ASSERT_EQ(5, 5);
+}
+
+TEST_F(testFixture, AssertTrue) {
+    ASSERT_TRUE(true);
+    ASSERT_TRUE(false) << "failure example";
+}
+
+/* ------------------------- */
+
+/*
+ * TEST_P test example
+ */
+class testParameter : public testing::TestWithParam<int> {};
+
+TEST_P(testParameter, TrueOrFalse) {
+    auto para = GetParam();
+    EXPECT_TRUE(para%2 == 0);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    Values, testParameter, ::testing::Values(2,4)
+);
+
+INSTANTIATE_TEST_CASE_P(
+    Range, testParameter, ::testing::Range(6,8,2)
+);
+
+/* ------------------------- */
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+```
+
+![gtest output](/assets/images/gtest_outputs.png)
