@@ -6,20 +6,128 @@ categories: [programming]
 
 # gtest's API
 
+
+`gtest`里有三种使用方式，分别是 `TEST`, `TEST_F`, `TESTP`, 都是宏定义。
+
+## `TEST`的定义
+
+`TEST`的定义如下，
+
 ```cpp
-// Values() allows generating tests from explicitly specified list of
-// parameters.
+// Defines a test.
 //
-// Synopsis:
-// Values(T v1, T v2, ..., T vN)
-//   - returns a generator producing sequences with elements v1, v2, ..., vN.
-// Currently, Values() supports from 1 to 50 parameters.
+// The first parameter is the name of the test case, and the second
+// parameter is the name of the test within the test case.
 //
-template <typename T1>
-internal::ValueArray1<T1> Values(T1 v1) {
-  return internal::ValueArray1<T1>(v1);
-}
+// The convention is to end the test case name with "Test".  For
+// example, a test case for the Foo class can be named FooTest.
+//
+// Test code should appear between braces after an invocation of
+// this macro.  Example:
+//
+//   TEST(FooTest, InitializesCorrectly) {
+//     Foo foo;
+//     EXPECT_TRUE(foo.StatusIsOK());
+//   }
+
+// Note that we call GetTestTypeId() instead of GetTypeId<
+// ::testing::Test>() here to get the type ID of testing::Test.  This
+// is to work around a suspected linker bug when using Google Test as
+// a framework on Mac OS X.  The bug causes GetTypeId<
+// ::testing::Test>() to return different values depending on whether
+// the call is from the Google Test framework itself or from user test
+// code.  GetTestTypeId() is guaranteed to always return the same
+// value, as it always calls GetTypeId<>() from the Google Test
+// framework.
+#define GTEST_TEST(test_case_name, test_name)\
+  GTEST_TEST_(test_case_name, test_name, \
+              ::testing::Test, ::testing::internal::GetTestTypeId())
+
+// Define this macro to 1 to omit the definition of TEST(), which
+// is a generic name and clashes with some other libraries.
+#if !GTEST_DONT_DEFINE_TEST
+# define TEST(test_case_name, test_name) GTEST_TEST(test_case_name, test_name)
+#endif
 ```
+
+上面的`GTEST_TEST_`宏定义如下:
+
+```cpp
+// Expands to the name of the class that implements the given test.
+#define GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \
+  test_case_name##_##test_name##_Test
+
+// Helper macro for defining tests.
+#define GTEST_TEST_(test_case_name, test_name, parent_class, parent_id)\
+class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
+ public:\
+  GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() {}\
+ private:\
+  virtual void TestBody();\
+  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(\
+      GTEST_TEST_CLASS_NAME_(test_case_name, test_name));\
+};\
+\
+::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_case_name, test_name)\
+  ::test_info_ =\
+    ::testing::internal::MakeAndRegisterTestInfo(\
+        #test_case_name, #test_name, NULL, NULL, \
+        (parent_id), \
+        parent_class::SetUpTestCase, \
+        parent_class::TearDownTestCase, \
+        new ::testing::internal::TestFactoryImpl<\
+            GTEST_TEST_CLASS_NAME_(test_case_name, test_name)>);\
+void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
+```
+
+通过上面代码， 我们可以看到，
+通过`TEST`，我们实际是定义了一个以`test_case_name`,`test_name`组成的`class`,
+并继承自`Test`,然后`TEST`后面代码实际是这个`class`里`TestBody`的函数体。
+
+## `TEST_F`宏定义
+
+```cpp
+// Defines a test that uses a test fixture.
+//
+// The first parameter is the name of the test fixture class, which
+// also doubles as the test case name.  The second parameter is the
+// name of the test within the test case.
+//
+// A test fixture class must be declared earlier.  The user should put
+// his test code between braces after using this macro.  Example:
+//
+//   class FooTest : public testing::Test {
+//    protected:
+//     virtual void SetUp() { b_.AddElement(3); }
+//
+//     Foo a_;
+//     Foo b_;
+//   };
+//
+//   TEST_F(FooTest, InitializesCorrectly) {
+//     EXPECT_TRUE(a_.StatusIsOK());
+//   }
+//
+//   TEST_F(FooTest, ReturnsElementCountCorrectly) {
+//     EXPECT_EQ(0, a_.size());
+//     EXPECT_EQ(1, b_.size());
+//   }
+
+#define TEST_F(test_fixture, test_name)\
+  GTEST_TEST_(test_fixture, test_name, test_fixture, \
+              ::testing::internal::GetTypeId<test_fixture>())
+
+}  // namespace testing
+```
+
+其实`TEST_F`与上面`TEST`类似，上面主要不同就是`TEST`直接继承`Test`，而`TEST_F`需要`test_fixture`先继承`Test`,
+然后`test_fixture`,`test_case`组成的`class`再继承`test_fixture`，
+也就是通过这种方式我们可以用过在`test_fixture`里`override`来定制化操作。
+
+## `TEST_P`定义
+
+`TEST_P`的宏定义具体如下:
 
 
 ```cpp
@@ -62,6 +170,91 @@ internal::ValueArray1<T1> Values(T1 v1) {
 
 }
 ```
+
+
+```cpp
+// The pure interface class that all value-parameterized tests inherit from.
+// A value-parameterized class must inherit from both ::testing::Test and
+// ::testing::WithParamInterface. In most cases that just means inheriting
+// from ::testing::TestWithParam, but more complicated test hierarchies
+// may need to inherit from Test and WithParamInterface at different levels.
+//
+// This interface has support for accessing the test parameter value via
+// the GetParam() method.
+//
+// Use it with one of the parameter generator defining functions, like Range(),
+// Values(), ValuesIn(), Bool(), and Combine().
+//
+// class FooTest : public ::testing::TestWithParam<int> {
+//  protected:
+//   FooTest() {
+//     // Can use GetParam() here.
+//   }
+//   virtual ~FooTest() {
+//     // Can use GetParam() here.
+//   }
+//   virtual void SetUp() {
+//     // Can use GetParam() here.
+//   }
+//   virtual void TearDown {
+//     // Can use GetParam() here.
+//   }
+// };
+// TEST_P(FooTest, DoesBar) {
+//   // Can use GetParam() method here.
+//   Foo foo;
+//   ASSERT_TRUE(foo.DoesBar(GetParam()));
+// }
+// INSTANTIATE_TEST_CASE_P(OneToTenRange, FooTest, ::testing::Range(1, 10));
+
+template <typename T>
+class WithParamInterface
+```
+
+```cpp
+// Most value-parameterized classes can ignore the existence of
+// WithParamInterface, and can just inherit from ::testing::TestWithParam.
+
+template <typename T>
+class TestWithParam : public Test, public WithParamInterface<T> {
+};
+```
+
+
+
+# `gtest`执行流程
+
+```cpp
+// Initializes Google Test.  This must be called before calling
+// RUN_ALL_TESTS().  In particular, it parses a command line for the
+// flags that Google Test recognizes.  Whenever a Google Test flag is
+// seen, it is removed from argv, and *argc is decremented.
+//
+// No value is returned.  Instead, the Google Test flag variables are
+// updated.
+//
+// Calling the function for the second time has no user-visible effect.
+GTEST_API_ void InitGoogleTest(int* argc, char** argv);
+```
+
+```cpp
+
+// Use this function in main() to run all tests.  It returns 0 if all
+// tests are successful, or 1 otherwise.
+//
+// RUN_ALL_TESTS() should be invoked after the command line has been
+// parsed by InitGoogleTest().
+//
+// This function was formerly a macro; thus, it is in the global
+// namespace and has an all-caps name.
+int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
+
+inline int RUN_ALL_TESTS() {
+  return ::testing::UnitTest::GetInstance()->Run();
+}
+```
+
+
 
 ```cpp
 // The abstract class that all tests inherit from.
@@ -107,245 +300,21 @@ class GTEST_API_ TestCase
 ```
 
 ```cpp
-// The interface for tracing execution of tests. The methods are organized in
-// the order the corresponding events are fired.
-class TestEventListener {
- public:
-  virtual ~TestEventListener() {}
-
-  // Fired before any test activity starts.
-  virtual void OnTestProgramStart(const UnitTest& unit_test) = 0;
-
-  // Fired before each iteration of tests starts.  There may be more than
-  // one iteration if GTEST_FLAG(repeat) is set. iteration is the iteration
-  // index, starting from 0.
-  virtual void OnTestIterationStart(const UnitTest& unit_test,
-                                    int iteration) = 0;
-
-  // Fired before environment set-up for each iteration of tests starts.
-  virtual void OnEnvironmentsSetUpStart(const UnitTest& unit_test) = 0;
-
-  // Fired after environment set-up for each iteration of tests ends.
-  virtual void OnEnvironmentsSetUpEnd(const UnitTest& unit_test) = 0;
-
-  // Fired before the test case starts.
-  virtual void OnTestCaseStart(const TestCase& test_case) = 0;
-
-  // Fired before the test starts.
-  virtual void OnTestStart(const TestInfo& test_info) = 0;
-
-  // Fired after a failed assertion or a SUCCEED() invocation.
-  virtual void OnTestPartResult(const TestPartResult& test_part_result) = 0;
-
-  // Fired after the test ends.
-  virtual void OnTestEnd(const TestInfo& test_info) = 0;
-
-  // Fired after the test case ends.
-  virtual void OnTestCaseEnd(const TestCase& test_case) = 0;
-
-  // Fired before environment tear-down for each iteration of tests starts.
-  virtual void OnEnvironmentsTearDownStart(const UnitTest& unit_test) = 0;
-
-  // Fired after environment tear-down for each iteration of tests ends.
-  virtual void OnEnvironmentsTearDownEnd(const UnitTest& unit_test) = 0;
-
-  // Fired after each iteration of tests finishes.
-  virtual void OnTestIterationEnd(const UnitTest& unit_test,
-                                  int iteration) = 0;
-
-  // Fired after all test activities have ended.
-  virtual void OnTestProgramEnd(const UnitTest& unit_test) = 0;
-};
-```
-
-
-```cpp
-// A UnitTest consists of a vector of TestCases.
+// Values() allows generating tests from explicitly specified list of
+// parameters.
 //
-// This is a singleton class.  The only instance of UnitTest is
-// created when UnitTest::GetInstance() is first called.  This
-// instance is never deleted.
+// Synopsis:
+// Values(T v1, T v2, ..., T vN)
+//   - returns a generator producing sequences with elements v1, v2, ..., vN.
+// Currently, Values() supports from 1 to 50 parameters.
 //
-// UnitTest is not copyable.
-//
-// This class is thread-safe as long as the methods are called
-// according to their specification.
-class GTEST_API_ UnitTest
-```
-
-```cpp
-// Initializes Google Test.  This must be called before calling
-// RUN_ALL_TESTS().  In particular, it parses a command line for the
-// flags that Google Test recognizes.  Whenever a Google Test flag is
-// seen, it is removed from argv, and *argc is decremented.
-//
-// No value is returned.  Instead, the Google Test flag variables are
-// updated.
-//
-// Calling the function for the second time has no user-visible effect.
-GTEST_API_ void InitGoogleTest(int* argc, char** argv);
-```
-
-```cpp
-// The pure interface class that all value-parameterized tests inherit from.
-// A value-parameterized class must inherit from both ::testing::Test and
-// ::testing::WithParamInterface. In most cases that just means inheriting
-// from ::testing::TestWithParam, but more complicated test hierarchies
-// may need to inherit from Test and WithParamInterface at different levels.
-//
-// This interface has support for accessing the test parameter value via
-// the GetParam() method.
-//
-// Use it with one of the parameter generator defining functions, like Range(),
-// Values(), ValuesIn(), Bool(), and Combine().
-//
-// class FooTest : public ::testing::TestWithParam<int> {
-//  protected:
-//   FooTest() {
-//     // Can use GetParam() here.
-//   }
-//   virtual ~FooTest() {
-//     // Can use GetParam() here.
-//   }
-//   virtual void SetUp() {
-//     // Can use GetParam() here.
-//   }
-//   virtual void TearDown {
-//     // Can use GetParam() here.
-//   }
-// };
-// TEST_P(FooTest, DoesBar) {
-//   // Can use GetParam() method here.
-//   Foo foo;
-//   ASSERT_TRUE(foo.DoesBar(GetParam()));
-// }
-// INSTANTIATE_TEST_CASE_P(OneToTenRange, FooTest, ::testing::Range(1, 10));
-
-template <typename T>
-class WithParamInterface
-```
-```cpp
-// Most value-parameterized classes can ignore the existence of
-// WithParamInterface, and can just inherit from ::testing::TestWithParam.
-
-template <typename T>
-class TestWithParam : public Test, public WithParamInterface<T> {
-};
-```
-
-```cpp
-// Defines a test.
-//
-// The first parameter is the name of the test case, and the second
-// parameter is the name of the test within the test case.
-//
-// The convention is to end the test case name with "Test".  For
-// example, a test case for the Foo class can be named FooTest.
-//
-// Test code should appear between braces after an invocation of
-// this macro.  Example:
-//
-//   TEST(FooTest, InitializesCorrectly) {
-//     Foo foo;
-//     EXPECT_TRUE(foo.StatusIsOK());
-//   }
-
-// Note that we call GetTestTypeId() instead of GetTypeId<
-// ::testing::Test>() here to get the type ID of testing::Test.  This
-// is to work around a suspected linker bug when using Google Test as
-// a framework on Mac OS X.  The bug causes GetTypeId<
-// ::testing::Test>() to return different values depending on whether
-// the call is from the Google Test framework itself or from user test
-// code.  GetTestTypeId() is guaranteed to always return the same
-// value, as it always calls GetTypeId<>() from the Google Test
-// framework.
-#define GTEST_TEST(test_case_name, test_name)\
-  GTEST_TEST_(test_case_name, test_name, \
-              ::testing::Test, ::testing::internal::GetTestTypeId())
-
-// Define this macro to 1 to omit the definition of TEST(), which
-// is a generic name and clashes with some other libraries.
-#if !GTEST_DONT_DEFINE_TEST
-# define TEST(test_case_name, test_name) GTEST_TEST(test_case_name, test_name)
-#endif
-```
-
-```cpp
-// Defines a test that uses a test fixture.
-//
-// The first parameter is the name of the test fixture class, which
-// also doubles as the test case name.  The second parameter is the
-// name of the test within the test case.
-//
-// A test fixture class must be declared earlier.  The user should put
-// his test code between braces after using this macro.  Example:
-//
-//   class FooTest : public testing::Test {
-//    protected:
-//     virtual void SetUp() { b_.AddElement(3); }
-//
-//     Foo a_;
-//     Foo b_;
-//   };
-//
-//   TEST_F(FooTest, InitializesCorrectly) {
-//     EXPECT_TRUE(a_.StatusIsOK());
-//   }
-//
-//   TEST_F(FooTest, ReturnsElementCountCorrectly) {
-//     EXPECT_EQ(0, a_.size());
-//     EXPECT_EQ(1, b_.size());
-//   }
-
-#define TEST_F(test_fixture, test_name)\
-  GTEST_TEST_(test_fixture, test_name, test_fixture, \
-              ::testing::internal::GetTypeId<test_fixture>())
-
-}  // namespace testing
-
-// Use this function in main() to run all tests.  It returns 0 if all
-// tests are successful, or 1 otherwise.
-//
-// RUN_ALL_TESTS() should be invoked after the command line has been
-// parsed by InitGoogleTest().
-//
-// This function was formerly a macro; thus, it is in the global
-// namespace and has an all-caps name.
-int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
-
-inline int RUN_ALL_TESTS() {
-  return ::testing::UnitTest::GetInstance()->Run();
+template <typename T1>
+internal::ValueArray1<T1> Values(T1 v1) {
+  return internal::ValueArray1<T1>(v1);
 }
 ```
 
-```cpp
-// Expands to the name of the class that implements the given test.
-#define GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \
-  test_case_name##_##test_name##_Test
 
-// Helper macro for defining tests.
-#define GTEST_TEST_(test_case_name, test_name, parent_class, parent_id)\
-class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
- public:\
-  GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() {}\
- private:\
-  virtual void TestBody();\
-  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(\
-      GTEST_TEST_CLASS_NAME_(test_case_name, test_name));\
-};\
-\
-::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_case_name, test_name)\
-  ::test_info_ =\
-    ::testing::internal::MakeAndRegisterTestInfo(\
-        #test_case_name, #test_name, NULL, NULL, \
-        (parent_id), \
-        parent_class::SetUpTestCase, \
-        parent_class::TearDownTestCase, \
-        new ::testing::internal::TestFactoryImpl<\
-            GTEST_TEST_CLASS_NAME_(test_case_name, test_name)>);\
-void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
-```
 
 ```cpp
 // Boolean assertions. Condition can be either a Boolean expression or an
@@ -394,6 +363,9 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
 
 
 # 测试实例
+
+简单使用`TEST`,`TEST_F`,`TEST_P`的测试代码:
+
 
 ```cpp
 #include "gtest.h"
@@ -446,5 +418,7 @@ int main(int argc, char** argv) {
     return RUN_ALL_TESTS();
 }
 ```
+
+测试输出 ：
 
 ![gtest output](/assets/images/gtest_outputs.png)
