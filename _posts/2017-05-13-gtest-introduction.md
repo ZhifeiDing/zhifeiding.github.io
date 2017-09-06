@@ -156,21 +156,10 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
                              test_name)::gtest_registering_dummy_ = \
       GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::AddToRegistry(); \
   void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
-
-# define INSTANTIATE_TEST_CASE_P(prefix, test_case_name, generator) \
-  ::testing::internal::ParamGenerator<test_case_name::ParamType> \
-      gtest_##prefix##test_case_name##_EvalGenerator_() { return generator; } \
-  int gtest_##prefix##test_case_name##_dummy_ = \
-      ::testing::UnitTest::GetInstance()->parameterized_test_registry(). \
-          GetTestCasePatternHolder<test_case_name>(\
-              #test_case_name, __FILE__, __LINE__)->AddTestCaseInstantiation(\
-                  #prefix, \
-                  &gtest_##prefix##test_case_name##_EvalGenerator_, \
-                  __FILE__, __LINE__)
-
-}
 ```
 
+与`TEST_F`类似， 定义的`test_case_name`首先需要定义为一个继承了`Test`和`WithParamInterface`的`class`，不过一般只需要继承`TestWithParam`即可
+`TestWithParam`与`Test`，`WithParamInterface`关系如下代码所示:
 
 ```cpp
 // The pure interface class that all value-parameterized tests inherit from.
@@ -220,9 +209,43 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 };
 ```
 
+上面的`TestBody`里可以使用`GetParam()`来使用后面`INSTANTIATE_TEST_CASE_P(prefix, test_case_name, generator)`里`generator`里传递进来的参数。通过`INSTANTIATE_TEST_CASE_P(prefix, test_case_name, generator)`来定义需要传递的参数
 
+```cpp
+# define INSTANTIATE_TEST_CASE_P(prefix, test_case_name, generator) \
+  ::testing::internal::ParamGenerator<test_case_name::ParamType> \
+      gtest_##prefix##test_case_name##_EvalGenerator_() { return generator; } \
+  int gtest_##prefix##test_case_name##_dummy_ = \
+      ::testing::UnitTest::GetInstance()->parameterized_test_registry(). \
+          GetTestCasePatternHolder<test_case_name>(\
+              #test_case_name, __FILE__, __LINE__)->AddTestCaseInstantiation(\
+                  #prefix, \
+                  &gtest_##prefix##test_case_name##_EvalGenerator_, \
+                  __FILE__, __LINE__)
+
+}
+```
+
+产生参数可以用`Values`和`Range`，`Values`是使用指定的参数列表， 而`Range`则是在指定的范围内按指定的步长来产生参数， 其中`Values`代码如下:
+
+```cpp
+// Values() allows generating tests from explicitly specified list of
+// parameters.
+//
+// Synopsis:
+// Values(T v1, T v2, ..., T vN)
+//   - returns a generator producing sequences with elements v1, v2, ..., vN.
+// Currently, Values() supports from 1 to 50 parameters.
+//
+template <typename T1>
+internal::ValueArray1<T1> Values(T1 v1) {
+  return internal::ValueArray1<T1>(v1);
+}
+```
 
 # `gtest`执行流程
+
+使用上面的`Test`, `TEST_F`或`TEST_P`定义好`test_case`和`test`之后， 就需要在`main`函数里顺序执行`InitGoogleTest`来初始化`gtest`测试框架，然后调用`RUN_ALL_TESTS`来执行所有的测试。
 
 ```cpp
 // Initializes Google Test.  This must be called before calling
@@ -254,7 +277,9 @@ inline int RUN_ALL_TESTS() {
 }
 ```
 
+# `gtest`基本类
 
+上面我们使用的不管是`TEST`,`TEST_F`还是`TEST_P`最终都继承了`Test`类。在`gtest`里，`Test`是所有`test`都要继承的基类
 
 ```cpp
 // The abstract class that all tests inherit from.
@@ -282,39 +307,10 @@ inline int RUN_ALL_TESTS() {
 // Test is not copyable.
 class GTEST_API_ Test
 ```
-```cpp
-// The result of a single Test.  This includes a list of
-// TestPartResults, a list of TestProperties, a count of how many
-// death tests there are in the Test, and how much time it took to run
-// the Test.
-//
-// TestResult is not copyable.
-class GTEST_API_ TestResult
-```
-
-```cpp
-// A test case, which consists of a vector of TestInfos.
-//
-// TestCase is not copyable.
-class GTEST_API_ TestCase
-```
-
-```cpp
-// Values() allows generating tests from explicitly specified list of
-// parameters.
-//
-// Synopsis:
-// Values(T v1, T v2, ..., T vN)
-//   - returns a generator producing sequences with elements v1, v2, ..., vN.
-// Currently, Values() supports from 1 to 50 parameters.
-//
-template <typename T1>
-internal::ValueArray1<T1> Values(T1 v1) {
-  return internal::ValueArray1<T1>(v1);
-}
-```
 
 
+`gtest`提供了一系列的`EXPECT_*`和`ASSERT_*`，`EXPECT_*`比较fail之后会继续执行后面的代码， 而`ASSERT_*`失败之后会停止执行。
+其具体实现如下所示:
 
 ```cpp
 // Boolean assertions. Condition can be either a Boolean expression or an
@@ -349,17 +345,7 @@ internal::ValueArray1<T1> Values(T1 v1) {
         gtest_ar_, text, #actual, #expected).c_str())
 ```
 
-```cpp
-// Macro for referencing flags.
-#define GTEST_FLAG(name) FLAGS_gtest_##name
 
-// Macros for declaring flags.
-#define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
-#define GTEST_DECLARE_int32_(name) \
-    GTEST_API_ extern ::testing::internal::Int32 GTEST_FLAG(name)
-#define GTEST_DECLARE_string_(name) \
-    GTEST_API_ extern ::std::string GTEST_FLAG(name)
-```
 
 
 # 测试实例
