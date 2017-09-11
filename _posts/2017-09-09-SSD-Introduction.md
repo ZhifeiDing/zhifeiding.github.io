@@ -30,7 +30,7 @@ tags : [hardware, storage]
 * 当*Floating Gate*上不存在电荷时，此时*MOSFET*阈值电压是 *VT1*, 管道导通
 * 当*Floating Gate*上存在电荷时，此时为了能使管道导通，除了要施加上面*VT1*，还需要抵消*Floating Gate*上电荷， 因此此时阈值电压 *Vt2 > Vt1*
 * 因此， 当没有对*Floating Gate MOSFET*做*Programming*操作时，*Floating Gate*上是不存在电荷的，也就是当前数据是`1`。而*Programming*使*Floating Gate*带上电荷之后，保存数据时`0`
-* 当需要做*Programming*操作时，需要在*Control Gate*上施加大于*Vt2*电压，此时源级和漏级之间的*Channel*里的电流会导致电子跃迁，进入*Floating Gate*，这叫做热电子注入。此时保存数据是`0`
+* 当需要做*Programming*操作时，需要在*Control Gate*上施加大于*Vt2*电压，此时源级和漏级之间的*Channel*里的电流会导致电子跃迁，进入*Floating Gate*。此时保存数据是`0`
 * 当需要读数据时，在*Control Gate*上施加一个介于*Vt1*和*Vt2*上的，此时如果*Floating*上没有电荷，则管道导通，数据为`1`。否则，管道不导通，数据为`0`
 * 上面主要是`SLC`情况， 即每一个*cell*只保存`1bit`的信息，所以只需要判断*MOSFET*是否有电流流过即可。 而对于`MLC`,`TLC`和`QLC`可以根据加到*Control Gate*上不同电压时流过电流不同来区别多bit的信息。
 
@@ -43,15 +43,32 @@ tags : [hardware, storage]
 
 ### Programming
 
+当需要对*NOR Flash*做*Programming*操作时，需要在*Control Gate*上施加高电压以便使*Channel*上的电子能够跃迁到*Floating Gate*上，此时各级上电压如下所示:
 ![NOR Flash Programming](https://upload.wikimedia.org/wikipedia/commons/2/28/Flash-Programming.svg)
 
 ### Erasing
 
+当需要对*NOR Flash*做*Erasing*操作(使*MOSFET*回到存储`1`状态)时，要在*Control Gate*和源级上施加相反的电压，使*Floating Gate*上的电子形成隧道效应而释放掉。此时各级上电压如下所示:
 ![NOR Flash Erasing](https://upload.wikimedia.org/wikipedia/commons/1/1f/Flash_erase.svg)
 
 ## NAND Flash
 
+与上面*NOR Flash*主要不同是*NAND Flash*基本单元是串在一起的*Floating Gate MOSFET*, 这些串在一起的*Floating Gate MOSFET*之后再组成基本单元按照*NOR Flash*方式连接。基本结构如下所示:
 ![NAND-FLash layout](https://upload.wikimedia.org/wikipedia/commons/f/f5/Nand_flash_structure.svg)
+
+上面基本结构决定了*NAND Flash*比*NOR Flash*面积更小， 价格更便宜。不过*NOR Flash*能够任意寻址，所以一般作为程序代码存储，而*NAND Flash*则作为大量数据存储。
+
+# 缺点与限制
+
+## Block Erasure
+
+不管是*NOR Flash*还是*NAND Flash*都只能*Erase*一个block，
+
+## Memory Wear
+
+## Read Disturb
+
+## X-ray effects
 
 # Reference
 
