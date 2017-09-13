@@ -62,13 +62,19 @@ tags : [hardware, storage]
 
 ## Block Erasure
 
-不管是*NOR Flash*还是*NAND Flash*都只能*Erase*一个block，
+不管是*NOR Flash*还是*NAND Flash*, 虽然可以按 `byte`, `word`来`programming`和`read`,但是都只能*Erase*一个block。
 
 ## Memory Wear
 
+另外，`Flash`对`program-erase cycle`有一定限制，一般有100,00 P/E。因此，为了能够使整块`Flash`能够不被`program-erase`同一个`block`而坏掉，需要控制器控制`program-earse`分布到所有`block`。
+
 ## Read Disturb
 
+这个是由于`Floating Gate MOSFET`之间的串扰导致读取一个cell的数据时导致临近其他cell数据变化
+
 ## X-ray effects
+
+`X-ray`射线能够`erase`已经`porgramming`的`Flash`
 
 # Reference
 
