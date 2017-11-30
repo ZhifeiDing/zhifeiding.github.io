@@ -74,7 +74,7 @@ tags : [hardware, storage]
 
 ## X-ray effects
 
-`X-ray`射线能够`erase`已经`porgramming`的`Flash`
+`X-ray`射线能够`erase`已经`porgramming`的`Flash`中的 `bit`
 
 # Reference
 
