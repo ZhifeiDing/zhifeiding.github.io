@@ -78,17 +78,18 @@ sudo docker run hello-world
 
 > `Dockerfile`描述的是*image*里应该包含的应用以及环境,*Dockerfile*里内容如下:
 
-    1. 指定基于哪个*image*
+
+1. 指定基于哪个*image*
     ```shell
     FROM docker/whalesay:latest
     ```
 
-    2. *image*中需要安装的应用
+2. *image*中需要安装的应用
     ```shell
     RUN apt-get -y update && apt-get install -y fortunes
     ```
 
-    3. 指定运行的应用
+3. 指定运行的应用
     ```shell
     CMD /usr/games/fortune -a | cowsay
     ```
@@ -133,7 +134,7 @@ kubectl run hello-node --image=gcr.io/PROJECT_ID/hello-node:v1 --port=8080
 
 *Kubernetes*命令和*Docker*类似， 比如:
     1. 可以使用`kubectl get pods`来查看创建的*Pod*
-    2. 可以使用`kubectl logs <POD-NAME>`来查看*Pod*的标准熟输出
+    2. 可以使用`kubectl logs <POD-NAME>`来查看*Pod*的标准输入输出
 
 * Service
 > *Service* 是一组*Pod*以及相关的访问接口集合
