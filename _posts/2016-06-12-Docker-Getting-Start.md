@@ -133,8 +133,9 @@ kubectl run hello-node --image=gcr.io/PROJECT_ID/hello-node:v1 --port=8080
 ```
 
 *Kubernetes*命令和*Docker*类似， 比如:
-    1. 可以使用`kubectl get pods`来查看创建的*Pod*
-    2. 可以使用`kubectl logs <POD-NAME>`来查看*Pod*的标准输入输出
+
+    1. 可以使用`kubectl get pods`来查看创建的*Pod*  
+    2. 可以使用`kubectl logs <POD-NAME>`来查看*Pod*的标准输入输出  
 
 * Service
 > *Service* 是一组*Pod*以及相关的访问接口集合
