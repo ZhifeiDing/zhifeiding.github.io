@@ -18,11 +18,11 @@ tags : [data structure, file system, linux]
 
 1. __Boot record__ : 主要是系统启动引导纪录，每一个逻辑分区都有，并占据其开始的512B空间　
 2. __Super Block__ : 纪录当前*ext2* 文件系统的基本信息，包括*Block Size*, *Block Groups*个数，每个*Block Group*的*Blocks*数量和*Blocks* 已使用数量等。每个*Block Group* 前1KB空间用来存储*Super Block*　信息。(除了*Block Group 0*必须有*Super Block*，其他可以不存储。并且*Block Group 0*总是从逻辑分区的第二个1KB开始)
-3. __Block Group Descriptor Table__ : 紧随*Super Block* 之后, 纪录每个*Block Group*的信息，包括每个*Group Block* 的第一个*Block Bitmap*, *Inode Bitmap*以及*Inode Table*的地址。q其大小由文件系统中*Block Groups*数量决定, 并且与*Super Block* 一样，在每个*Block Group*里都有备份。
-4. __Block Bitmap__和__Inode Bitmap__　: 两者都是用来*bit*值来指示其对应的*Block*或*Inode*是否使用。其中*Block Bitmap*大小始终是1个*Data Block*。可以参见下面示意图:
+3. __Block Group Descriptor Table__ : 紧随*Super Block* 之后, 纪录每个*Block Group*的信息，包括每个*Group Block* 的第一个*Block Bitmap*, *Inode Bitmap*以及*Inode Table*的地址。其大小由文件系统中*Block Groups*数量决定, 并且与*Super Block* 一样，在每个*Block Group*里都有备份。
+4. __Block Bitmap__ 和 __Inode Bitmap__　: 两者都是用来*bit*值来指示其对应的*Block*或*Inode*是否使用。其中*Block Bitmap*大小始终是1个*Data Block*。可以参见下面示意图:
 ![ext2 bitmap](/assets/images/ext2fs_bitmap.png)
 
-5. __Inode Table__和__Inode__ : 类似于*Block Group Descriptor Table*, 只是用来管理*Block Group*内部的*Inode*和文件目录的查找。实际文件和目录自身读写属性，大小，类型等都保存在*Inode*里。每个*Inode*包含１２个直接指向的*Data Block*, 分别１个*single indirect Data Block, doubly indirect Data Block*和*triply indirect Data Block*。具体结构可参考下图：
+5. __Inode Table__ 和 __Inode__ : 类似于*Block Group Descriptor Table*, 只是用来管理*Block Group*内部的*Inode*和文件目录的查找。实际文件和目录自身读写属性，大小，类型等都保存在*Inode*里。每个*Inode*包含１２个直接指向的*Data Block*, 分别１个*single indirect Data Block, doubly indirect Data Block*和*triply indirect Data Block*。具体结构可参考下图：
 
 了解上面一些概念之后，可以参考下面示意图来理解*ext2*　是怎么保存`/etc/vim/vimrc`:
 ![ext2 file](/assets/images/ext2-file.png)
@@ -69,7 +69,7 @@ tags : [data structure, file system, linux]
 ![leaf node](/assets/images/leaf_node.png)
 
 * *Btrfs*读操作很简单就是对*Sub-Volume Tree*作简单的*B+-Tree*查找操作。
-* 当修改文件或目录时会导致*extent*的更新， 然后由于使用__Copy-On-Write__, 更新会一直传导到*Sub-Volume Tree*的根节点。 同时也会导致*Extent Allocation Tree需要更新。而数据和元数据变化也会导致*Checksum Tree*需要同样更新操作。所有这些更新最后在*root*层就是产生一个新的*tree of tree root*。 *Btrfs*一个更新操作可以参考下图：
+* 当修改文件或目录时会导致*extent*的更新， 然后由于使用 __Copy-On-Write__ , 更新会一直传导到*Sub-Volume Tree*的根节点。 同时也会导致*Extent Allocation Tree需要更新。而数据和元数据变化也会导致*Checksum Tree*需要同样更新操作。所有这些更新最后在*root*层就是产生一个新的*tree of tree root*。 *Btrfs*一个更新操作可以参考下图：
 ![Btrfs](/assets/images/Btrfs.png)
 
 # 参考
