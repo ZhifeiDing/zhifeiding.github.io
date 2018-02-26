@@ -69,7 +69,7 @@ tags : [data structure, file system, linux]
 ![leaf node](/assets/images/leaf_node.png)
 
 * *Btrfs*读操作很简单就是对*Sub-Volume Tree*作简单的*B+-Tree*查找操作。
-* 当修改文件或目录时会导致*extent*的更新， 然后由于使用__Copy-On-Write__, 更新会一直传导到*Sub-Volume Tree*的根节点。 同时也会导致*Extent Allocation Tree需要更新。而数据和元数据变化也会导致*Checksum Tree*需要同样更新操作。所有这些更新最后在*root*层就是产生一个新的*tree of tree root*。 *Btrfs*一个更新操作可以参考下图：
+* 当修改文件或目录时会导致*extent*的更新， 然后由于使用 __Copy-On-Write__ , 更新会一直传导到*Sub-Volume Tree*的根节点。 同时也会导致*Extent Allocation Tree需要更新。而数据和元数据变化也会导致*Checksum Tree*需要同样更新操作。所有这些更新最后在*root*层就是产生一个新的*tree of tree root*。 *Btrfs*一个更新操作可以参考下图：
 ![Btrfs](/assets/images/Btrfs.png)
 
 # 参考
