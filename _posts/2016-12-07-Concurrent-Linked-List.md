@@ -84,7 +84,7 @@ __Memory Model__ 是指能够执行`Out-of-Order`的`CPU`能够对`Load`和`Stor
 >
 上面提到的 __CAS__ 中我们读取一个值并与其之前值进行比较， 当两者一致时，我们认为在这之间状态没有变化。但是，其他线程可能已经对数据进行一系列操作，致使最后退出时将该值修改为之前的值。 这种出现在 __Lock-Free__ 结构里的现象，就被称为 __ABA Problem__ 。
 
-具体可以看下面__linklist__ `head->NodeA->NodeB->NodeC`的例子:
+具体可以看下面 __linklist__  `head->NodeA->NodeB->NodeC`的例子:
 
 1. __Thread 1__ 从*memory* 里读取 `NodeA`值， 然后 __Thread 1__ 被调度出，__Thread 2__ 开始执行
 2. __Thread 2__ 删除`NodeA`和`NodeB`, 然后插入`NodeA`, 变成`head->NodeA->NodeC`
