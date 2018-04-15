@@ -1,6 +1,6 @@
 ---
-titles : Paper Reading : An FPGA-based In-line Accelerator for Memcached
-categories : [fpga]
+title : Paper Reading : An FPGA-based In-line Accelerator for Memcached
+category : [fpga]
 tags : [fpga, database]
 ---
 
