@@ -1,6 +1,6 @@
 ---
-title : Paper Reading : A Reconfigurable Fabric for Accelerating Large-Scale Datacenter Services
-categories : fpga
+title : Paper Reading - A Reconfigurable Fabric for Accelerating Large-Scale Datacenter Services
+categories : [fpga]
 tags :[fpga, datacenter]
 ---
 
