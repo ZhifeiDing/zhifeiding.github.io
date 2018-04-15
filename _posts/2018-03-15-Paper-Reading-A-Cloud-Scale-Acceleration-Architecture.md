@@ -1,6 +1,6 @@
 ---
-title : Paper Reading : A Cloud-Scale Acceleration Architecture
-categories : fpga
+title : Paper Reading - A Cloud-Scale Acceleration Architecture
+categories : [fpga]
 tags : [fpga, datacenter]
 ---
 
