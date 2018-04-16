@@ -15,6 +15,7 @@ FPGA组成的二维网络放置于48个机器的机架中。每一个FPGA和对�
 ![fpga overview](/assets/images/00_fpga_overview.png)
 ![fpga flow](/assets/images/01_fpga_flow.png)
 ![fpga fe](/assets/images/02_fpga_fe.png)
+![fpga arch](/assets/images/03_fpga_arch.png)
 
 # Method used in the Paper
 
@@ -22,4 +23,4 @@ FPGA组成的二维网络放置于48个机器的机架中。每一个FPGA和对�
 
 # Reference
 
-*[A Reconfigurable Fabric for Accelerating Large-Scale Datacenter Services](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Catapult_ISCA_2014.pdf)
+* [A Reconfigurable Fabric for Accelerating Large-Scale Datacenter Services](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Catapult_ISCA_2014.pdf)
