@@ -27,6 +27,8 @@ DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
 
 ## FPGA逻辑设计
 
+### FPGA和CPU接口设计
+
 该论文提出为了保证CPU与FPGA之间传输16KB数据时延在10us以内，同时能够支持多线程，专门设计了DMA支持的PCIe接口程序,其中：
 
 * CPU侧设计了64个input/output buffer对, 每个线程只能访问指定buffer，
@@ -38,7 +40,15 @@ DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
 
 ![fpga cpu interface](/assets/images/07_fpga_cpu_int.png)
 
+而其传输流程则如下图所示:
+
+![fpga cpu transfer](/assets/images/08_fpga_cpu_trans.png)
+
+### FPGA 逻辑实现
+
 ![fpga arch](/assets/images/03_fpga_arch.png)
+
+### Web Search流程
 
 Web Search Implementation Flow
 ![fpga web search](/assets/images/05_fpga_Web_Search.png)
@@ -49,10 +59,14 @@ Feature Extraction Implementation
 Free Form Expression Implementation
 ![fpga ffe](/assets/images/04_fpga_ffe.png)
 
+### Web Search在系统中实现
+
 Bing Web Search Flow System View
 ![fpga flow](/assets/images/01_fpga_flow.png)
 
 # Results of the Paper
+
+![fpga result](/assets/images/08_fpga_result.png)
 
 # Reference
 
