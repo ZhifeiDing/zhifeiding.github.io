@@ -27,7 +27,14 @@ DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
 
 ## FPGA逻辑设计
 
-该论文提出为了保证CPU与FPGA之间传输16KB数据时延在10us以内，同时能够支持多线程，专门设计了DMA支持的PCIe接口程序，
+该论文提出为了保证CPU与FPGA之间传输16KB数据时延在10us以内，同时能够支持多线程，专门设计了DMA支持的PCIe接口程序,其中：
+
+* CPU侧设计了64个input/output buffer对, 每个线程只能访问指定buffer，
+  实现线程安全
+
+* FPGA侧则实现了2个input/output buffer对，可以同时执行3个任务
+
+其接口实现可以参考下图:
 
 ![fpga cpu interface](/assets/images/07_fpga_cpu_int.png)
 
