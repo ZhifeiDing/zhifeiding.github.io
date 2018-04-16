@@ -18,20 +18,29 @@ tags : [fpga, datacenter]
 
 # Method used in the Paper
 
-为了减少对原始服务器系统主版的改动，该论文提出使用PCIe来作为主CPU和FPGA系统之间通信，同时使用8GB
-DRAM来作为FPGA的存贮器。
+## FPGA子板设计
 
-FPGA Implementation Architecture
+为了减少对原始服务器系统主版的改动，该论文提出使用PCIe来作为主CPU和FPGA系统之间通信，同时使用8GB
+DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
+
+![fpga arch](/assets/images/03_fpga_arch.png)
+
+## FPGA逻辑设计
+
+该论文提出为了保证CPU与FPGA之间传输16KB数据时延在10us以内，同时能够支持多线程，专门设计了DMA支持的PCIe接口程序，
+
+![fpga cpu interface](/assets/images/07_fpga_cpu_int.png)
+
 ![fpga arch](/assets/images/03_fpga_arch.png)
 
 Web Search Implementation Flow
-![fpga fe](/assets/images/05_fpga_Web_Search.png)
+![fpga web search](/assets/images/05_fpga_Web_Search.png)
 
 Feature Extraction Implementation
 ![fpga fe](/assets/images/02_fpga_fe.png)
 
 Free Form Expression Implementation
-![fpga fe](/assets/images/04_fpga_ffe.png)
+![fpga ffe](/assets/images/04_fpga_ffe.png)
 
 Bing Web Search Flow System View
 ![fpga flow](/assets/images/01_fpga_flow.png)
