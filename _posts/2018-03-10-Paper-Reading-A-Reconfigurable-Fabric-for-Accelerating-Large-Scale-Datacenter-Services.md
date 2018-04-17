@@ -42,26 +42,49 @@ DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
 
 而其传输流程则如下图所示:
 
+* 每一个线程有自己独立的input buffer, 将数据写入并将`FULL`标志位置起
+* FPGA监控`FULL`标志位，检测到置起之后通过DMC将数据搬运到FPGA侧的inout buffer
+* CPU侧等待FPGA侧output buffer的DONE信号
+
+具体流程可以参考如下图所示:
 ![fpga cpu transfer](/assets/images/08_fpga_cpu_trans.png)
 
 ### FPGA 逻辑实现
 
+该论文将FPGA的实现分成了Shell和Role两部分，其中`Role`部分是主要的应用逻辑实现部分,`Shell`部分是能够复用的部分包括:
+
+* 2个DRAM 控制器，能够独立运行在667MHz或者作为一个800MHz接口
+* 4个高速SerialLite III (SL3),用来和邻近FPGA通信
+* 和CPU的PCIe通信的控制逻辑以及 PCIe核
+* 一些其他接口逻辑
+
+`Role`和`Shell`的具体结构可见下图:
 ![fpga arch](/assets/images/03_fpga_arch.png)
 
 ### Web Search流程
 
-Web Search Implementation Flow
+论文中将Bing's Ranking Engine用FPGA实现，即上面的`Role`逻辑。 Bing's Ranking Engine的主要工作如下:
+
+* 当一个查询请求达到服务器时， 服务器从存储器中取得对应文档和元数据， 然后将文档处理成包含相关信息的`feature`, 这一步是`feature extraction`
+* 然后会对feature进行处理得到一些综合的feature， 这一步称为`free form expression`
+* 然后这些`feature`都会被送到机器学习模型来得到和查询的相关度
+
+上述过程中的`feature extraction`, `free form expression`, `machine learned model`都是在FPGA上实现的， CPU上实现的主要是从存储器读取等操作，具体过程如下图所示:
 ![fpga web search](/assets/images/05_fpga_Web_Search.png)
 
-Feature Extraction Implementation
+`Feature Extraction` 在FPGA上实现如下图所示:
 ![fpga fe](/assets/images/02_fpga_fe.png)
 
-Free Form Expression Implementation
+* 首先，文档被送到`Stream Preprocessing FSM`， 被分割成控制和数据
+* 然后数据被并行分发到43个单独的`feature state matchine`来计算`feature`
+* 最后上面计算出来的`feature`被`Feature Gathering Network`收集
+
+`Free Form Expression`主要是对`Feature Extraction`计算出来的`Feature`进行一些数学的计算来得到新的`Feature`, 由于这一步对不同的模型差异很大，所以论文采用的方式是使用多线程软核来实现。可以参考下图:
 ![fpga ffe](/assets/images/04_fpga_ffe.png)
 
 ### Web Search在系统中实现
 
-Bing Web Search Flow System View
+上面介绍的`Bing's Ranking Engine`在整个系统中实现使用了8个FPGA+CPU对， 其中一个是冗余的， 具体功能映射如下所示
 ![fpga flow](/assets/images/01_fpga_flow.png)
 
 # Results of the Paper
