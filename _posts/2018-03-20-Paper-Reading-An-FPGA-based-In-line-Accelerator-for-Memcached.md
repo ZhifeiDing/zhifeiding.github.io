@@ -10,6 +10,10 @@ tags : [fpga, database]
 
 # Results of the Paper
 
+![fpga memcached](/assets/images/16_fpga_memcached_arch.png)
+![fpga memcached](/assets/images/17_fpga_memcached_fast_result.png)
+![fpga memcached](/assets/images/18_fpga_memcached_performance.png)
+
 
 # Reference
 
