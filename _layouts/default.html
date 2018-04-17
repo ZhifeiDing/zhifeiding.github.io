@@ -5,7 +5,8 @@
       <div id="main" role="main">
         <header>
         <h1> {{ page.title }} </h1>
-        </header>
+	</header>
+	<!-- duoshuo had not provided service yet
 <div class="ds-share" data-thread-key="{{ page.title }}" data-title="{{ page.title }}" data-images="" data-content="{{ page.title }}" data-url="http://zhifeiding.github.io{{ page.url  }}">
     <div class="ds-share-inline">
       <ul  class="ds-share-icons-16">
@@ -21,6 +22,18 @@
       </div>
     </div>
  </div>
+-->
+	      <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_ydnote"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank">更多</a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code_mini/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
     {% include navigator.html %}
     <article class="content">
     <section class="post">
@@ -71,23 +84,11 @@
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
     </section>
 -->
-<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="{{ page.title }}" data-title="{{ page.title }}" data-url="http://zhifeiding.github.io{{ page.url  }}"></div>
-<!-- 多说评论框 end -->
-<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-var duoshuoQuery = {short_name:"dzhf21"};
-	(function() {
-		var ds = document.createElement('script');
-		ds.type = 'text/javascript';ds.async = true;
-		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-		ds.charset = 'UTF-8';
-		(document.getElementsByTagName('head')[0] 
-		 || document.getElementsByTagName('body')[0]).appendChild(ds);
-	})();
-	</script>
-<!-- 多说公共JS代码 end -->
-
+<!-- UY BEGIN -->
+<div id="uyan_frame"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js"></script>
+<!-- UY END -->
+	    
     <script type="text/javascript">
     $(function(){
       $(document).keydown(function(e) {
