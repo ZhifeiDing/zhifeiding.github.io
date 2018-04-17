@@ -89,6 +89,7 @@ DRAM来作为FPGA的存贮器。FPGA子板和主板位置如下图所示:
 
 # Results of the Paper
 
+论文中实现的`Web Search`在FPGA + CPU上能够实现比纯CPU 相同延时下95%的吞吐量提升，同时减少10%功耗。
 ![fpga result](/assets/images/08_fpga_result.png)
 
 # Reference
