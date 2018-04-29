@@ -15,3 +15,4 @@ title : Links
 * [project euler](https://projecteuler.net)  project euler, programming problems archive  
 * [python-guide](http://docs.python-guide.org/) python guide
 * [projects-case](http://ideabook.phodal.com/) project cases  
+* [archive of interesting code](http://www.keithschwarz.com/interesting/)
