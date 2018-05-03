@@ -1,5 +1,5 @@
 ---
-title : DEFLATE : A Lossless Data Compression Algorithm
+title : DEFLATE - A Lossless Data Compression Algorithm
 categories : [programming]
 tags : [compression, algorithm]
 ---
