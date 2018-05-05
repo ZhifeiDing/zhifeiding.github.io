@@ -49,6 +49,27 @@ Blah b[D=5,L=5]
 
 ## DEFLATE Algorithm
 
+*DEFLATE*算法结合上面介绍的*LZ77 Compression*算法和*Huffman Code*，来对数据进行压缩处理。其中*LZ77*用来对数据中重复出现的部分进行处理， 而*Huffman Coding*则对*LZ77*处理过的数据进行编码， 将出现频率高的用更短的编码。
+
+具体的对于*DEFLATE*压缩后的数据是由一系列的*block*组成的， 每个*block*格式如下:
+
+* 第一个 bit: 是否为连续的数据中最后一个*block*
+
+```cpp
+1: 是最后一个block
+0: 后面还有连续的block
+```
+
+* 第二和三 bits: 当前*block*的编码方式:
+
+```cpp
+00: 原始数据, 0到65,535字节长度
+01: 使用静态Huffman 编码
+10: 使用动态Huffman 编码
+11: 保留
+```
+
+
 # Reference
 
 * [wikipedia - DEFLATE](https://en.wikipedia.org/wiki/DEFLATE)
