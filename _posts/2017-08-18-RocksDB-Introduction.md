@@ -6,9 +6,16 @@ tags : [c++,database]
 
 # Introduction
 
-*RocksDB* 是一个基于*LevelDB](https://github.com/facebook/rocksdb)
+*RocksDB* 是一个基于[LevelDB](https://github.com/facebook/rocksdb)开发的支持并发的键值数据库。主要在*LevelDB*上增加了多线程*Compaction*, 多线程*Memtable*插入， 并且从*HBase*里引入了*ColumnFamily*。
 
+## RocksDB Architecture
+
+与*LevelDB*在架构上基本是一致的， 如下图所示:
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_arch.png)
+
+## RocksDB Write Path
+
+类似的， *RocksDB*首先写入
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_write_path_0.png)
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_write_path_1.png)
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_write_path_2.png)
@@ -23,7 +30,7 @@ tags : [c++,database]
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_level_based_compaction_6.png)
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_level_based_compaction_7.png)
 
-![rocksdb arch](/assets/images/rocksdb/rocksdb_level_based_size.png)
+![rocksdb arch](/assets/images/rocksdb/rocksdb_level_base_size.png)
 
 ![rocksdb arch](/assets/images/rocksdb/rocksdb_multithread_compaction.png)
 
