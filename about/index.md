@@ -22,4 +22,4 @@ __正是河豚欲上时。__
 
 # 工作
 
-现在从事SoC design 方面的工作。VIM 是每天coding Perl, Tcl, csh工具。
+现在从事SoC design 方面的工作。VIM 是每天coding sv, python, Perl, Tcl, csh工具。
