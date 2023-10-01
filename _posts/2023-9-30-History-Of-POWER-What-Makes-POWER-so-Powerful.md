@@ -1,67 +1,69 @@
 ---
-title : POWER往事
+title : History of POWER | What makes POWER so powerful
 categories : [history]
 tags : [chip, cpu, architecture, history]
 ---
 
 # 0. 概述
 最近几年系统性的学习了解并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾IBM POWER系列。
+
 POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的RISC System/6000产品。1991年，Apple, IBM, 和Motorola一起合作开发了PowerPC架构。1997, Motorola和IBM合作将PowerPC用于嵌入式系统。2006, Freescale和IBM合作制定了POWER ISA 2.03。 2019年8月21, 开源了POWER Instruction Set Architecture (ISA)。PowerISA由必须的基础架构，4组可选特性，一组过时特性组成。OpenPOWER也允许自定义扩展。
 
 本文通过系统性回顾整个POWER系列处理器，试图通过POWER系列处理器发展的历史脉络，来展现近30年计算架构的变迁，技术的演进，进而窥见计算技术发展的未来。
+
 本文组织形式如下:
 * 第一章简单介绍POWER指令集架构3.1B版本， 也是最新POWER10处理器使用的指令集。通过本章介绍，可以了解程序在POWER架构上运行的过程及预期结果，掌握异常处理，特权模型，以及POWER调试手段
-* 第二章简单回顾整个POWER系列处理器，总结各代处理器的面积，功耗，缓存，IO等基本内容
+* 第二章 简单回顾整个POWER系列处理器，总结各代处理器的面积，功耗，缓存，IO等基本内容
 * 第三章，第四章分别描述POWER 1和POWER 2的整体架构，主要是了解这些古老系统结构
 * 第五章具体描述POWER 3的微架构及各模块
 * 第六章详细描述POWER 4微架构以及从POWER3单核演进到POWER4双核的变化
-* 第七章POWER 5
-* 第八章POWER 6
-* 第九章POWER 7
-* 第十章POWER 8
-* 第十一章POWER 9
-* 第十二章POWER 10
+* 第七章详细描述POWER 5微架构以及从之前单线程到双线程的演进
+* 第八章介绍POWER 6处理器微架构，了解从之前乱序执行变为顺序执行的取舍
+* 第九章介绍POWER 7处理器微架构，以及内部缓存协议状态
+* 第十章介绍POWER 8处理器微架构
+* 第十一章主要介绍POWER 9处理器微架构，SMP互联
+* 第十二章完整介绍POWER 10处理器微架构，SMP互联，片上加速器，中断
 * 第十三章列出了主要的参考文献
 
 # 1. POWER指令集架构
 ## 1.1 寄存器
-* $Condition Register (CR)$是32寄存器，记录指令执行结果，供测试和条件分支指令使用
-* $Link Register (LR)$是64位寄存器，保存$Branch Conditional to Link Register$指令跳转地址, 并且可以保存当$LK=1$时分支指令和$System Call Vectored$指令后的返回地址。
-* $Count Register (CTR)$是64位寄存器。当执行的分支指令的$BO$编码时候可以作为for循环计数寄存器。$Count Register$也可以保存$Branch Conditional to Count Register$指令的跳转目标地址。
-* $VR Save Register (VRSAVE)$是32位寄存器，软件作为SPR使用。
-* $Fixed-Point Exception Register (XER)$是64位寄存器
+* __Condition Register (CR)__是32寄存器，记录指令执行结果，供测试和条件分支指令使用
+* __Link Register (LR)__是64位寄存器，保存__Branch Conditional to Link Register__指令跳转地址, 并且可以保存当__LK=1__时分支指令和__System Call Vectored__指令后的返回地址。
+* __Count Register (CTR)__是64位寄存器。当执行的分支指令的__BO__编码时候可以作为`for`循环计数寄存器。__Count Register__也可以保存__Branch Conditional to Count Register__指令的跳转目标地址。
+* __VR Save Register (VRSAVE)__是32位寄存器，软件作为SPR使用。
+* __Fixed-Point Exception Register (XER)__是64位寄存器
 	* 0:31 Reserved
-	* 32 $Summary Overflow (SO)$ Summary Overflow置位当Overflow置位.
-	* 33 $Overflow (OV)$ 指令执行溢出时Overflow置位
-	* 34 $Carry (CA)$
+	* 32 __Summary Overflow (SO)__ Summary Overflow置位当Overflow置位.
+	* 33 __Overflow (OV)__ 指令执行溢出时Overflow置位
+	* 34 __Carry (CA)__
 	* 35:43 Reserved
-	* 44 $Overflow32 (OV32)$ OV32 32位运行模式时溢出位
-	* 45 $Carry32 (CA32)$ CA32 32位运行模式时溢出位
+	* 44 __Overflow32 (OV32)__ OV32 32位运行模式时溢出位
+	* 45 __Carry32 (CA32)__ CA32 32位运行模式时溢出位
 	* 46:56 Reserved
-	* 57:63 指定$Load String Indexed$和$Store String Indexed$指令传输的字节数
-* $FloatingPoint Status and Control Register(FPSCR)$控制浮点异常处理和浮点指令执行结果状态。32:55位是状态位, 56:63是控制位
+	* 57:63 指定__Load String Indexed__和__Store String Indexed__指令传输的字节数
+* __FloatingPoint Status and Control Register(FPSCR)__控制浮点异常处理和浮点指令执行结果状态。32:55位是状态位, 56:63是控制位
 ![Pasted image 20230904172658.png](/assets/images/power/Pasted image 20230904172658.png)
-* $Logical Partitioning Control Register (LPCR)$ $LPCR$控制资源的逻辑分区
-* $Logical Partition Identification Register (LPIDR)$ $LPIDR$设置逻辑分区ID
+* __Logical Partitioning Control Register (LPCR)__ __LPCR__控制资源的逻辑分区
+* __Logical Partition Identification Register (LPIDR)__ __LPIDR__设置逻辑分区ID
 ## 1.2 计算模式
-处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, $Condition Register$和$XER$的设置, 当$LK=1$时$Link Register$被分支指令的设置 , 以及$Count Register$被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位($General Purpose Registers$, $Link Register$, $Count Register$等) 并且产生64位结果。
+处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, __Condition Register__和__XER__的设置, 当__LK=1__时__Link Register__被分支指令的设置 , 以及__Count Register__被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位(__General Purpose Registers__, __Link Register__, __Count Register__等) 并且产生64位结果。
 ## 1.3 指令格式
 ![Pasted image 20230904175410.png](/assets/images/power/Pasted image 20230904175410.png)
 
 指令前缀格式
-前缀指令由4字节前缀和4字节后缀组成。所有前缀的0:5都是$0b000001$.
+前缀指令由4字节前缀和4字节后缀组成。所有前缀的0:5都是*0b000001*.
 
 ### 1.3.1 分支指令
 分支指令按照下面5种方式计算有效地址(EA):
-1. 将分支指令地址加上位移 (当分支或条件分支的$AA=0$时).
-2. 使用绝对地址 (当分支或条件分支的$AA=1$时).
-3. 使用$Link Register$里的地址($Branch Conditional to Link Register$).
-4. 使用$Count Register$里的地址 ($Branch Conditional to Count Register$).
-5. 使用$Target Address Register$里的地址 ($Branch Conditional to Target Address Register$).
+1. 将分支指令地址加上位移 (当分支或条件分支的__AA=0__时).
+2. 使用绝对地址 (当分支或条件分支的__AA=1__时).
+3. 使用__Link Register__里的地址(__Branch Conditional to Link Register__).
+4. 使用__Count Register__里的地址 (__Branch Conditional to Count Register__).
+5. 使用__Target Address Register__里的地址 (__Branch Conditional to Target Address Register__).
 ![Pasted image 20230905092520.png](/assets/images/power/Pasted image 20230905092520.png)
 ![Pasted image 20230905092500.png](/assets/images/power/Pasted image 20230905092500.png)
 ### 1.3.2 条件寄存器指令
-这些是操作条件寄存器$CR$的指令
+这些是操作条件寄存器__CR__的指令
 ![Pasted image 20230905093726.png](/assets/images/power/Pasted image 20230905093726.png)
 ![Pasted image 20230905093750.png](/assets/images/power/Pasted image 20230905093750.png)
 ![Pasted image 20230905094031.png](/assets/images/power/Pasted image 20230905094031.png)
@@ -69,13 +71,13 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905094419.png](/assets/images/power/Pasted image 20230905094419.png)
 ### 1.3.3 系统调用指令
 系统调用指令主要用于切换特权模式
-* 当$LEV=1$时，唤起hypervisor
-* 当$LEV=2$和$SMFCTRL.E = 1$时, 唤起ultravisor
-* 当$LEV=2$和$SMFCTRL.E = 0$时, 唤起hypervisor。但是，这种方式是编程错误
+* 当__LEV=1__时，唤起hypervisor
+* 当__LEV=2__和__SMFCTRL.E = 1__时, 唤起ultravisor
+* 当__LEV=2__和__SMFCTRL.E = 0__时, 唤起hypervisor。但是，这种方式是编程错误
 ![Pasted image 20230905095119.png](/assets/images/power/Pasted image 20230905095119.png)
 ### 1.3.4 定点加载存储指令
-* 有效地址(EA)索引的字节，半字，字，双字被加载到$RT$寄存器
-* $RS$寄存器里字节，半字，字，双字被存储到有效地址(EA)索引空间
+* 有效地址(EA)索引的字节，半字，字，双字被加载到__RT__寄存器
+* __RS__寄存器里字节，半字，字，双字被存储到有效地址(EA)索引空间
 ![Pasted image 20230905101900.png](/assets/images/power/Pasted image 20230905101900.png)
 ![Pasted image 20230905102304.png](/assets/images/power/Pasted image 20230905102304.png)
 ![Pasted image 20230905102532.png](/assets/images/power/Pasted image 20230905102532.png)
@@ -84,14 +86,14 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905102726.png](/assets/images/power/Pasted image 20230905102726.png)
 ![Pasted image 20230905102804.png](/assets/images/power/Pasted image 20230905102804.png)
 ### 1.3.5 定点算术指令
-* $addic$, $addic$, $subfic$, $addc$, $subfc$, $adde$, $subfe$, $addme$, $subfme$, $addze$, 和$subfze$指令设置$CR.CA$, 在64位模式下反映位0的进位，在32位模式反映位32的进位
-* 对于XO形式的Multiply Low和Divide指令, $CR.SO/OV/OV32$设置依赖计算模式, 反映$mulld$, $divd$, $divde$, $divdu$和$divdeu$的64位溢出, $mullw$, $divw$, $divwe$, $divwu$和$divweu$低32位的溢出.
+* __addic__, __addic__, __subfic__, __addc__, __subfc__, __adde__, __subfe__, __addme__, __subfme__, __addze__, 和__subfze__指令设置__CR.CA__, 在64位模式下反映位0的进位，在32位模式反映位32的进位
+* 对于XO形式的Multiply Low和Divide指令, __CR.SO/OV/OV32__设置依赖计算模式, 反映__mulld__, __divd__, __divde__, __divdu__和__divdeu__的64位溢出, __mullw__, __divw__, __divwe__, __divwu__和__divweu__低32位的溢出.
 ### 1.3.6 定点比较指令
-定点比较指令将寄存器$RA$和如下值比较
+定点比较指令将寄存器__RA__和如下值比较
 1. 符号扩展SI
 2. 无符号扩展UI
-3. $RB$寄存器的值
-$cmpi$和$cmp$是有符号比较, $cmpli$和$cmpl$是无符号比较.
+3. __RB__寄存器的值
+__cmpi__和__cmp__是有符号比较, __cmpli__和__cmpl__是无符号比较.
 ![Pasted image 20230905103727.png](/assets/images/power/Pasted image 20230905103727.png)
 ### 1.3.7 定点逻辑指令
 定点逻辑指令对64位进行按位操作
@@ -100,20 +102,20 @@ $cmpi$和$cmp$是有符号比较, $cmpli$和$cmpl$是无符号比较.
 定点旋转和移位指令对通用寄存器值进行旋转和移位操作，从位0开始
 ![Pasted image 20230905104311.png](/assets/images/power/Pasted image 20230905104311.png)
 ### 1.3.9 Binary Coded Decimal (BCD) 辅助指令
-Binary Coded Decimal辅助指令操作BCD($cbcdtd$和$addg6s$)和十进制浮点操作数
+Binary Coded Decimal辅助指令操作BCD(__cbcdtd__和__addg6s__)和十进制浮点操作数
 ![Pasted image 20230905104845.png](/assets/images/power/Pasted image 20230905104845.png)
 
 ## 1.4 特权模型
-$Machine State Register (MSR)$是64位寄存器，定义了线程的特权状态。
-线程的特权状态由$MSR.S$, $MSR.HV$和$MSR.PR$组成，意义如下:
+__Machine State Register (MSR)__是64位寄存器，定义了线程的特权状态。
+线程的特权状态由__MSR.S__, __MSR.HV__和__MSR.PR__组成，意义如下:
 ![Pasted image 20230905144055.png](/assets/images/power/Pasted image 20230905144055.png)
-$MSR.SF$控制线程32/64位计算模式.
+__MSR.SF__控制线程32/64位计算模式.
 ## 1.5 存储模型
 Storage control attributes are associated with units of storage that are multiples of the page size. Each storage access is performed according to the storage control attributes of the specified storage location, as described below. The storage control attributes are the following.
-* $Write Through Required$ The store does not cause the block to be considered to be modified in the data cache.
-* $Caching Inhibited$ An access to a Caching Inhibited storage location is performed in main storage.
-* $Memory Coherence Required$ An access to a Memory Coherence Required storage location is performed coherently
-* $Guarded$  A data access to a Guarded storage location is performed only if either
+* __Write Through Required__ The store does not cause the block to be considered to be modified in the data cache.
+* __Caching Inhibited__ An access to a Caching Inhibited storage location is performed in main storage.
+* __Memory Coherence Required__ An access to a Memory Coherence Required storage location is performed coherently
+* __Guarded__  A data access to a Guarded storage location is performed only if either
 	* the access is caused by an instruction that is known to be required by the sequential execution model
 	* the access is a load and the storage location is already in a cache.
 
@@ -121,20 +123,20 @@ These attributes have meaning only when an effective address is translated by th
 The storage model for the ordering of storage accesses is weakly consistent. This model provides an opportunity for improved performance over a model that has stronger consistency rules, but places the responsibility on the program to ensure that ordering or synchronization instructions are properly placed when storage is shared by two or more programs.
 
 ## 1.6 内存管理及虚拟化
-The translation mode is selected by the $Host Radix$ bit found in the $Partition Table Entry$. The $Host Radix$ bit indicates whether the partition is using $HPT(Hashed Page Table)$  or $Radix Tree$ translation. Given the overall process, $MSR.HV/PR/IR/DR$ determine where and how the process is entered.
+The translation mode is selected by the __Host Radix__ bit found in the __Partition Table Entry__. The __Host Radix__ bit indicates whether the partition is using __HPT(Hashed Page Table)__  or __Radix Tree__ translation. Given the overall process, __MSR.HV/PR/IR/DR__ determine where and how the process is entered.
 ### 1.6.1 Ultravisor/Hypervisor Offset Real Mode Address
-If $MSR.HV = 1$ and $EA.0 = 0$, the access is controlled by the contents of the $Ultravisor Real Mode Offset Register$ or the $Hypervisor Real Mode Offset Register$, depending on the value of $MSR.S$, as follows.
-* When $MSR.S=1$, bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the $URMOR$, and the 60-bit result is used as the real address for the access
-* When $MSR.S=0$, bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the $HRMOR$, and the 60-bit result is used as the real address for the access.
+If __MSR.HV = 1__ and __EA.0 = 0__, the access is controlled by the contents of the __Ultravisor Real Mode Offset Register__ or the __Hypervisor Real Mode Offset Register__, depending on the value of __MSR.S__, as follows.
+* When __MSR.S=1__, bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the __URMOR__, and the 60-bit result is used as the real address for the access
+* When __MSR.S=0__, bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the __HRMOR__, and the 60-bit result is used as the real address for the access.
 
 ### 1.6.2 Segment Translation
-Conversion of a 64-bit effective address to a virtual address is done by searching the Segment Lookaside Buffer (SLB) as shown. If no matching translation is found in the SLB, $LPCR.UPRT=1$, and either $MSR.HV=0$ or $LPID=0$, the Segment Table is searched. The Segment Lookaside Buffer (SLB) specifies the mapping between Effective Segment IDs (ESIDs) and Virtual Segment IDs (VSIDs).
+Conversion of a 64-bit effective address to a virtual address is done by searching the Segment Lookaside Buffer (SLB) as shown. If no matching translation is found in the SLB, __LPCR.UPRT=1__, and either __MSR.HV=0__ or __LPID=0__, the Segment Table is searched. The Segment Lookaside Buffer (SLB) specifies the mapping between Effective Segment IDs (ESIDs) and Virtual Segment IDs (VSIDs).
 ![Pasted image 20230905155844.png](/assets/images/power/Pasted image 20230905155844.png)
 In Paravirtualized HPT mode, conversion of a 78-bit virtual address to a real address is done by searching the Page Table. The Hashed Page Table (HTAB) is a variable-sized data structure that specifies the mapping between virtual page numbers and real page numbers. The HTAB contains Page Table Entry Groups (PTEGs). A PTEG contains 8 Page Table Entries (PTEs) of 16 bytes each; each PTEG is thus 128 bytes long. PTEGs are entry points for searches of the Page Table.
 Below shows Translation of 78-bit virtual address to 60-bit real address.
 ![Pasted image 20230906084212.png](/assets/images/power/Pasted image 20230906084212.png)
 ### 1.6.3 Radix Tree Translation
-A $Radix Tree root descriptor (RTRD)$ specifies the size of the address being translated, the size of the root table, and its location. Below shows Four level Radix Tree walk translating a 52b EA with $NLS=13$ in the root PDE and $NLS=9$ in the other PDEs.
+A __Radix Tree root descriptor (RTRD)__ specifies the size of the address being translated, the size of the root table, and its location. Below shows Four level Radix Tree walk translating a 52b EA with __NLS=13__ in the root PDE and __NLS=9__ in the other PDEs.
 ![Pasted image 20230905170905.png](/assets/images/power/Pasted image 20230905170905.png)
 Radix Tree Page Directory Entry
 ![Pasted image 20230905171134.png](/assets/images/power/Pasted image 20230905171134.png)
@@ -142,13 +144,13 @@ Radix Tree Page Directory Entry
 Radix Tree Page Table Entry
 
 #### 1.6.3.1Nested Translation
-When $MSR.HV=0$ and translation is enabled, each guest real address must undergo partition-scoped translation using the hypervisor’s Radix Tree for the partition. Below shows Radix on Radix Page Table search for a 52-bit EA depicting memory reads 1-24 numbered in sequence
+When __MSR.HV=0__ and translation is enabled, each guest real address must undergo partition-scoped translation using the hypervisor’s Radix Tree for the partition. Below shows Radix on Radix Page Table search for a 52-bit EA depicting memory reads 1-24 numbered in sequence
 ![Pasted image 20230905172603.png](/assets/images/power/Pasted image 20230905172603.png)
 ### 1.6.4 Secure Memory Protection
-When $SMFCTRL.E=1$, Secure Memory Protection is enabled. Each location in main storage has a Secure Memory property $mem.SM$. $mem.SM=1$ indicates secure memory. $mem.SM=0$ indicates ordinary memory. Generally, only secure partitions and the ultravisor may access secure memory for explicit and implicit accesses.
+When __SMFCTRL.E=1__, Secure Memory Protection is enabled. Each location in main storage has a Secure Memory property __mem.SM__. __mem.SM=1__ indicates secure memory. __mem.SM=0__ indicates ordinary memory. Generally, only secure partitions and the ultravisor may access secure memory for explicit and implicit accesses.
 
 ## 1.7 异常和中断
-Power指令集架构提供了中断机制，允许线程能够处理外部信号，错误或指令执行异常。系统复位和机器检查中断是不可覆盖的，其他中断可覆盖且处理器状态可保留。当中断发生时， $SRR0$, $HSRR0$或$USRR0$指向正在执行且未完成的指令。
+Power指令集架构提供了中断机制，允许线程能够处理外部信号，错误或指令执行异常。系统复位和机器检查中断是不可覆盖的，其他中断可覆盖且处理器状态可保留。当中断发生时， __SRR0__, __HSRR0__或__USRR0__指向正在执行且未完成的指令。
 中断可分为是否是执行指令引起或其他系统异常。系统异常包括：
 * System Reset
 * Machine Check
@@ -165,26 +167,26 @@ Power指令集架构提供了中断机制，允许线程能够处理外部信号
 
 ### 1.7.1 中断寄存器
 根据处理器所在特权状态，可以分为:
-* $Machine Status Save/Restore Registers$ 中断发生时，处理器状态被保存在$Machine Status Save/Restore registers$($SRR0$和$SRR1$)。
-* $Hypervisor Machine Status Save/Restore Registers$ 中断发生时，处理器状态被保存在$Hypervisor Machine Status Save/Restore registers$($HSRR0$ and $HSRR1$)。
-* $Ultravisor Machine Status Save/Restore Registers$ 中断发生时，处理器状态被保存在$Ultravisor Machine Status Save/Restore registers$($HSRR0$ and $HSRR1$)。
+* __Machine Status Save/Restore Registers__ 中断发生时，处理器状态被保存在__Machine Status Save/Restore registers__(__SRR0__和__SRR1__)。
+* __Hypervisor Machine Status Save/Restore Registers__ 中断发生时，处理器状态被保存在__Hypervisor Machine Status Save/Restore registers__(__HSRR0__ and __HSRR1__)。
+* __Ultravisor Machine Status Save/Restore Registers__ 中断发生时，处理器状态被保存在__Ultravisor Machine Status Save/Restore registers__(__HSRR0__ and __HSRR1__)。
 
 ### 1.7.2 中断处理
-shows all the types of interrupts and the values assigned to the $MSR$ for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
-1. $SRR0$, $HSRR0$, or $USRR0$ is loaded with an instruction address that depends on the type of interrupt;
-2. Bits 33:36 and 42:47 of $SRR1$, $HSRR1$, or $USRR1$ are loaded with information specific to the interrupt type.
-3. Bits 0:32, 37:41, and 48:63 of $SRR1$, $HSRR1$, or $USRR1$ are loaded with a copy of the corresponding bits of the $MSR$.
-4. The $MSR$ is set. In particular, $MSR$ bits $IR$ and $DR$ are set as specified by $LPCR.AIL$ or $LPCR.HAIL$ as appropriate and $MSR.SF$ is set to 1, selecting 64-bit mode. The new values take effect beginning with the first instruction executed following the interrupt.
-5. Instruction fetch and execution resumes, using the new $MSR$ value, at the effective address specific to the interrupt type. An offset may be applied to get the effective addresses, as specified by $LPCR.AIL$ or $LPCR.HAIL$ as appropriate
+shows all the types of interrupts and the values assigned to the __MSR__ for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
+1. __SRR0__, __HSRR0__, or __USRR0__ is loaded with an instruction address that depends on the type of interrupt;
+2. Bits 33:36 and 42:47 of __SRR1__, __HSRR1__, or __USRR1__ are loaded with information specific to the interrupt type.
+3. Bits 0:32, 37:41, and 48:63 of __SRR1__, __HSRR1__, or __USRR1__ are loaded with a copy of the corresponding bits of the __MSR__.
+4. The __MSR__ is set. In particular, __MSR__ bits __IR__ and __DR__ are set as specified by __LPCR.AIL__ or __LPCR.HAIL__ as appropriate and __MSR.SF__ is set to 1, selecting 64-bit mode. The new values take effect beginning with the first instruction executed following the interrupt.
+5. Instruction fetch and execution resumes, using the new __MSR__ value, at the effective address specific to the interrupt type. An offset may be applied to get the effective addresses, as specified by __LPCR.AIL__ or __LPCR.HAIL__ as appropriate
 ![Pasted image 20230906141329.png](/assets/images/power/Pasted image 20230906141329.png)
 ## 1.8 调试
 调试功能允许硬件和软件通过追踪指令流，比较数据地址，单步执行等进行调试：
-* $Come From Address Register$
-	* $Come From Address Register (CFAR)$是64位寄存器， 当执行$rfebb$, $rfid$, 或$rfscv$执行时，寄存器值设置为当前执行的有效地址。
-* $Completed Instruction Address Breakpoint$
-	* $Completed Instruction Address Breakpoint$提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。$Completed Instruction Address Breakpoint$机制是由$Completed Instruction Address Breakpoint Register (CIABR)$控制。
-* $Data Address Watchpoint$
-	* $Data Address Watchpoint$提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个$Data Address Watchpoint$是由一对SPRs控制：$Data Address Watchpoint Register(DAWRn)$和$Data Address Watchpoint Register Extension (DAWRXn)$
+* __Come From Address Register__
+	* __Come From Address Register (CFAR)__是64位寄存器， 当执行__rfebb__, __rfid__, 或__rfscv__执行时，寄存器值设置为当前执行的有效地址。
+* __Completed Instruction Address Breakpoint__
+	* __Completed Instruction Address Breakpoint__提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__机制是由__Completed Instruction Address Breakpoint Register (CIABR)__控制。
+* __Data Address Watchpoint__
+	* __Data Address Watchpoint__提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个__Data Address Watchpoint__是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__和__Data Address Watchpoint Register Extension (DAWRXn)__
 
 # 2. POWER处理器概述
 * 1975年，IBM Thomas J. Watson Research Center发明了第一个RISC机器，801。801原始设计目标是1 IPC，研究重点是定义一个能够每周期执行多个指令，即超标量的架构。研究的结果是第二代RISC架构，称为"AMERICA architecture"
@@ -203,7 +205,6 @@ shows all the types of interrupts and the values assigned to the $MSR$ for each.
 
 下表总结了各代POWER处理器的各方面数据，可以从中看到POWER系列的发展路径。
 
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
 ||POWER1|POWER2|POWER3|POWER4|POWER5|POWER6|POWER7|   |POWER8|   |POWER9|   |   |POWER10|
 |Date|1990|1993|1997|2001|2004|2007|2010|2012|2014|2016|2017|2018|2020|2021|
@@ -809,7 +810,7 @@ Each super-slice selects a single load and a single store/branch/simple operatio
 ## POWER10 Core Pipeline
 The Power10 core pipeline stages show the nominal path through the load and store unit (LSU), arithmetic and logical unit (ALU), and floating-point unit (FPU) pipelines including the shortest latency data forwarding paths.
 * Branch Pipeline
-	* Branches are issued from an issue port shared with both store address generation and simple addition operations. Each SMT4-core-resource can resolve one branch per cycle. Branches are issued after the branch target-address source register ($LNK$, $CNT$, or $TAR$), if any, is ready; even when a $condition register (CR)$ source is still awaiting resolution. These partially executed branches awaiting $CR$ results are held in the branch condition queues (BCQ). This enables target register dependent branches to resolve target register dependencies and extends the effective capacity of the main issue queues. Move-to and move-from operations between the target registers and GPRs are optimized for latency. The nominal latency of these operations has been reduced by sharing the physical register file between the LNK, CNT, TAR, and the GPRs. Further optimizations include dependency bypass at dispatch to completely eliminate the dependent latency between a target producing instruction and the consuming branch in some scenarios.
+	* Branches are issued from an issue port shared with both store address generation and simple addition operations. Each SMT4-core-resource can resolve one branch per cycle. Branches are issued after the branch target-address source register (__LNK__, __CNT__, or __TAR__), if any, is ready; even when a __condition register (CR)__ source is still awaiting resolution. These partially executed branches awaiting __CR__ results are held in the branch condition queues (BCQ). This enables target register dependent branches to resolve target register dependencies and extends the effective capacity of the main issue queues. Move-to and move-from operations between the target registers and GPRs are optimized for latency. The nominal latency of these operations has been reduced by sharing the physical register file between the LNK, CNT, TAR, and the GPRs. Further optimizations include dependency bypass at dispatch to completely eliminate the dependent latency between a target producing instruction and the consuming branch in some scenarios.
 * Simple Pipeline
 	* Add immediate instructions, such as those used for address manipulation, are supported on either the main ALU pipelines or share the simple pipeline used for some branch instructions by issuing to the store/branch/simple issue port. These operations can use either of the two simple ports per SMT4-core resource to produce a result with a nominal 2-cycle latency. A dynamic policy steers the add immediate instructions to the simple pipelines or the main ALU pipelines.
 * Local/Store Pipeline
@@ -887,7 +888,7 @@ The Power10 off-chip SMP interconnect is a highly scalable, multi-tiered, fully-
 In the 1-hop configuration, the Power10 processor chip can fully connect up to seven other processor chips to create an eight-chip SMP system. Each chip is a group using up to seven inter-group A-links for a maximum system of eight processor chips.
 ![Pasted image 20230909093241.png](/assets/images/power/Pasted image 20230909093241.png)
 * 2-Hop SMP Topology
-In the 2-hop configuration, the Power10 processor chip can fully connect up to three other processor chips to create a four-chip group. The intra-group links are designated as $X-links$. Each Power10 processor in a group connects to its corresponding processor chip in each other group. Three of the inter-group $A-links$ are provided per chip supporting a total of four groups, each containing four processor chips. A full four-group system of four chips per group comprises a maximum system of 16 processor chips.
+In the 2-hop configuration, the Power10 processor chip can fully connect up to three other processor chips to create a four-chip group. The intra-group links are designated as __X-links__. Each Power10 processor in a group connects to its corresponding processor chip in each other group. Three of the inter-group __A-links__ are provided per chip supporting a total of four groups, each containing four processor chips. A full four-group system of four chips per group comprises a maximum system of 16 processor chips.
 ![Pasted image 20230909093315.png](/assets/images/power/Pasted image 20230909093315.png)
 #### Protocol and Data Routing in Multi-Chip Configurations
 The SMP ports configured for coherency are used for both data and control information transport. The buses are used as follows:
@@ -903,7 +904,7 @@ Power10 System Real-Address Map
 ![Pasted image 20230909193549.png](/assets/images/power/Pasted image 20230909193549.png)
 
 ## NCU
-The Power10 Non-Cacheable Unit (NCU) is responsible for processing noncacheable load and store operations, word and doubleword load and store atomic instructions (lwat, ldat, stwat, stdat), and certain other uncacheable operations such as $tlbie$ and portions of the various $sync$ and $ptesync$ instructions. One NCU unit is instantiated per SMT4-core resource.
+The Power10 Non-Cacheable Unit (NCU) is responsible for processing noncacheable load and store operations, word and doubleword load and store atomic instructions (lwat, ldat, stwat, stdat), and certain other uncacheable operations such as __tlbie__ and portions of the various __sync__ and __ptesync__ instructions. One NCU unit is instantiated per SMT4-core resource.
 ![Pasted image 20230909194305.png](/assets/images/power/Pasted image 20230909194305.png)
 The Power10 NCU provides one dedicated cache-inhibited load station (LDS) per thread to process cache inhibited loads and load word or doubleword atomics (lwat, ldat). Cache-inhibited loads (whether guarded or not) and load atomics are neither gathered nor are they reordered in the Power10 implementation.
 For cache-inhibited stores and store word and doubleword atomics (stwat, stdat), a store queue (STQ) consisting of sixteen 64-byte store gather stations is provided. The store gather stations are shared across the four core threads and hardware prevents any thread from blocking other threads in the store queue. A pair of 64-byte stations can “pair” together to gather up to 128 bytes.
@@ -949,7 +950,7 @@ below figure shows the Flow for NX Invocation through the VAS.
 6. When an NX CT queue is empty and its counter is nonzero, NX reads the next CRB from the receive FIFO. As soon as the CRB is read from the FIFO, NX does a memory mapped (MMIO) store to the VAS unit to return a credit. VAS ensures that the receive FIFO does not overflow by managing credits. The hypervisor initializes the receive window with credits equal to the number of CRBs that can be stored to the receive FIFO based on the size of the FIFO. VAS decrements the receive credit count when it stores a CRB to the receive FIFO and increments the count when NX returns a credit via MMIO store after NX pulls the CRB off of the FIFO. NX uses the stamped information from the CRB to read the send window context from memory and decrements its internal counter.
 7. NX dispatches the job to the associated CT, which can have multiple acceleration engines, and executes the CRB.
 8. Upon completion of the job, NX returns a send window credit to VAS via an MMIO store. Each send window, when created by the hypervisor, is assigned a number of send credits. This allows the hypervisor to implement quality of service by managing numerous users sharing the same accelerator resource, and preventing one process from using more than its share. When an RMA_write command is received by VAS, VAS decrements the send credit for the associated send window. VAS increments the count when NX completes the CRB and returns a send credit with an MMIO store.
-9. NX writes a $coprocessor status block (CSB)$ and can optionally send an interrupt, which notifies the user that the job has completed. NX also updates the $accelerator processed byte count (XPBC)$ in the send window indicating the number of bytes that were processed on behalf of the user.
+9. NX writes a __coprocessor status block (CSB)__ and can optionally send an interrupt, which notifies the user that the job has completed. NX also updates the __accelerator processed byte count (XPBC)__ in the send window indicating the number of bytes that were processed on behalf of the user.
 
 ## OpenCAPI Processing in the POWERAccel Unit
 
