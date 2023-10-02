@@ -28,7 +28,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 # 1. POWER指令集架构
 ## 1.1 寄存器
 * __Condition Register (CR)__ 是32寄存器，记录指令执行结果，供测试和条件分支指令使用
-* __Link Register (LR)__ 是64位寄存器，保存__Branch Conditional to Link Register__ 指令跳转地址, 并且可以保存当__LK=1__ 时分支指令和__System Call Vectored__ 指令后的返回地址。
+* __Link Register (LR)__ 是64位寄存器，保存 __Branch Conditional to Link Register__ 指令跳转地址, 并且可以保存当 __LK=1__ 时分支指令和 __System Call Vectored__ 指令后的返回地址。
 * __Count Register (CTR)__ 是64位寄存器。当执行的分支指令的__BO__ 编码时候可以作为`for`循环计数寄存器。__Count Register__ 也可以保存__Branch Conditional to Count Register__ 指令的跳转目标地址。
 * __VR Save Register (VRSAVE)__ 是32位寄存器，软件作为SPR使用。
 * __Fixed-Point Exception Register (XER)__ 是64位寄存器
@@ -40,14 +40,17 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 	* 44 __Overflow32 (OV32)__ OV32 32位运行模式时溢出位
 	* 45 __Carry32 (CA32)__ CA32 32位运行模式时溢出位
 	* 46:56 Reserved
-	* 57:63 指定__ Load String Indexed__  和__ Store String Indexed__  指令传输的字节数
+	* 57:63 指定 __ Load String Indexed__  和 __ Store String Indexed__  指令传输的字节数
 * __FloatingPoint Status and Control Register(FPSCR)__ 控制浮点异常处理和浮点指令执行结果状态。32:55位是状态位, 56:63是控制位
+
 ![Pasted image 20230904172658.png](/assets/images/power/Pasted image 20230904172658.png)
+
 * __Logical Partitioning Control Register (LPCR)__  __LPCR__ 控制资源的逻辑分区
 * __Logical Partition Identification Register (LPIDR)__  __LPIDR__ 设置逻辑分区ID
 ## 1.2 计算模式
-处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, __Condition Register__ 和__XER__ 的设置, 当__LK=1__ 时__Link Register__ 被分支指令的设置 , 以及__Count Register__  被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位(__General Purpose Registers__ , __Link Register__ , __Count Register__ 等) 并且产生64位结果。
+处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, __Condition Register__ 和 __XER__ 的设置, 当 __LK=1__ 时 __Link Register__ 被分支指令的设置 , 以及 __Count Register__  被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位( __General Purpose Registers__ , __Link Register__ , __Count Register__ 等) 并且产生64位结果。
 ## 1.3 指令格式
+
 ![Pasted image 20230904175410.png](/assets/images/power/Pasted image 20230904175410.png)
 
 指令前缀格式
@@ -55,15 +58,15 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 
 ### 1.3.1 分支指令
 分支指令按照下面5种方式计算有效地址(EA):
-1. 将分支指令地址加上位移 (当分支或条件分支的__AA=0__ 时).
-2. 使用绝对地址 (当分支或条件分支的__AA=1__ 时).
-3. 使用__Link Register__ 里的地址(__Branch Conditional to Link Register__ ).
-4. 使用__Count Register__ 里的地址 (__Branch Conditional to Count Register__ ).
-5. 使用__Target Address Register__ 里的地址 (__Branch Conditional to Target Address Register__ ).
+1. 将分支指令地址加上位移 (当分支或条件分支的 __AA=0__ 时).
+2. 使用绝对地址 (当分支或条件分支的 __AA=1__ 时).
+3. 使用 __Link Register__ 里的地址( __Branch Conditional to Link Register__ ).
+4. 使用 __Count Register__ 里的地址 ( __Branch Conditional to Count Register__ ).
+5. 使用 __Target Address Register__ 里的地址 ( __Branch Conditional to Target Address Register__ ).
 ![Pasted image 20230905092520.png](/assets/images/power/Pasted image 20230905092520.png)
 ![Pasted image 20230905092500.png](/assets/images/power/Pasted image 20230905092500.png)
 ### 1.3.2 条件寄存器指令
-这些是操作条件寄存器__CR__ 的指令
+这些是操作条件寄存器 __CR__ 的指令
 ![Pasted image 20230905093726.png](/assets/images/power/Pasted image 20230905093726.png)
 ![Pasted image 20230905093750.png](/assets/images/power/Pasted image 20230905093750.png)
 ![Pasted image 20230905094031.png](/assets/images/power/Pasted image 20230905094031.png)
@@ -71,9 +74,9 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905094419.png](/assets/images/power/Pasted image 20230905094419.png)
 ### 1.3.3 系统调用指令
 系统调用指令主要用于切换特权模式
-* 当__LEV=1__ 时，唤起hypervisor
-* 当__LEV=2__ 和__SMFCTRL.E = 1__ 时, 唤起ultravisor
-* 当__LEV=2__ 和__SMFCTRL.E = 0__ 时, 唤起hypervisor。但是，这种方式是编程错误
+* 当 __LEV=1__ 时，唤起hypervisor
+* 当 __LEV=2__ 和 __SMFCTRL.E = 1__ 时, 唤起ultravisor
+* 当 __LEV=2__ 和 __SMFCTRL.E = 0__ 时, 唤起hypervisor。但是，这种方式是编程错误
 ![Pasted image 20230905095119.png](/assets/images/power/Pasted image 20230905095119.png)
 ### 1.3.4 定点加载存储指令
 * 有效地址(EA)索引的字节，半字，字，双字被加载到__RT__ 寄存器
@@ -89,11 +92,11 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * __addic__ , __addic__ , __subfic__ , __addc__ , __subfc__ , __adde__ , __subfe__ , __addme__ , __subfme__ , __addze__ , 和__subfze__ 指令设置__CR.CA__ , 在64位模式下反映位0的进位，在32位模式反映位32的进位
 * 对于XO形式的`Multiply Low`和`Divide`指令, __CR.SO/OV/OV32__ 设置依赖计算模式, 反映__mulld__ , __divd__ , __divde__ , __divdu__ 和__divdeu__ 的64位溢出, __mullw__ , __divw__ , __divwe__ , __divwu__ 和__divweu__ 低32位的溢出.
 ### 1.3.6 定点比较指令
-定点比较指令将寄存器__RA__ 和如下值比较
+定点比较指令将寄存器 __RA__ 和如下值比较
 1. 符号扩展SI
 2. 无符号扩展UI
 3. __RB__ 寄存器的值
-__cmpi__ 和__cmp__ 是有符号比较, __cmpli__ 和__cmpl__ 是无符号比较.
+__cmpi__ 和 __cmp__ 是有符号比较, __cmpli__ 和 __cmpl__ 是无符号比较.
 ![Pasted image 20230905103727.png](/assets/images/power/Pasted image 20230905103727.png)
 ### 1.3.7 定点逻辑指令
 定点逻辑指令对64位进行按位操作
@@ -102,12 +105,12 @@ __cmpi__ 和__cmp__ 是有符号比较, __cmpli__ 和__cmpl__ 是无符号比较
 定点旋转和移位指令对通用寄存器值进行旋转和移位操作，从位0开始
 ![Pasted image 20230905104311.png](/assets/images/power/Pasted image 20230905104311.png)
 ### 1.3.9 Binary Coded Decimal (BCD) 辅助指令
-Binary Coded Decimal辅助指令操作BCD(__cbcdtd__ 和__addg6s__ )和十进制浮点操作数
+Binary Coded Decimal辅助指令操作BCD( __cbcdtd__ 和 __addg6s__ )和十进制浮点操作数
 ![Pasted image 20230905104845.png](/assets/images/power/Pasted image 20230905104845.png)
 
 ## 1.4 特权模型
 __Machine State Register (MSR)__ 是64位寄存器，定义了线程的特权状态。
-线程的特权状态由__MSR.S__ , __MSR.HV__ 和__MSR.PR__ 组成，意义如下:
+线程的特权状态由 __MSR.S__ , __MSR.HV__ 和 __MSR.PR__ 组成，意义如下:
 ![Pasted image 20230905144055.png](/assets/images/power/Pasted image 20230905144055.png)
 __MSR.SF__ 控制线程32/64位计算模式.
 ## 1.5 存储模型
@@ -167,9 +170,9 @@ Power指令集架构提供了中断机制，允许线程能够处理外部信号
 
 ### 1.7.1 中断寄存器
 根据处理器所在特权状态，可以分为:
-* __Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Machine Status Save/Restore registers__ (__SRR0__ 和__SRR1__ )。
-* __Hypervisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Hypervisor Machine Status Save/Restore registers__ (__HSRR0__  and __ HSRR1__ )。
-* __Ultravisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Ultravisor Machine Status Save/Restore registers__ (__HSRR0__  and __ HSRR1__ )。
+* __Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Machine Status Save/Restore registers__ ( __SRR0__ 和__SRR1__ )。
+* __Hypervisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Hypervisor Machine Status Save/Restore registers__ ( __HSRR0__  and __ HSRR1__ )。
+* __Ultravisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Ultravisor Machine Status Save/Restore registers__ ( __HSRR0__  and __ HSRR1__ )。
 
 ### 1.7.2 中断处理
 shows all the types of interrupts and the values assigned to the __ MSR__  for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
@@ -182,11 +185,11 @@ shows all the types of interrupts and the values assigned to the __ MSR__  for e
 ## 1.8 调试
 调试功能允许硬件和软件通过追踪指令流，比较数据地址，单步执行等进行调试：
 * __Come From Address Register__ 
-	* __Come From Address Register (CFAR)__ 是64位寄存器， 当执行__rfebb__ , __rfid__ , 或__rfscv__ 执行时，寄存器值设置为当前执行的有效地址。
+	* __Come From Address Register (CFAR)__ 是64位寄存器， 当执行 __rfebb__ , __rfid__ , 或 __rfscv__ 执行时，寄存器值设置为当前执行的有效地址。
 * __Completed Instruction Address Breakpoint__ 
-	* __ Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由__Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
+	* __ Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由 __Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
 * __Data Address Watchpoint__ 
-	* __Data Address Watchpoint__ 提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个__Data Address Watchpoint__ 是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__ 和__Data Address Watchpoint Register Extension (DAWRXn)__ 
+	* __Data Address Watchpoint__ 提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个 __Data Address Watchpoint__ 是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__ 和 __Data Address Watchpoint Register Extension (DAWRXn)__ 
 
 # 2. POWER处理器概述
 * 1975年，IBM Thomas J. Watson Research Center发明了第一个RISC机器，801。801原始设计目标是1 IPC，研究重点是定义一个能够每周期执行多个指令，即超标量的架构。研究的结果是第二代RISC架构，称为"AMERICA architecture"
@@ -336,7 +339,7 @@ POWER3由7个功能单元组成：
 * 片外L3接口，2个16-byte总线，一个输入，一个输出，运行在1/3处理器频率。
 * 2个4-byte GX总线, 一个输入，一个输出，运行在1/3处理器频率。
 
-下图展示了**POWER4** 的逻辑框图:
+下图展示了**POWER4** 芯片的逻辑框图:
 ![Pasted image 20230912171951.png](/assets/images/power/Pasted image 20230912171951.png)
 
 The chip also has a dedicated intra chip and inter-chip communication fabric to support a maximum of 32 processors in a SMP system.
@@ -350,12 +353,14 @@ As a part of IBM’s commitment to reliability, availability and serviceability,
 ![Pasted image 20230809154420.png](/assets/images/power/Pasted image 20230809154420.png)
 
 ## 6.1 POWER4 Core
-Below figure shows a high-level block diagram of a POWER4 processor. The internal microarchitecture of the core is a speculative superscalar out-of-order execution design. Up to eight instructions can be issued each cycle, with a sustained completion rate of five instructions. Register-renaming pools and other out-of-order resources coupled with the pipeline structure allow the design to have more than 200 instructions in flight at any given time. In order to exploit instruction-level parallelism, there are eight execution units, each capable of being issued an instruction each cycle. Two identical floating-point execution units, each capable of starting a fused multiply and add each cycle are provided. In order to feed the dual floating-point units, two load/store units, each capable of performing address-generation arithmetic, are provided. Additionally, there are dual fixed-point execution units, a branch execution unit, and an execution unit to perform logical operations on the condition register.
+**POWER 4** 处理器是一个乱序的超标量设计，每周期可以发射8条指令，完成5条指令，可以同时处理超过200条指令。为了增强指令级并行，**POWER 4**处理器拥有8个执行单元，2个相同的可以每周期执行融合乘加的浮点执行单元，2个存储加载单元，2个定点执行单元，一个分支执行单元和一个操作条件寄存器的执行单元。下图展示了**POWER4**处理器的框图
+
 ![Pasted image 20230912172922.png](/assets/images/power/Pasted image 20230912172922.png)
-### Branch prediction
-POWER4 uses a multilevel branch-prediction scheme to predict whether or not a conditional branch instruction is taken. Additionally, branch target addresses are predicted for those instructions that branch to an address specified in either the count register or the link register. In POWER4, up to eight instructions are fetched each cycle from the direct-mapped 64KB instruction cache. The branch-prediction logic scans the fetched instructions, looking for up to two branches each cycle. Depending upon the branch type found, various branch-prediction mechanisms engage to help predict the branch direction or the target address of the branch or both. Branch direction for unconditional branches is not predicted. All conditional branches are predicted, even if the condition register bits upon which they are dependent are known at instruction fetch time. Branch target addresses for the PowerPC branch-to-link-register (bclr) and branch-tocount-register (bcctr) instructions are predicted using a hardware-implemented link stack and count cache mechanism, respectively. Target addresses for absolute and relative branches are computed directly as part of the branch scan function. POWER4 uses a set of three branch-history tables to predict the direction of branch instructions.
-	* The first table, called the local predictor, is similar to a traditional branch-history table (BHT). It is a 16 384-entry array indexed by the branch instruction address producing a 1-bit predictor that indicates whether the branch direction should be taken or not taken.
-	* The second table, called the global predictor, predicts the branch direction on the basis of the actual path of execution to reach the branch. The path of execution is identified by an 11-bit vector, one bit per group of instructions fetched from the instruction cache. The global history vector is hashed, using a bitwise exclusive or with the address of the branch instruction. The result indexes into a 16 384-entry global history table to produce another 1-bit branch-direction predictor.
+
+### 分支预测
+**POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-tocount-register (bcctr) __ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个branch-history tables来预测分支方向：
+	* 第一个是本地预测器，类似于branch-history table (BHT)，使用分支指令地址来索引16 384-entry数组，产生1-bit预测分支是否发生
+	* 第二个是全局预测器，通过一个执行过的分支指令的11-bit向量，和分支指令地址进行按位异或，来索引16 384-entry全局历史表来产生1-bit预测分支是否发生
 	* a third table, called the selector table, keeps track of which of the two prediction schemes works better for a given branch and is used to select between the local and the global predictions. The 16 384-entry selector table is indexed exactly the same way as the global history table to produce the 1-bit selector. This combination of branch-prediction tables has been shown to produce very accurate predictions across a wide range of workload types.
 Dynamic branch prediction can be overridden by software. It is accomplished by setting two previously reserved bits in conditional branch instructions, one to indicate a software override and the other to predict the direction.
 POWER4 uses a link stack to predict the target address for a branch-to-link instruction that it believes corresponds to a subroutine return. By setting the hint bits in a branch-to-link instruction, software communicates to the processor whether a branch-to-link instruction represents a subroutine return, a target address that is likely to repeat, or neither. When instruction-fetch logic fetches a branch-and-link instruction (either conditional or unconditional) predicted as taken, it pushes the address of the next instruction onto the link stack. When it fetches a branch-to-link instruction with taken prediction and with hint bits indicating a subroutine return, the link stack is popped, and instruction fetching starts from the popped address.
@@ -363,7 +368,7 @@ POWER4 uses a 32-entry, tagless, direct-mapped cache, called a count cache, to p
 
 ### 6.1.1 Instruction Fecth
 
-once instruction-fetch address register (IFAR) is loaded, the I-cache is accessed and retrieves up to eight instructions per cycle. Each line in the I-cache can hold 32 PowerPC instructions, i.e., 128 bytes. Each line is divided into four equal sectors. Since I-cache misses are infrequent, to save area, the I-cache has been designed to contain a single port that can be used to read or write one sector per cycle. The I-cache directory (IDIR) is indexed by the effective address and contains 42 bits of real address per entry. On an I-cache miss, instructions are returned from the L2 in four 32-byte transmissions. The L2 normally returns the critical sector (the sector containing the specific word address that references the cache line) in one of the first two beats. Instruction-fetch logic forwards these demandoriented instructions into the pipeline as quickly as possible. In addition, the cache line is written into one entry of the instruction-prefetch buffer so that the I-cache itself is available for successive instruction fetches. The instructions are written to the I-cache during cycles when instruction fetching is not using the I-cache, as is the case when another I-cache miss occurs. In this way, writes to the I-cache are hidden and do not interfere with normal instruction fetching.
+一旦 __instruction-fetch address register (IFAR)__ 被加载，I-cache没被访问，并每周期提供8条指令。每个I-cache缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为I-cache缺失比较少，为了省面积，I-cache只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。On an I-cache miss, instructions are returned from the L2 in four 32-byte transmissions. The L2 normally returns the critical sector (the sector containing the specific word address that references the cache line) in one of the first two beats. Instruction-fetch logic forwards these demandoriented instructions into the pipeline as quickly as possible. In addition, the cache line is written into one entry of the instruction-prefetch buffer so that the I-cache itself is available for successive instruction fetches. The instructions are written to the I-cache during cycles when instruction fetching is not using the I-cache, as is the case when another I-cache miss occurs. In this way, writes to the I-cache are hidden and do not interfere with normal instruction fetching.
 the EA, RA pair is stored in a 128-entry, two-way set-associative array, called the effective-to-real address translation (ERAT) table. POWER4 implements separate ERATs for instruction-cache (IERAT) and datacache (DERAT) accesses. Both ERATs are indexed using the effective address. A common 1024-entry four-way setassociative TLB is implemented for each processor.
 When the instruction pipeline is ready to accept instructions, the IFAR content is sent to the I-cache, IDIR, IERAT, and branch-prediction logic. The IFAR is updated with the address of the first instruction in the next sequential sector. In the next cycle, instructions are received from the I-cache and forwarded to an instruction queue from which the decode, crack, and group formation logic. Also received in the same cycle are the RA from the IDIR, the EA, RA pair from the IERAT, and the branchdirection-prediction information. The IERAT is checked to ensure that it has a valid entry and that its RA matches the contents of the IDIR. If the IERAT has an invalid entry, the EA must be translated from the TLB and SLB. Instruction fetching is then stalled. Assuming that the IERAT is valid, if the RA from the IERAT matches the contents of the IDIR, an I-cache hit is validated. Using the branch-prediction logic, the IFAR is reloaded and the process is repeated. Filling the instruction queue in front of the decode, crack, and group formation logic allows instruction fetching to run ahead of the rest of the system and queue work for the remainder of the system. In this way, when there is an I-cache miss, there often are additional instructions in the instruction queue to be processed, thereby not freezing the pipeline.
 If there is an I-cache miss, several different scenarios are possible. First, the instruction-prefetch buffers are examined to see whether the requested instructions are there, and, if so, logic steers these instructions into the pipeline as though they came from the I-cache and will also write the critical sector into the I-cache. If the instructions are not found in the instruction-prefetch buffer, a demand-fetch reload request is sent to the L2. The L2 processes this reload request with high priority. When it is returned from the L2, an attempt will be made to write it into the I-cache. In addition to these demand-oriented instructionfetching mechanisms, POWER4 prefetches instructioncache lines that might soon be referenced into its instruction-prefetch buffer, which is capable of holding four entries of 32 instructions each. The instructionprefetch logic monitors demand instruction-fetch requests and initiates prefetches for the next one (if there is a hit in the prefetch buffer) or two (if there is a miss in the prefetch buffer) sequential cache lines after verifying that they are not already in the I-cache. When these requests return cache lines, the returned lines are stored in the instruction-prefetch buffer so that they do not pollute the demand-oriented I-cache. The I-cache contains only cache lines that have had a reference to at least one instruction.
