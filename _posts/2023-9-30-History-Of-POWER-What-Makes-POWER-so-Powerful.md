@@ -16,7 +16,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * 第二章 简单回顾整个POWER系列处理器，总结各代处理器的面积，功耗，缓存，IO等基本内容
 * 第三章，第四章，第五章分别描述POWER 1和POWER 2的整体架构，简单介绍了POWER 3的微架构，主要是了解这些古老系统结构
 * 第六章详细描述POWER 4微架构以及从单核演进到POWER4双核的进化
-* 第七章详细描述POWER 5微架构，从单线程到双线程的演进，以及集成的片上L3和内存控制器
+* 第七章详细描述POWER 5微架构，从单线程到双线程的演进，以及集成片上内存控制器
 * 第八章介绍POWER 6处理器微架构，了解从之前乱序执行变为顺序执行的取舍
 * 第九章介绍POWER 7处理器微架构，以及内部缓存协议状态
 * 第十章介绍POWER 8处理器微架构
@@ -324,7 +324,6 @@ POWER3由7个功能单元组成：
 
 ### 6.1.1 分支预测
 **POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-to-count-register (bcctr)__ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个branch-history tables来预测分支方向：
-
 * 第一个是本地预测器，类似于分支历史表BHT，使用分支指令地址来索引16 384-entry数组，产生1-bit预测分支是否发生
 * 第二个是全局预测器，通过一个执行过的分支指令的11-bit向量，和分支指令地址进行按位异或，来索引16 384-entry全局历史表来产生1-bit预测分支是否发生
 * 第三个是选择表，记录上面两个预测器预测表现来选择其中一个预测器，16 384-entry 选择表和全局预测器使用同样方式索引来产生1bit的选择信号。
@@ -336,11 +335,13 @@ POWER3由7个功能单元组成：
 
 一旦 __instruction-fetch address register (IFAR)__ 被加载，I-cache没被访问，并每周期提供8条指令。每个I-cache缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为I-cache缺失比较少，为了省面积，I-cache只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。当I-cache缺失时，指令从L2以4个32B传输，最需要的区域在前两个周期传输。缓存行被写入instruction-prefetch buffer，I-cache可以继续被后续指令访问。当取值逻辑不使用I-cache时，例如发生另一个I-cache访问缺失，缓存行会被写入I-cache。这样 I-cache的写入操作可以被掩藏而不影响正常的取指操作。
 EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address translation (ERAT)__ 表中。**POWER4** 分别实现了 IERAT 和 DERAT，都是用有效地址(EA)访问。 每个处理器实现了一个1024-entry 4路组相联的 *TLB* 。
+
 当指令流水线准备好接受指令时，IFAR的值被发送到I-cache, IDIR, IERAT, 和分支预测逻辑，同时IFAR被更新为下一个顺序区域的地址。下一个周期，指令从 I-cache转发到decode, crack, 和group formation的指令队列，同时从IDIR接收真实地址(RA), 从IERAT接收EA, RA对，以及分支方向预测信息。IERAT会被检查是否有有效的记录并且RA和IDIR的RA匹配。如果IERAT是无效的记录，EA必须从TLB和SLB进行翻译，取值会被暂停。假设IERAT记录是有效的，并且 IERAT的RA和IDIR的RA匹配，, I-cache访问命中。使用分支预测逻辑重新加载IFAR，然后重复上面过程。填充decode, crack, and group formation logic前面的指令队列可以允许取指逻辑提前运行，而且当发生I-cache缺失时，指令队列可以继续提供指令而不必停止后面的流水线。
+
 如果发生 I-cache缺失，首先，instruction-prefetch buffers会被检查是否有请求的指令，如果有，会将指令发送到流水线并写入I-cache。如果instruction-prefetch buffer也不存在请求的指令，取指命令被发送到L2，L2高优先级处理指令重载传输。当数据从L2返回，会尝试写入到I-cache。除了这些取指命令，**POWER4** 会预取指令缓存行到 instruction-prefetch buffer，instruction-prefetch buffer可以保存4个32条指令。 指令预取逻辑监控取指请求，当instruction-prefetch buffer里存在请求缓存行时，会预取下一个缓存行；当instruction-prefetch buffer里不存在请求缓存行时，会预取下两个缓存行。这些预取操作需要保证I-cache里不存在预取的缓存行。预取的缓存行会被保存在instruction-prefetch buffer里，从而保证不会污染I-cache。
 
 ### 6.1.2 Decode, crack, 和group formation
-一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，no-ops 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。为了保证正确性，一些指令不允许投机执行，为了确保这些指令不会被投机执行，这些指令只有作为下一个完成的指令时才会被执行，这被称为completion serialization。为了简化实现，这些指令单独组成单指令组。completion serialization例子包括guarded space的存储加载指令和contextsynchronizing 指令，例如修改处理器状态的 __move-to-machinestate-register__ 指令。
+一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，no-ops 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。为了保证正确性，一些指令不允许投机执行，为了确保这些指令不会被投机执行，这些指令只有作为下一个完成的指令时才会被执行，这被称为completion serialization。为了简化实现，这些指令单独组成单指令组。completion serialization例子包括guarded space的存储加载指令和context synchronizing 指令，例如修改处理器状态的 __move-to-machinestate-register__ 指令。
 
 ### 6.1.3 组分发和指令发射
 一次分发一个指令组到指令队列，当指令组分发时，控制信息被保存在 __group completion table (GCT)__ 。GCT可以保存20个组。GCT会记录指令组里第一条指令的地址。当指令执行结束，也会被记录到对应的GCT，记录会一直维护直到指令组退休。每个指令槽对应不同的执行单元的发射队列。定点执行单元和存储加载单元共享一个发射队列。下表列出了不同发射队列的深度和不同类型的队列的个数：
@@ -369,8 +370,11 @@ EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address tran
 ![Pasted image 20230912173004.png](/assets/images/power/Pasted image 20230912173004.png)
 
 在MP(mapper)阶段所有依赖性被确定，资源被分配，指令组被分发到对应的发射队列。在ISS阶段, IOP被发射到对应的执行单元。在RF阶段读取对应寄存器获取源操作数。在EX阶段执行。在WB阶段写回执行的结果到对应寄存器，这个时候，指令结束执行但还未结束。至少经过Xfer和CP两个周期，所有更老的指令组已经完成并且同一个组里其他指令结束执行指令才能完成。如果指令打包成指令组速度没有取指速度快，从指令缓存里取出的进入指令缓存的指令处于D1阶段。 同样，如果没有资源分发指令组到发射队列，指令等待在MP之前；指令在ISS之前在发射队列等待；在CP之前等待完成。
+
 两个存储加载单元流水线是一样的，称为LD/ST流水线。 访问寄存器文件之后，存储加载指令在EA周期生成有效地址。加载指令在DC周期访问DERAT，the data cache directory 和数据缓存。如果DERAT未命中，加载指令被拒绝，保留在发射队列。同时请求会发送到TLB重新加载DERAT。第一次发射最少7个周期之后，被拒绝的指令会重新发射。如果DERAT仍然未命中，指令会再次被拒绝。这个过程一直持续直到DERAT命中。如果TLB也未命中，地址转换会被投机执行，但是TLB只有在指令确定执行之后才会更新。因此，只有在触发地址缺失的指令所在的指令组是下一个完成的指令组时才会更新TLB。TLB同时支持4 KB和16 MB页表。
+
 对于加载指令，如果L1数据缓存目录指示包含数据，数据会在fmt周期进行格式化并写入到对应的寄存器，依赖的指令也可以使用数据。依赖的指令会假设数据缓存命中并发射，这样这些指令的RF周期和加载指令的WB周期对齐。 如果L1数据缓存提示未命中，请求会发送到L2获取对应缓存行。发送的请求会被保存在load miss queue (LMQ)中。LMQ可以保存8条请求。如果LMQ满了，加载指令会被拒绝并在7个周期之后重新发射。如果已经存在同一个缓存行的请求，第二个请求会被合并到同一个LMQ条目。如果这是同一个缓存行第三个请求，加载指令会被拒绝。所有从L2返回的数据都会和LMQ进行匹配，匹配到的数据会被转发到寄存器以便对应的加载操作可以完成，同时对应LMQ条目被释放。
+
 对于存储指令，数据被保存到SDQ，一旦存储指令对应的指令组完成，会尝试将SDQ数据写到数据缓存。如果数据已经存在L1数据缓存，修改的数据会写回到数据缓存；如果不存在，不会写回到L1。修改的数据都会写回到L2。**POWER4** 的缓存一致性点是L2。另外，L2缓存对L1是包含的，即所有L1数据都在L2中。
 
 
@@ -380,7 +384,6 @@ EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address tran
 ![Pasted image 20230912173042.png](/assets/images/power/Pasted image 20230912173042.png)
 
 L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制器之间做哈希。每个块包括4块SRAM分区，每一个分区每两个周期能提供16B数据；4个分区每周期能提供32B数据，需要4个周期传输一个128B缓存行。数据阵列实现SECDED，并且有冗余的wordline和bitline；L2缓存目录由2个冗余的8路组相联，parity保护阵列组成。冗余的阵列除了提供备份，同时也提供了2个非阻塞的读端口，允许snoop而不影响存储加载请求。L2实现了pseudo-LRU替换算法。因为L1是写入设计，到L2的写请求最多8B，L2有2个4条目的64B的队列来合并写请求，减少到L2的请求。每个控制器里有4个一致性处理器来管理L2，每个一致性处理器处理一个请求。请求可能来自两个处理器的L1数据缓存或者取指，或者存储存储队列。一致性处理器负责:
-
 * 负责命中时数据返回，或未命中时从fabric controller返回数据到CIU
 * 更新L2目录
 * 未命中时发送请求到fabric
@@ -388,7 +391,6 @@ L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制�
 * 当一个处理器写的缓存行存在另一个处理器L1缓存时，通过CIU发送无效请求到处理器
 
 每个L2控制器有4个侦查处理器负责管理从总线侦查到的一致性操作。当总线操作命中L2时，一个侦查处理器会负责做出相应操作。根据操作类型，L2目录里的包含位，缓存行的一致性状态，会导致：
-
 * 发送无效请求到处理器L1数据缓存
 * 从L2读取数据
 * 更新缓存行在目录里的状态
@@ -397,7 +399,6 @@ L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制�
 
 除了分配一个侦查处理器，L2对于所有侦查操作提供一个snoop response。对于侦查请求，L2目录会被访问以确定缓存行是否存在以及对应的一致性状态，同时侦查的地址会和当前活跃的一致性处理器比较来发现可能的地址冲突。基于这些信息，会返回对应的snoop response。
 L2缓存控制器也充当两个处理器的保留站来支持 __load [double] word and reserve indexed (lwarx/ldarx)__ 和 __store [double] word conditional (stwcx/stdcx)__ 指令。每个处理器一个地址寄存器用来保存保留的地址。当 __lwarx__ 或 __ldarx__ 指令执行时会设置一个标志，当侦查到无效操作包括从其他处理器发送的对保留地址的写，或者 __stwcx__ 或 __stdcx__ 执行成功 (通过 __condition register__ 里一位来通知处理器执行结果)，会清除标志。L2实现增强的MESI一致性协议，一共7个状态：
-
 * I (invalid state): 数据无效
 * SL (shared state): 数据有效，缓存行可能在其他L2。数据可以传输到同一个MCM内的其他L2。当处理器L1数据缓存加载或指令未命中L2并且数据来自其他缓存或内存时会进入 __SL__ 状态
 * S (shared state): 数据有效，缓存行可能在其他L2。数据不可以传输给其他L2。当来自同一个MCM的处理器发出的侦查读命中时进入该状态
@@ -411,7 +412,6 @@ L2缓存控制器也充当两个处理器的保留站来支持 __load [double] w
 ![Pasted image 20230913172331.png](/assets/images/power/Pasted image 20230913172331.png)
 
 L2系统里还有两个noncacheable units (NCU)， 分别对应两个处理器。NCUs处理分缓存的读写，以及缓存同步操作。每个NCU由NCU master 和 NCU snooper组成。
-
 * NCU master负责来自处理器的请求，包含一个深度为4的FIFO队列，处理非缓存的写，包括memory-mapped I/O的写，和缓存以及内存屏障操作。一个深度为1的队列来处理非缓存的读操作。 片上处理器的缓存和同步操作和非缓存的写操作一样处理，不同的是不带数据。这些操作会发送到L2控制器，大部分会被L2侦查到，包括 __icbi__ , __tlbie__ ,  __translation lookaside buffer synchronize (tlbsync)__ , __enforce in-order execution of I/O (eieio)__ , __synchronize (sync)__ , __page table entry synchronize (ptesync)__ , __lsync__ , __data cache block flush (dcbf)__ , __data cache block invalidate (dcbi)__ 指令。
 * NCU snooper处理来自总线的 __translation lookaside buffer invalidate entry (tlbie)__ 和 __instruction cache block invalidate (icbi)__ 。NCU snooper侦查来自总线的 __sync__ , __ptesync__ , __lsync__ , __eieio__ , __icbi__ 和 __tlbie__ 操作，并传递给处理器。
 
@@ -427,7 +427,7 @@ L3由控制器和数据阵列组成，控制器在**POWER4** 芯片上，包含t
  * Trem (remote tagged state): 和T状态类似，但是数据是从其他芯片传输过来的
  * O (prefetch data state): 数据和内存里数据一致，其他L2或L3状态未知
 
-L3缓存数据要么来自直接连接的内存，或者连接的其他处理器芯片的内存。当其中一个处理器的读请求未命中L3时，L3控制器分配一个S状态的缓存行，和L1以及L2的包含性不是必须的。因此，当L3释放数据时，并不需要无效L1或L2缓存。当本地L2弹出M或T状态数据时，L3数据进入 T或Trem状态。当收到侦查时，L3进入T或Trem状态，这样当L3写出时候. 不需要做内存地址译码。L3使用T/Trem来决定数据是否可以写入到直接连接的内存控制器，或者需要将写出操作发送到总线。处在T 或Trem状态时,L3可以给系统上任何请求提供数据。但是在S状态时, L3只能为本地L2提供数据。这样减少片间数据传输，尽量使用本地L3。当处在O状态时, the L3 sources data to any requestor using the same rules that determine when it is permitted to send data from its attached memory controller; i.e., no cache is sourcing data and no snooper retried the request.
+L3缓存数据要么来自直接连接的内存，或者连接的其他处理器芯片的内存。当其中一个处理器的读请求未命中L3时，L3控制器分配一个S状态的缓存行，和L1以及L2的包含性不是必须的。因此，当L3释放数据时，并不需要无效L1或L2缓存。当本地L2弹出M或T状态数据时，L3数据进入 T或Trem状态。当收到侦查时，L3进入T或Trem状态，这样当L3写出时候. 不需要做内存地址译码。L3使用T/Trem来决定数据是否可以写入到直接连接的内存控制器，或者需要将写出操作发送到总线。处在T 或Trem状态时,L3可以给系统上任何请求提供数据。但是在S状态时, L3只能为本地L2提供数据。这样减少片间数据传输，尽量使用本地L3。当处在O状态时, 数据可以传输给任意请求者。
 
 ## 6.5 POWER4 Memory System
 下图展示了**POWER4**的内存系统视图：
@@ -465,29 +465,45 @@ L3地址, 内存地址和控制总线有parity，可以发现单bit的错误。L
 L3 tag目录发生stuck fault或L3 cache-embedded DRAMs发生超过 line-delete控制寄存器范围的stuck faults，包含对应L3缓存的处理器芯片可以被重新配置，从逻辑上在系统里删掉而不影响系统里其他L3缓存。
 
 # 7. POWER 5
-**POWER5** 将L3直接连到L2，作为victim cache，另外，**POWER5** 还集成了片上内存控制器，以提高主存访问速度。每个处理器核支持双线程，对于操作系统，**POWER5** 是一个4路SMP处理器。两个处理器共享1.875MB L2 缓存，并分为3个分区，每一个分区是10路组相联。 The L3 directory for the off-chip 36-MB L3 is also integrated onto the POWER5 chip. The L3 is also implemented as three slices, with each slice acting as a victim cache for one of the L2 slices. Each slice is 12-way set-associative, with 4,096 congruence classes of 256-byte lines managed as two 128-byte sectors to match the L2 line size.
-Accesses between the POWER5 chip and the L3 are across two unidirectional 16-byte-wide buses operating at half processor frequency. Access between memory and the on-chip memory controllers is via two unidirectional buses operating at twice the dual in-line memory module (DIMM) frequency. The data memory read bus is 16 bytes wide, while the write memory bus is 8 bytes wide.
+**POWER5** 将L3直连到L2，作为victim cache，另外，**POWER5** 还集成了片上内存控制器，以提高主存访问速度。每个处理器核支持双线程，对于操作系统，**POWER5** 是一个4路SMP处理器。两个处理器共享1.875MB L2 缓存，并分为3个分区，每一个分区是10路组相联。 L3分为3个slice，分别作为L2的victim cache，每个slice是12路组相联，缓存行大小为256B，分为2个128B的sector。**POWER5** 芯片和L3通过2个16B的双向总线以1/2处理器速度相连。 下图展示了**POWER 5**的die shot：
 
 ![Pasted image 20230914085010.png](/assets/images/power/Pasted image 20230914085010.png)
-## 7.1 Multi-threading Evolution
-* SMT easily added to Superscalar Micro-architecture
-	* Second Program Counter (PC) added to share I-fetch bandwidth
-	* GPR/FPR rename mapper expanded to map second set of registers (High order address bit indicates thread)
-	* Completion logic replicated to track two threads
-	* Thread bit added to most address/tag buses
-![Pasted image 20230809154930.png](/assets/images/power/Pasted image 20230809154930.png)
-In the PowerPC architecture, address translation is performed in two steps. First, the effective address is translated to the virtual address. In the POWER5 processor, the segment table is cached in a fully associative 64-entry segment lookaside buffer (SLB), one per thread. Next, the virtual address is translated to the real address using a hashed page table that is also maintained in memory. In the POWER5 processor, the page table is cached in a 1,024-entry, four-way set associative translation lookaside buffer (TLB). To facilitate fast translation, two first-level translation tables are used, one for instructions and one for data, to provide a fast, effective address to a real address translation.
-The first-level data translation table is a fully associative 128-entry array. The first-level instruction translation table is a two-way set-associative 128-entry array. Entries in both first-level translation tables are tagged with the thread number and are not shared between threads. The BHT and count cache are also unchanged to support SMT. The return address stack was duplicated, since it contains ordering that must be maintained within a thread. The four instruction prefetch buffers are split between the two threads; each thread can independently process instruction cache misses and instruction prefetches.
-The GCT design was changed to support SMT by implementing it as a linked list so that each thread can be independently allocated and deallocated. A fully shared GCT allows the number of entries to remain the same as in POWER4 systems. Register renaming is changed only slightly from the POWER4 implementation. Each logical register number has a thread bit appended, and these are then mapped as usual. Because the second thread comes with its set of architected registers, the number of register renames of each type was increased. In POWER5 systems, the size of the issue queues remains the same as in POWER4 systems, with the exception of the floating point issue queues, which were increased from a total of 20 entries to 24. In the POWER4 design, both the LRQ and the SRQ contain 32 entries. Entries are allocated and de-allocated in program order. They are allocated at dispatch. The LRQ is de-allocated at completion, and the SRQ is deallocated after completion once the store has been sent to the L2. For SMT, program order must be maintained within a thread, but the threads must be able to independently allocate and de-allocate entries. Because the address checking to ensure memory consistency occurs on a thread basis, it was simpler to split the LRQ and SRQ into two halves, one per thread; this resulted in cases in which one thread could run out of LRQ or SRQ entries. Rather than increase the physical size of these queues, each was extended by providing 32 additional virtual queue entries, 16 per thread. A virtual queue entry contains sufficient information to identify the instruction but not the address specified for the load or store instruction or the data to be stored for a store instruction. This mechanism provides a low-cost method of extending the LRQ and SRQ sizes and not stalling instruction dispatch. At instruction dispatch, if a real LRQ or SRQ entry is not available and a virtual entry is available, the instruction can dispatch with the virtual entry. As real entries become available, virtual entries are converted to real entries, with the virtual queue entry returned to the pool for possible use by younger instructions. Before a load or a store can issue, its LRQ or SRQ entry, respectively, must be associated with a real entry. The size of the BIQ remains at 16 entries as in POWER4 systems. In SMT mode it is split in two, with eight entries per thread. The POWER4 eight-entry load miss queue (LMQ) was changed in the POWER5 design by adding a thread bit that allows the LMQ to be dynamically shared between the two threads.
-![Pasted image 20230804094425.png](/assets/images/power/Pasted image 20230804094425.png)
-Below table summarizes changes of rename registers and issue queue sizes.
-![Pasted image 20230914112838.png](/assets/images/power/Pasted image 20230914112838.png)
-## 7.2 Multithreaded Instruction Flow in Processor Pipeline
-The POWER5 instruction pipeline is identical to the POWER4 instruction pipeline. All pipeline latencies, including the branch misprediction penalty and load-touse latency with an L1 data cache hit in POWER5, are the same as in POWER4.
-![Pasted image 20230914085221.png](/assets/images/power/Pasted image 20230914085221.png)
-In SMT mode, two separate program counters are used, one for each thread. Instruction fetches alternate between the two threads. After fetching (before pipeline stage D1), instructions are placed in separate instruction buffers for the two threads. These buffers contain 24 instructions each, slightly smaller than the single queue in a POWER4 microprocessor. On the basis of thread priority, up to five instructions are fetched from one of the instruction buffers (D0 pipeline stage), and a group is formed (pipeline stages D1 through D3). Instructions in a group are all from the same thread. All instructions in the group are decoded in parallel.
-![Pasted image 20230914085156.png](/assets/images/power/Pasted image 20230914085156.png)
 
+## 7.1 多线程的演进
+将超标量微处理器改成SMT需要做下面这些修改：
+* 增加 __Program Counter (PC)__ 共享取指逻辑
+* 增加GPR/FPR重命名资源，高地址位可用来识别不同线程
+* 增加完成逻辑来记录不同线程
+* 地址和标签中增加线程区别位
+
+下图展示了从ST到Coarse Grain Thread, Fine Grain Thread和Simultaneous Multi Thread的演进：
+![Pasted image 20230809154930.png](/assets/images/power/Pasted image 20230809154930.png)
+
+在**POWER5**处理器中, 为了实现SMT，相比**POWER 4**：
+* segment table缓存在全相联的64个条目的 __segment lookaside buffer (SLB)__ , 每个线程一个
+* page table缓存在1,024个条目, 4路组相联的 __translation lookaside buffer (TLB)__
+* BHT和 __count cache__没有因为SMT而修改
+* return address stack，每个线程一个
+* 4个 __instruction prefetch buffers__ ，每个线程一半，每个线程可以独立处理指令缓存缺失和指令预取
+* GCT修改为 *linked list* 实现，这样每个线程可以独立分配和释放。共享的GCT保持和**POWER4**一样的条目数
+* 寄存器重命名有一些小修改，每个逻辑寄存器有一个线程位，每种重命名资源增加一些
+* 除了浮点发射队列从20增加到24， 其他发射队列保持不变
+* 对于LRQ和SRQ，**POWER4**是32个条目，对于SMT，需要分成每个线程一个，这样会导致LRQ和SRQ容易用完。为了不增加队列物理大小，每一个队列都提供了32个虚拟队列条目。虚拟队列条目包含足够信息来分辨指令而不是存储加载指令地址和数据。这种方案以很小成本扩展了LRQ和SRQ大小，从而不会停止指令分发。当指令分发时，真实的LRQ或SRQ已满，指令可以分发到虚拟条目。当真实条目可用时，虚拟条目转换成真实条目。在存储加载指令发射时必须使用真实的LRQ和SRQ
+* __Branch Issue Queue(BIQ)__ 保持和**POWER4**一样的16条目大小，每个线程8条
+* __load miss queue (LMQ)__ 增加了一个线程位，有2个线程共享
+
+下表总结了重命名寄存器和发射队列的大小比较：
+![Pasted image 20230914112838.png](/assets/images/power/Pasted image 20230914112838.png)
+
+下图展示了**POWER5**处理器的逻辑视图：
+![Pasted image 20230804094425.png](/assets/images/power/Pasted image 20230804094425.png)
+
+## 7.2 多线程指令流和流水线
+**POWER5**指令流水线和**POWER4**一样。所有流水线延迟，包括分支预测错误惩罚，L1数据缓存命中延迟都和**POWER4**一致。**POWER5**流水线如下图所示：
+![Pasted image 20230914085221.png](/assets/images/power/Pasted image 20230914085221.png)
+
+在SMT模式下, 每个线程一个程序计数器。取指之后不同线程的指令被放到不同的指令缓存（D1之前)，每个指令缓存可以存放24条指令，比**POWER4**单个指令缓存稍小。在D0阶段，基于线程的优先级，从一个指令缓存中取5条指令，并且在D1和D3阶段组成一个指令组。一个指令组中的指令全部来自同一个线程，并同时解码。下图展示了**POWER5**的指令流程图：
+![Pasted image 20230914085156.png](/assets/images/power/Pasted image 20230914085156.png)
 
 * **Dynamic resource balancing**. The objective of dynamic resource balancing is to ensure that the two threads executing on the same processor flow smoothly through the system. Dynamic resource-balancing logic monitors resources such as the GCT and the load miss queue to determine if one thread is hogging resources. For example, if one thread encounters multiple L2 cache load misses, dependent instructions can back up in the issue queues, preventing additional groups from dispatching and slowing down the other thread. To prevent this, resource-balancing logic detects that a thread has reached a threshold of L2 cache misses and throttles that thread. The other thread can then flow through the machine without encountering congestion from the stalled thread. The Power5 resourcebalancing logic also monitors how many GCT entries each thread is using. If one thread starts to use too many GCT entries, the resourcebalancing logic throttles it back to prevent its blocking the other thread. Depending on the situation, the Power5 resource-balancing logic has three threadthrottling mechanisms:
 	* **Reducing the thread’s priority** is the primary mechanism in situations where a thread uses more than a predetermined number of GCT entries.
@@ -502,7 +518,7 @@ The Power5 supports two types of ST operation:
 * In the dormant state, the operating system boots up in SMT mode but instructs the hardware to put the thread into the dormant state when there is no work for that thread. To make a dormant thread active, either the active thread executes a special instruction, or an external or decrementer interrupt targets the dormant thread.
 * When a thread is in the null state, the operating system is unaware of the thread’s existence.
 ## 7.3 POWER5 Memory System
-POWER5 uses a synchronous memory interface (SMI) to DDR-I or DDR-II SDRAM. In the two-SMI mode, each SMI chip is configured for an 8-byte read and 2-byte write interface on the controller side, and two independent 8-byte ports to the DIMMs. In the four-SMI mode, each SMI chip is configured for a 4-byte read and a 2-byte write interface on the controller side and two independent 8-byte ports to the DIMMs. The SMI chips contain buffers to match the differences in interface widths between the controller side and the DIMMs.
+Access between memory and the on-chip memory controllers is via two unidirectional buses operating at twice the dual in-line memory module (DIMM) frequency. The data memory read bus is 16 bytes wide, while the write memory bus is 8 bytes wide.POWER5 uses a synchronous memory interface (SMI) to DDR-I or DDR-II SDRAM. In the two-SMI mode, each SMI chip is configured for an 8-byte read and 2-byte write interface on the controller side, and two independent 8-byte ports to the DIMMs. In the four-SMI mode, each SMI chip is configured for a 4-byte read and a 2-byte write interface on the controller side and two independent 8-byte ports to the DIMMs. The SMI chips contain buffers to match the differences in interface widths between the controller side and the DIMMs.
 A logical view of the memory subsystem is shown in Figure. The interface between the POWER5 chip and the SMI chips is made up of three buses. All of these buses operate at twice the DIMM speed. The three buses are the address/command bus, the unidirectional write data bus, and the unidirectional read data bus. The write data bus is 8 bytes wide, with each of up to four SMI chips receiving 2 bytes point to point. In configurations with two SMI chips per POWER5 chip, four of the 8-byte write data bus pins are left unconnected. The read data bus consists of 16 bytes. When four SMI chips are used, each SMI drives four of the 16-byte read data bus inputs. In configurations with two SMI chips per POWER5 chip, each SMI chip drives eight of the 16-byte read data bus inputs.
 ![Pasted image 20230914090521.png](/assets/images/power/Pasted image 20230914090521.png)
 
