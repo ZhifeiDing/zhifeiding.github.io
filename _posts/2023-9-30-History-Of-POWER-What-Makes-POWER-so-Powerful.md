@@ -237,7 +237,7 @@ RS/6000架构在当时一个主要特性就是集成了浮点算法单元，同�
 下图展示了RISC system/6000架构逻辑结构
 ![Pasted image 20230912135927.png](/assets/images/power/Pasted image 20230912135927.png)
 RISC System/6000架构定义了分离的指令和数据缓存。这些缓存都是写入。指令缓存主要和分支单元耦合，而数据缓存由定点和浮点单元共享。
-* 分支单元  分支单元主要负责取指，地址翻译和检查， 中断处理。除非对应定点或浮点单元上指令队列已满或对定点或浮点单元上数据存在依赖性，分支单元能不断对下一个指令进行取指，解码，并执行相应指令，或者将对应定点或浮点指令分发到对应定点或浮点单元。分支单元每周期可以至少获取3条指令，分别对应定点单元，浮点单元，及分支单元。并且每周期可以分发一个定点和浮点指令。**POWER 1**不需要分支延迟槽。
+* 分支单元  分支单元主要负责取指，地址翻译和检查， 中断处理。除非对应定点或浮点单元上指令队列已满或对定点或浮点单元上数据存在依赖性，分支单元能不断对下一个指令进行取指，解码，并执行相应指令，或者将对应定点或浮点指令分发到对应定点或浮点单元。分支单元每周期可以至少获取3条指令，分别对应定点单元，浮点单元，及分支单元。并且每周期可以分发一个定点和浮点指令。**POWER 1**不支持分支延迟槽。
 * 定点单元 定点单元除了处理所有定点算术指令外，还需要为浮点单元及自身计算数据地址。因此，定点单元需要负责调度浮点单元和数据缓存之间数据交换。浮点单元寄存器只负责接收或提供数据，因此，浮点单元加载和存储操作是消耗定点单元周期数。
 * 浮点单元 浮点单元支持ANSI/IEEE Standard 754-1985. RISC System/6000浮点运算是双精度计算。因此，单精度浮点运算也会被转换为双精度进行运算。
 
@@ -245,54 +245,23 @@ RISC System/6000架构定义了分离的指令和数据缓存。这些缓存都�
 ![Pasted image 20230912141125.png](/assets/images/power/Pasted image 20230912141125.png)
 
 
-# 4. Power 2
-High Performance MCM Chip Set for Desktop Systems
-* 4 Data Cache Unit Chips
-	* 128 Kbytes of DCache
-* 32 Kbyte ICache
-* 512 Kbyte - 2 Mbyte L2 Cache
-* 4 Word Memory interface
-	* Minimum Memory Configuration of two memory cards
-	* 64 Mbyte - 2048 Mbyte
-* Ceramic Multi-Chip Module (MCM) CPU Package
+# 4. POWER 2
+**POWER2** 包括高性能的Multi-Chip Module (MCM)和Single Chip Module(SCM)，区别主要是DCU和内存接口，MCM逻辑框图如下所示：
+
 ![Pasted image 20230816174929.png](/assets/images/power/Pasted image 20230816174929.png)
-Cost Reduced Chip Set for Desktop Systems
-* 2 Data Cache Unit Chips
-	* 64 Kbytes of DCache
-* 32 Kbyte ICache
-* 512 Kbyte - 1 Mbyte L2 Cache
-* 2 Word Memory Interface
-	* Minimum Memory Configuration of one memory card
-	* 32 Mbyte - 512 Mbyte
-* Single Chip Solder Ball Connect (SBC) CPU Package
+
+包括4个Data Cache Unit芯片，每个128 Kbytes数据缓存，32 Kbyte指令缓存，512 Kbyte - 2 Mbyte L2缓存，4 Word宽内存接口，支持 64 Mbyte - 2048 Mbyte内存
+
+SCM逻辑框图如下所示：
+
 ![Pasted image 20230816175250.png](/assets/images/power/Pasted image 20230816175250.png)
-## 4.1 Core Features
-* 6 Instruction Dispatch
-* 8 Operations/cycle
-* Large, multi-ported Data Cache
-* High bandwidth buses
-* Dual Fixed Point, Floating Point, Branch Units
+
+包括两个DCU，每个64KB数据缓存，512 Kbyte - 1 Mbyte L2 缓存，2 Word宽内存接口，支持32 Mbyte - 512 Mbyte内存。
+
+## 4.1 POWER 2 Core
+处理器每周期可以分发6条指令，包括两个定点单元，一个浮点单元，和分支单元。下图展示了逻辑框图:
+
 ![Pasted image 20230816175511.png](/assets/images/power/Pasted image 20230816175511.png)
-* Optimized L2 Cache Subsystem
-	* 512 KB,1 MB,2 MB Second Level Cache
-	* Direct-Mapped, 128 byte line
-	* Store-through - Overlapped write to L2 and Memory
-	* Industry standard Burst SRAM
-		* 2-1-1-1 Cache Hit Read and Write Timing
-	* Run at CPU clock speed
-	* Single bit correct, double bit detect ECC for all L2 Cache Accesses
-* Storage Control Unit L2 Cache Features
-	* Programmable Second Level Cache and Main Memory Size
-	* Programmable Bus Width
-	* Integrated L2 Cache Tag RAM
-	* Overlapped L2 Tag lookup/compare with DRAM access
-	* Single cycle L2 Tag iookup
-	* DRAM access never started on L2 Cache Hit
-	* No Memory cycle penalty for L2 Cache Miss
-	* Direct Store Segment Load/Store to L2 directory and data
-
-![Pasted image 20230816193204.png](/assets/images/power/Pasted image 20230816193204.png)
-
 
 # 5. POWER 3
 POWER3是第一个支持32位和64位PowerPC ISA的处理器。下图展示了**POWER 3** 的die shot
@@ -411,6 +380,7 @@ EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address tran
 ![Pasted image 20230912173042.png](/assets/images/power/Pasted image 20230912173042.png)
 
 L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制器之间做哈希。每个块包括4块SRAM分区，每一个分区每两个周期能提供16B数据；4个分区每周期能提供32B数据，需要4个周期传输一个128B缓存行。数据阵列实现SECDED，并且有冗余的wordline和bitline；L2缓存目录由2个冗余的8路组相联，parity保护阵列组成。冗余的阵列除了提供备份，同时也提供了2个非阻塞的读端口，允许snoop而不影响存储加载请求。L2实现了pseudo-LRU替换算法。因为L1是写入设计，到L2的写请求最多8B，L2有2个4条目的64B的队列来合并写请求，减少到L2的请求。每个控制器里有4个一致性处理器来管理L2，每个一致性处理器处理一个请求。请求可能来自两个处理器的L1数据缓存或者取指，或者存储存储队列。一致性处理器负责:
+
 * 负责命中时数据返回，或未命中时从fabric controller返回数据到CIU
 * 更新L2目录
 * 未命中时发送请求到fabric
@@ -418,6 +388,7 @@ L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制�
 * 当一个处理器写的缓存行存在另一个处理器L1缓存时，通过CIU发送无效请求到处理器
 
 每个L2控制器有4个侦查处理器负责管理从总线侦查到的一致性操作。当总线操作命中L2时，一个侦查处理器会负责做出相应操作。根据操作类型，L2目录里的包含位，缓存行的一致性状态，会导致：
+
 * 发送无效请求到处理器L1数据缓存
 * 从L2读取数据
 * 更新缓存行在目录里的状态
@@ -425,18 +396,25 @@ L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制�
 * 将数据发送到其他L2
 
 除了分配一个侦查处理器，L2对于所有侦查操作提供一个snoop response。对于侦查请求，L2目录会被访问以确定缓存行是否存在以及对应的一致性状态，同时侦查的地址会和当前活跃的一致性处理器比较来发现可能的地址冲突。基于这些信息，会返回对应的snoop response。
-L2缓存控制器也充当两个处理器的保留站来支持 __load [double] word and reserve indexed (lwarx/ldarx)__ 和 __store [double] word conditional (stwcx/stdcx)__ 指令。每个处理器一个地址寄存器用来保存保留的地址。The reservation logic maintains a reservation flag per processor to indicate when a reservation is set. The flag is set when a lwarx or ldarx instruction is received from the processor; it is reset when certain invalidating type operations are snooped, including a store to the reservation address from other processors in the system, or when a stwcx or stdcx instruction succeeds. (A successful store occurs if the reservation flag was not reset by another operation. The success or failure of the conditional store instruction is communicated to the program by setting a bit in the condition register.) The L2 cache implements an enhanced version of the MESI coherency protocol, supporting seven states as follows:
-* I (invalid state): The data is invalid. This is the initial state of the L2 entered from a power-on reset or a snoop invalidate hit.
-* SL (shared state, can be source to local requesters): The data is valid. The cache line may also be valid in other L2 caches. From this state, the data can be sourced to another L2 on the same module via intervention. This state is entered as a result of a processor L1 data-cache load request or instruction-fetch request that misses in the L2 and is sourced from another cache or from memory when not in other L2s.
-* S (shared state): The data is valid. The cache line may also be valid in other L2 caches. In this state, the data cannot be sourced to another L2 via intervention. This state is entered when a snoop-read hit from another processor on a chip on the same module occurs and the data and tag were in the SL state.
-* M (modified state): The data is valid. The data has been modified and is exclusively owned. The cache line cannot be valid in any other L2. From this state the data can be sourced to another L2 in a chip on the same or remote module via intervention. This state results from a store operation performed by one of the processors on the chip.
-* Me (exclusive state): The data is valid. The data is not considered modified but is exclusive to this L2. The cache line cannot be valid in any other L2. Cast-out of an Me line requires only invalidation of the tag; i.e., data need not be written back to memory. This state is entered as a result of one of the processors on the chip asking for a reservation via the lwarx or ldarx instruction when data is sourced from memory or for a cache line being prefetched into the L2 that was sourced from memory. (Sourcing data from the L3 in the O state is equivalent to sourcing it from memory.)
-* Mu (unsolicited modified state): The data is valid. The data is considered to have been modified and is exclusively owned. The cache line cannot be valid in any other L2. This state is entered as a result of one of the processors on the chip asking for a reservation via the lwarx or ldarx instruction when data is sourced from another L2 in the M state or for a cache line being prefetched into the L2 that was sourced from another L2 in the M state.
-* T (tagged state): The data is valid. The data is modified with respect to the copy in memory. It has also been sourced to another cache; i.e., it was in the M state at some time in the past, but is not currently exclusively owned. From this state, the data will not be sourced to another L2 via intervention until the combined response is received and it is determined that no other L2 is sourcing data (that is, if no L2s have the data in the SL state. This state is entered when a snoop-read hit occurs while in the M state.
+L2缓存控制器也充当两个处理器的保留站来支持 __load [double] word and reserve indexed (lwarx/ldarx)__ 和 __store [double] word conditional (stwcx/stdcx)__ 指令。每个处理器一个地址寄存器用来保存保留的地址。当 __lwarx__ 或 __ldarx__ 指令执行时会设置一个标志，当侦查到无效操作包括从其他处理器发送的对保留地址的写，或者 __stwcx__ 或 __stdcx__ 执行成功 (通过 __condition register__ 里一位来通知处理器执行结果)，会清除标志。L2实现增强的MESI一致性协议，一共7个状态：
+
+* I (invalid state): 数据无效
+* SL (shared state): 数据有效，缓存行可能在其他L2。数据可以传输到同一个MCM内的其他L2。当处理器L1数据缓存加载或指令未命中L2并且数据来自其他缓存或内存时会进入 __SL__ 状态
+* S (shared state): 数据有效，缓存行可能在其他L2。数据不可以传输给其他L2。当来自同一个MCM的处理器发出的侦查读命中时进入该状态
+* M (modified state): 数据有效，数据被修改且独占，数据可以传输给任意L2。当处理器发出写操作时进入该状态。
+* Me (exclusive state): 数据没有修改但被独占，__Me__ 状态缓存行写出只需要无效对应标签，数据不需要写出。当处理器执行 __lwarx__ 或 __ldarx__ 指令并且缓存行时从内存获取时候会进入该状态。
+* Mu (unsolicited modified state): 数据有效，数据被修改且独占，当处理器执行 __lwarx__ 或 __ldarx__ 指令并且缓存行时从其他处于 __M__ 状态L2获取时会进入该状态。
+* T (tagged state): 数据有效，但是和内存比有修改，并且数据已经传输给其他缓存，在这个状态，数据不能传输给其他L2除非收到回应。当 __M__ 状态时收到侦查读时候会进入该状态。
+
+下表列出了L2和L1可能对应的缓存状态:
 
 ![Pasted image 20230913172331.png](/assets/images/power/Pasted image 20230913172331.png)
 
-Included within the L2 subsystem are two noncacheable units (NCU), one per processor. The NCUs handle noncacheable loads and stores, as well as cache and synchronization operations. Each NCU is partitioned into two parts: the NCU master and the NCU snooper. The NCU master handles requests originating from processors on the chip, while the NCU snooper handles the snooping of translation lookaside buffer invalidate entry (tlbie) and instruction cache block invalidate (icbi) operations from the fabric. The NCU master includes a four-deep FIFO queue for handling cache-inhibited stores, including memory-mapped I/O store operations, and cache and memory barrier operations. It also contains a one-deep queue for handling cache-inhibited load operations. The return of data for a noncacheable load operation is via the L2 controller, using the same reload buses as for cacheable load operations. Cache-inhibited stores are routed through the NCU in order to preserve execution ordering of noncacheable stores with respect to one another. Cache and synchronization operations originating in a processor on the chip are handled in a manner similar to cache-inhibited stores, except that they do not have any data associated with them. These operations are issued to the fabric. Most will be snooped by an L2 controller. Included in this category are the icbi, tlbie, translation lookaside buffer synchronize (tlbsync), enforce in-order execution of I/O (eieio), synchronize (sync), page table entry synchronize (ptesync), lsync, data cache block flush (dcbf), data cache block invalidate (dcbi) instructions, and a processor acknowledgment that a snooped TLB has completed. The NCU snooper snoops icbi and tlbie operations from the fabric, propagating them upstream to the processors. These snoops are sent to the processor via the reload buses of the L2 controller. It also snoops sync, ptesync, lsync, and eieio. These are snooped because they may have to be retried because of an icbi or TLB that has not yet completed to the same processor.
+L2系统里还有两个noncacheable units (NCU)， 分别对应两个处理器。NCUs处理分缓存的读写，以及缓存同步操作。每个NCU由NCU master 和 NCU snooper组成。
+
+* NCU master负责来自处理器的请求，包含一个深度为4的FIFO队列，处理非缓存的写，包括memory-mapped I/O的写，和缓存以及内存屏障操作。一个深度为1的队列来处理非缓存的读操作。 片上处理器的缓存和同步操作和非缓存的写操作一样处理，不同的是不带数据。这些操作会发送到L2控制器，大部分会被L2侦查到，包括 __icbi__ , __tlbie__ ,  __translation lookaside buffer synchronize (tlbsync)__ , __enforce in-order execution of I/O (eieio)__ , __synchronize (sync)__ , __page table entry synchronize (ptesync)__ , __lsync__ , __data cache block flush (dcbf)__ , __data cache block invalidate (dcbi)__ 指令。
+* NCU snooper处理来自总线的 __translation lookaside buffer invalidate entry (tlbie)__ 和 __instruction cache block invalidate (icbi)__ 。NCU snooper侦查来自总线的 __sync__ , __ptesync__ , __lsync__ , __eieio__ , __icbi__ 和 __tlbie__ 操作，并传递给处理器。
+
 ## 6.4 POWER4 L3 Cache
 下图展示了L3的逻辑视图：
 
@@ -456,7 +434,7 @@ L3缓存数据要么来自直接连接的内存，或者连接的其他处理器
 
 ![Pasted image 20230912173158.png](/assets/images/power/Pasted image 20230912173158.png)
 
-每个**POWER4** 芯片有一个可选的内存控制器连接到L3缓存后面，每个内存控制器有1或2个内存接口。. Memory controllers can have either one or two ports to memory. The memory controller is attached to the L3 eDRAM chips, with each chip having two 8-byte buses, one in each direction, to the data interface in the memory controller. These buses operate at one-third processor speed using the synchronous wave pipeline interface to operate at high frequencies. Each port to memory has four 4-byte bidirectional buses operating at a fixed frequency of 400 MHz connecting load/store buffers in the memory controller to four system memory interface (SMI) chips used to read and write data from memory. When two memory ports are available, they each work on 512-byte boundaries. The memory controller has a 64-entry read command queue, a 64-entry write command queue, and a 16-entry write cache queue. The memory is protected by a single-bit error correct, double-bit error detect ECC. Additionally, memory scrubbing is used in the background to find and correct soft errors. Each memory extent has an extra DRAM to allow for transparent replacement of one failing DRAM per group of four DIMMs using chip-kill technology. Redundant bit steering is also employed.
+每个**POWER4** 芯片有一个可选的内存控制器连接到L3缓存后面，每个内存控制器有1或2个内存接口。每个芯片有2个8-byte总线，一个输入，一个输出。system memory interface (SMI)芯片和DRAM芯片由4个4-byte 双向总线连接，工作在400MHz内存控制器有一个64条目的读命令缓存，65条目的写命令缓存和一个16条目的写缓存队列。
 
 ## 6.6 POWER4 IO
 下图展示了 **POWER4** 的IO结构，GX总线连接远程IO桥芯片。
@@ -487,7 +465,7 @@ L3地址, 内存地址和控制总线有parity，可以发现单bit的错误。L
 L3 tag目录发生stuck fault或L3 cache-embedded DRAMs发生超过 line-delete控制寄存器范围的stuck faults，包含对应L3缓存的处理器芯片可以被重新配置，从逻辑上在系统里删掉而不影响系统里其他L3缓存。
 
 # 7. POWER 5
-**POWER5** 将L3直接连到L2，作为victim cache，另外，**POWER5** 还集成了片上内存控制器，以提高主存访问速度。每个处理器核支持双线程，对于操作系统，**POWER5** 是一个4路SMP处理器。两个处理器共享1.875MB L2 缓存，并分为3个分区，每一个分区是10路组相联There are three partitions, or slices, of the L2, each of which is ten-way set-associative, with 512 congruence classes of 128-byte lines. The L3 directory for the off-chip 36-MB L3 is also integrated onto the POWER5 chip. The L3 is also implemented as three slices, with each slice acting as a victim cache for one of the L2 slices. Each slice is 12-way set-associative, with 4,096 congruence classes of 256-byte lines managed as two 128-byte sectors to match the L2 line size.
+**POWER5** 将L3直接连到L2，作为victim cache，另外，**POWER5** 还集成了片上内存控制器，以提高主存访问速度。每个处理器核支持双线程，对于操作系统，**POWER5** 是一个4路SMP处理器。两个处理器共享1.875MB L2 缓存，并分为3个分区，每一个分区是10路组相联。 The L3 directory for the off-chip 36-MB L3 is also integrated onto the POWER5 chip. The L3 is also implemented as three slices, with each slice acting as a victim cache for one of the L2 slices. Each slice is 12-way set-associative, with 4,096 congruence classes of 256-byte lines managed as two 128-byte sectors to match the L2 line size.
 Accesses between the POWER5 chip and the L3 are across two unidirectional 16-byte-wide buses operating at half processor frequency. Access between memory and the on-chip memory controllers is via two unidirectional buses operating at twice the dual in-line memory module (DIMM) frequency. The data memory read bus is 16 bytes wide, while the write memory bus is 8 bytes wide.
 
 ![Pasted image 20230914085010.png](/assets/images/power/Pasted image 20230914085010.png)
