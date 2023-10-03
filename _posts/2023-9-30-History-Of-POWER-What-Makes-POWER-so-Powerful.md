@@ -29,7 +29,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ## 1.1 寄存器
 * __Condition Register (CR)__ 是32寄存器，记录指令执行结果，供测试和条件分支指令使用
 * __Link Register (LR)__ 是64位寄存器，保存 __Branch Conditional to Link Register__ 指令跳转地址, 并且可以保存当 __LK=1__ 时分支指令和 __System Call Vectored__ 指令后的返回地址。
-* __Count Register (CTR)__ 是64位寄存器。当执行的分支指令的__BO__ 编码时候可以作为`for`循环计数寄存器。__Count Register__ 也可以保存__Branch Conditional to Count Register__ 指令的跳转目标地址。
+* __Count Register (CTR)__ 是64位寄存器。当执行的分支指令的 __BO__ 编码时候可以作为`for`循环计数寄存器。__Count Register__ 也可以保存 __Branch Conditional to Count Register__ 指令的跳转目标地址。
 * __VR Save Register (VRSAVE)__ 是32位寄存器，软件作为SPR使用。
 * __Fixed-Point Exception Register (XER)__ 是64位寄存器
 	* 0:31 Reserved
@@ -40,7 +40,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 	* 44 __Overflow32 (OV32)__ OV32 32位运行模式时溢出位
 	* 45 __Carry32 (CA32)__ CA32 32位运行模式时溢出位
 	* 46:56 Reserved
-	* 57:63 指定 __ Load String Indexed__  和 __ Store String Indexed__  指令传输的字节数
+	* 57:63 指定 __Load String Indexed__  和 __Store String Indexed__  指令传输的字节数
 * __FloatingPoint Status and Control Register(FPSCR)__ 控制浮点异常处理和浮点指令执行结果状态。32:55位是状态位, 56:63是控制位
 
 ![Pasted image 20230904172658.png](/assets/images/power/Pasted image 20230904172658.png)
@@ -79,7 +79,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * 当 __LEV=2__ 和 __SMFCTRL.E = 0__ 时, 唤起hypervisor。但是，这种方式是编程错误
 ![Pasted image 20230905095119.png](/assets/images/power/Pasted image 20230905095119.png)
 ### 1.3.4 定点加载存储指令
-* 有效地址(EA)索引的字节，半字，字，双字被加载到__RT__ 寄存器
+* 有效地址(EA)索引的字节，半字，字，双字被加载到 __RT__ 寄存器
 * __RS__ 寄存器里字节，半字，字，双字被存储到有效地址(EA)索引空间
 ![Pasted image 20230905101900.png](/assets/images/power/Pasted image 20230905101900.png)
 ![Pasted image 20230905102304.png](/assets/images/power/Pasted image 20230905102304.png)
@@ -89,8 +89,8 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905102726.png](/assets/images/power/Pasted image 20230905102726.png)
 ![Pasted image 20230905102804.png](/assets/images/power/Pasted image 20230905102804.png)
 ### 1.3.5 定点算术指令
-* __addic__ , __addic__ , __subfic__ , __addc__ , __subfc__ , __adde__ , __subfe__ , __addme__ , __subfme__ , __addze__ , 和__subfze__ 指令设置__CR.CA__ , 在64位模式下反映位0的进位，在32位模式反映位32的进位
-* 对于XO形式的`Multiply Low`和`Divide`指令, __CR.SO/OV/OV32__ 设置依赖计算模式, 反映__mulld__ , __divd__ , __divde__ , __divdu__ 和__divdeu__ 的64位溢出, __mullw__ , __divw__ , __divwe__ , __divwu__ 和__divweu__ 低32位的溢出.
+* __addic__ , __addic__ , __subfic__ , __addc__ , __subfc__ , __adde__ , __subfe__ , __addme__ , __subfme__ , __addze__ , 和 __subfze__ 指令设置 __CR.CA__ , 在64位模式下反映位0的进位，在32位模式反映位32的进位
+* 对于XO形式的`Multiply Low`和`Divide`指令, __CR.SO/OV/OV32__ 设置依赖计算模式, 反映 __mulld__ , __divd__ , __divde__ , __divdu__ 和 __divdeu__ 的64位溢出, __mullw__ , __divw__ , __divwe__ , __divwu__ 和 __divweu__ 低32位的溢出.
 ### 1.3.6 定点比较指令
 定点比较指令将寄存器 __RA__ 和如下值比较
 1. 符号扩展SI
@@ -153,7 +153,7 @@ When __MSR.HV=0__  and translation is enabled, each guest real address must unde
 When __SMFCTRL.E=1__ , Secure Memory Protection is enabled. Each location in main storage has a Secure Memory property __mem.SM__ . __mem.SM=1__  indicates secure memory. __mem.SM=0__  indicates ordinary memory. Generally, only secure partitions and the ultravisor may access secure memory for explicit and implicit accesses.
 
 ## 1.7 异常和中断
-Power指令集架构提供了中断机制，允许线程能够处理外部信号，错误或指令执行异常。系统复位和机器检查中断是不可覆盖的，其他中断可覆盖且处理器状态可保留。当中断发生时， __SRR0__ , __HSRR0__ 或__USRR0__ 指向正在执行且未完成的指令。
+Power指令集架构提供了中断机制，允许线程能够处理外部信号，错误或指令执行异常。系统复位和机器检查中断是不可覆盖的，其他中断可覆盖且处理器状态可保留。当中断发生时， __SRR0__ , __HSRR0__ 或 __USRR0__ 指向正在执行且未完成的指令。
 中断可分为是否是执行指令引起或其他系统异常。系统异常包括：
 * System Reset
 * Machine Check
@@ -170,15 +170,15 @@ Power指令集架构提供了中断机制，允许线程能够处理外部信号
 
 ### 1.7.1 中断寄存器
 根据处理器所在特权状态，可以分为:
-* __Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Machine Status Save/Restore registers__ ( __SRR0__ 和__SRR1__ )。
-* __Hypervisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Hypervisor Machine Status Save/Restore registers__ ( __HSRR0__  and __ HSRR1__ )。
-* __Ultravisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在__Ultravisor Machine Status Save/Restore registers__ ( __HSRR0__  and __ HSRR1__ )。
+* __Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在 __Machine Status Save/Restore registers__ ( __SRR0__ 和 __SRR1__ )。
+* __Hypervisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在 __Hypervisor Machine Status Save/Restore registers__ ( __HSRR0__  and __HSRR1__ )。
+* __Ultravisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在 __Ultravisor Machine Status Save/Restore registers__ ( __HSRR0__  and __HSRR1__ )。
 
 ### 1.7.2 中断处理
-shows all the types of interrupts and the values assigned to the __ MSR__  for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
+shows all the types of interrupts and the values assigned to the __MSR__  for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
 1. __SRR0__ , __HSRR0__ , or __USRR0__  is loaded with an instruction address that depends on the type of interrupt;
 2. Bits 33:36 and 42:47 of __SRR1__ , __HSRR1__ , or __USRR1__  are loaded with information specific to the interrupt type.
-3. Bits 0:32, 37:41, and 48:63 of __SRR1__ , __HSRR1__ , or __USRR1__  are loaded with a copy of the corresponding bits of the __ MSR__ .
+3. Bits 0:32, 37:41, and 48:63 of __SRR1__ , __HSRR1__ , or __USRR1__  are loaded with a copy of the corresponding bits of the __MSR__ .
 4. The __MSR__  is set. In particular, __MSR__  bits __IR__  and __DR__  are set as specified by __LPCR.AIL__  or __LPCR.HAIL__  as appropriate and __MSR.SF__  is set to 1, selecting 64-bit mode. The new values take effect beginning with the first instruction executed following the interrupt.
 5. Instruction fetch and execution resumes, using the new __ MSR__  value, at the effective address specific to the interrupt type. An offset may be applied to get the effective addresses, as specified by __LPCR.AIL__  or __LPCR.HAIL__  as appropriate
 ![Pasted image 20230906141329.png](/assets/images/power/Pasted image 20230906141329.png)
@@ -187,7 +187,7 @@ shows all the types of interrupts and the values assigned to the __ MSR__  for e
 * __Come From Address Register__ 
 	* __Come From Address Register (CFAR)__ 是64位寄存器， 当执行 __rfebb__ , __rfid__ , 或 __rfscv__ 执行时，寄存器值设置为当前执行的有效地址。
 * __Completed Instruction Address Breakpoint__ 
-	* __ Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由 __Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
+	* __Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由 __Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
 * __Data Address Watchpoint__ 
 	* __Data Address Watchpoint__ 提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个 __Data Address Watchpoint__ 是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__ 和 __Data Address Watchpoint Register Extension (DAWRXn)__ 
 
@@ -358,24 +358,24 @@ As a part of IBM’s commitment to reliability, availability and serviceability,
 ![Pasted image 20230912172922.png](/assets/images/power/Pasted image 20230912172922.png)
 
 ### 分支预测
-**POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-tocount-register (bcctr) __ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个branch-history tables来预测分支方向：
-	* 第一个是本地预测器，类似于branch-history table (BHT)，使用分支指令地址来索引16 384-entry数组，产生1-bit预测分支是否发生
+**POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-tocount-register (bcctr)__ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个branch-history tables来预测分支方向：
+
+	* 第一个是本地预测器，类似于分支历史表BHT，使用分支指令地址来索引16 384-entry数组，产生1-bit预测分支是否发生
 	* 第二个是全局预测器，通过一个执行过的分支指令的11-bit向量，和分支指令地址进行按位异或，来索引16 384-entry全局历史表来产生1-bit预测分支是否发生
-	* a third table, called the selector table, keeps track of which of the two prediction schemes works better for a given branch and is used to select between the local and the global predictions. The 16 384-entry selector table is indexed exactly the same way as the global history table to produce the 1-bit selector. This combination of branch-prediction tables has been shown to produce very accurate predictions across a wide range of workload types.
-Dynamic branch prediction can be overridden by software. It is accomplished by setting two previously reserved bits in conditional branch instructions, one to indicate a software override and the other to predict the direction.
-POWER4 uses a link stack to predict the target address for a branch-to-link instruction that it believes corresponds to a subroutine return. By setting the hint bits in a branch-to-link instruction, software communicates to the processor whether a branch-to-link instruction represents a subroutine return, a target address that is likely to repeat, or neither. When instruction-fetch logic fetches a branch-and-link instruction (either conditional or unconditional) predicted as taken, it pushes the address of the next instruction onto the link stack. When it fetches a branch-to-link instruction with taken prediction and with hint bits indicating a subroutine return, the link stack is popped, and instruction fetching starts from the popped address.
-POWER4 uses a 32-entry, tagless, direct-mapped cache, called a count cache, to predict the repetitive targets, as indicated by the software hints. Each entry in the count cache can hold a 62-bit address. When a branch-to-link or branch-to-count instruction is executed, for which the software indicates that the target is repetitive and therefore predictable, the target address is written in the count cache. When such an instruction is fetched, the target address is predicted using the count cache.
+	* 第三个是选择表，记录上面两个预测器预测表现来选择其中一个预测器，16 384-entry 选择表和全局预测器使用同样方式索引来产生1bit的选择信号。
+
+动态分支预测能够被软件覆盖，通过设置条件分支指令的2个保留位，一个用来指示软件覆盖，一个用来预测方向。**POWER4** 使用 *link stack* 来预测 __branch-to-link__ 指令的目标地址，一般用于子函数返回。通过设置 __branch-to-link__ 指令的提示位，软件可以将 __branch-to-link__ 是否代表子函数返回，目标地址是否重复通知处理器。当取值逻辑取到 __branch-and-link__ 指令并预测发生分支跳转时，处理器会将下一条指令的地址推入 *link stack* 。当取到一个提示位指示是子函数返回并预测发生分支跳转的 __branch-to-link__ 指令时，*link stack* 会被弹出，并从弹出的地址继续取值。 
+**POWER4** 使用一个32-entry, tagless直接映射的 *count cache* 来预测软件提示的重复的目标。*count cache* 每一条能记录62位地址。当软件提示目标地址可重复的 __branch-to-link__ 和 __branch-to-count__ 指令执行时，目标地址被写入 *count cache* 。当再次取值这样指令时，目标地址通过 *count cache* 来预测。
 
 ### 6.1.1 Instruction Fecth
 
-一旦 __instruction-fetch address register (IFAR)__ 被加载，I-cache没被访问，并每周期提供8条指令。每个I-cache缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为I-cache缺失比较少，为了省面积，I-cache只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。On an I-cache miss, instructions are returned from the L2 in four 32-byte transmissions. The L2 normally returns the critical sector (the sector containing the specific word address that references the cache line) in one of the first two beats. Instruction-fetch logic forwards these demandoriented instructions into the pipeline as quickly as possible. In addition, the cache line is written into one entry of the instruction-prefetch buffer so that the I-cache itself is available for successive instruction fetches. The instructions are written to the I-cache during cycles when instruction fetching is not using the I-cache, as is the case when another I-cache miss occurs. In this way, writes to the I-cache are hidden and do not interfere with normal instruction fetching.
-the EA, RA pair is stored in a 128-entry, two-way set-associative array, called the effective-to-real address translation (ERAT) table. POWER4 implements separate ERATs for instruction-cache (IERAT) and datacache (DERAT) accesses. Both ERATs are indexed using the effective address. A common 1024-entry four-way setassociative TLB is implemented for each processor.
-When the instruction pipeline is ready to accept instructions, the IFAR content is sent to the I-cache, IDIR, IERAT, and branch-prediction logic. The IFAR is updated with the address of the first instruction in the next sequential sector. In the next cycle, instructions are received from the I-cache and forwarded to an instruction queue from which the decode, crack, and group formation logic. Also received in the same cycle are the RA from the IDIR, the EA, RA pair from the IERAT, and the branchdirection-prediction information. The IERAT is checked to ensure that it has a valid entry and that its RA matches the contents of the IDIR. If the IERAT has an invalid entry, the EA must be translated from the TLB and SLB. Instruction fetching is then stalled. Assuming that the IERAT is valid, if the RA from the IERAT matches the contents of the IDIR, an I-cache hit is validated. Using the branch-prediction logic, the IFAR is reloaded and the process is repeated. Filling the instruction queue in front of the decode, crack, and group formation logic allows instruction fetching to run ahead of the rest of the system and queue work for the remainder of the system. In this way, when there is an I-cache miss, there often are additional instructions in the instruction queue to be processed, thereby not freezing the pipeline.
-If there is an I-cache miss, several different scenarios are possible. First, the instruction-prefetch buffers are examined to see whether the requested instructions are there, and, if so, logic steers these instructions into the pipeline as though they came from the I-cache and will also write the critical sector into the I-cache. If the instructions are not found in the instruction-prefetch buffer, a demand-fetch reload request is sent to the L2. The L2 processes this reload request with high priority. When it is returned from the L2, an attempt will be made to write it into the I-cache. In addition to these demand-oriented instructionfetching mechanisms, POWER4 prefetches instructioncache lines that might soon be referenced into its instruction-prefetch buffer, which is capable of holding four entries of 32 instructions each. The instructionprefetch logic monitors demand instruction-fetch requests and initiates prefetches for the next one (if there is a hit in the prefetch buffer) or two (if there is a miss in the prefetch buffer) sequential cache lines after verifying that they are not already in the I-cache. When these requests return cache lines, the returned lines are stored in the instruction-prefetch buffer so that they do not pollute the demand-oriented I-cache. The I-cache contains only cache lines that have had a reference to at least one instruction.
+一旦 __instruction-fetch address register (IFAR)__ 被加载，I-cache没被访问，并每周期提供8条指令。每个I-cache缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为I-cache缺失比较少，为了省面积，I-cache只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。当I-cache缺失时，指令从L2以4个32B传输，最需要的区域在前两个周期传输。缓存行被写入instruction-prefetch buffer，I-cache可以继续被后续指令访问。当取值逻辑不使用I-cache时，例如发生另一个I-cache访问缺失，缓存行会被写入I-cache。这样 I-cache的写入操作可以被掩藏而不影响正常的取指操作。
+EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address translation (ERAT)__ 表中。**POWER4** 分别实现了 IERAT 和 DERAT，都是用有效地址(EA)访问。 每个处理器实现了一个1024-entry 4路组相联的 *TLB* 。
+当指令流水线准备好接受指令时，IFAR的值被发送到I-cache, IDIR, IERAT, 和分支预测逻辑，同时IFAR被更新为下一个顺序区域的地址。下一个周期，指令从 I-cache转发到decode, crack, 和group formation的指令队列，同时从IDIR接收真实地址(RA), 从IERAT接收EA, RA对，以及分支方向预测信息。IERAT会被检查是否有有效的记录并且RA和IDIR的RA匹配。如果IERAT是无效的记录，EA必须从TLB和SLB进行翻译，取值会被暂停。假设IERAT记录是有效的，并且 IERAT的RA和IDIR的RA匹配，, I-cache访问命中。使用分支预测逻辑重新加载IFAR，然后重复上面过程。填充decode, crack, and group formation logic前面的指令队列可以允许取指逻辑提前运行，而且当发生I-cache缺失时，指令队列可以继续提供指令而不必停止后面的流水线。
+如果发生 I-cache缺失，首先，instruction-prefetch buffers会被检查是否有请求的指令，如果有，会将指令发送到流水线并写入I-cache。如果instruction-prefetch buffer也不存在请求的指令，取指命令被发送到L2，L2高优先级处理指令重载传输。当数据从L2返回，会尝试写入到I-cache。除了这些取指命令，**POWER4** 会预取指令缓存行到 instruction-prefetch buffer，instruction-prefetch buffer可以保存4个32条指令。 指令预取逻辑监控取指请求，当instruction-prefetch buffer里存在请求缓存行时，会预取下一个缓存行；当instruction-prefetch buffer里不存在请求缓存行时，会预取下两个缓存行。这些预取操作需要保证I-cache里不存在预取的缓存行。预取的缓存行会被保存在instruction-prefetch buffer里，从而保证不会污染I-cache。
 
 ### 6.1.2 Decode, crack, 和group formation
-一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，no-ops 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。 
-For correct operation, certain instructions are not allowed to execute speculatively. To ensure that the instruction executes nonspeculatively, it is not executed until it is the next one to complete. This mechanism is called completion serialization. To simplify the implementation, such instructions form single instruction groups. Examples of completion serialization instructions include loads and stores to guarded space and contextsynchronizing instructions such as the move-to-machinestate-register instruction that is used to alter the state of the machine. In order to implement out-of-order execution, many of the architected registers are renamed, but not all. To ensure proper execution of these instructions, any instruction that sets a nonrenamed register terminates a group.
+一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，no-ops 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。为了保证正确性，一些指令不允许投机执行，为了确保这些指令不会被投机执行，这些指令只有作为下一个完成的指令时才会被执行，这被称为completion serialization。为了简化实现，这些指令单独组成单指令组。completion serialization例子包括guarded space的存储加载指令和contextsynchronizing 指令，例如修改处理器状态的 __move-to-machinestate-register__ 指令。 instruction that is used to alter the state of the machine. In order to implement out-of-order execution, many of the architected registers are renamed, but not all. To ensure proper execution of these instructions, any instruction that sets a nonrenamed register terminates a group.
 
 ### 6.1.3 Group dispatch and instruction issue
 Instruction groups are dispatched into the issue queues one group at a time. As a group is dispatched, control information for the group is stored in the group completion table (GCT). The GCT can store up to 20 groups. The GCT entry contains the address of the first instruction in the group. As instructions finish execution, that information is registered in the GCT entry for the group. Information is maintained in the GCT until the group is retired, i.e., either all of its results are committed, or the group is flushed from the system. Each instruction slot feeds separate issue queues for the floating-point units, the branch-execution unit, the CR execution unit, the fixed-point execution units, and the load/store execution units. The fixed-point and load/store execution units share common issue queues. Below Table summarizes the depth of each issue queue and the number of queues available for each type of queue.
