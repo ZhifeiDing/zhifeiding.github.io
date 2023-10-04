@@ -5,7 +5,7 @@ tags : [chip, cpu, architecture, history]
 ---
 
 # 0. 概述
-最近几年系统性的学习了解并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，串联起不同技术，挖掘不同架构之间的渊源，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾IBM POWER系列。
+最近几年系统性的学习并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，串联起不同技术，挖掘不同架构之间的渊源，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾IBM POWER系列。
 
 POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的RISC System/6000产品。1991年，Apple, IBM, 和Motorola一起合作开发了PowerPC架构。1997, Motorola和IBM合作将PowerPC用于嵌入式系统。2006, Freescale和IBM合作制定了POWER ISA 2.03。 2019年8月21, 开源了POWER Instruction Set Architecture (ISA)。PowerISA由必须的基础架构，4组可选特性，一组过时特性组成。OpenPOWER也允许自定义扩展。
 
@@ -113,43 +113,46 @@ __Machine State Register (MSR)__ 是64位寄存器，定义了线程的特权状
 ![Pasted image 20230905144055.png](/assets/images/power/Pasted image 20230905144055.png)
 __MSR.SF__ 控制线程32/64位计算模式.
 ## 1.5 存储模型
-Storage control attributes are associated with units of storage that are multiples of the page size. Each storage access is performed according to the storage control attributes of the specified storage location, as described below. The storage control attributes are the following.
-* __Write Through Required__ The store does not cause the block to be considered to be modified in the data cache.
-* __Caching Inhibited__ An access to a Caching Inhibited storage location is performed in main storage.
-* __Memory Coherence Required__ An access to a Memory Coherence Required storage location is performed coherently
-* __Guarded__  A data access to a Guarded storage location is performed only if either
-	* the access is caused by an instruction that is known to be required by the sequential execution model
-	* the access is a load and the storage location is already in a cache.
+存储属性是以页表为单位设置，每一个读写访问都需要检查对应的存储属性。主要有下列存储属性：
+* __Write Through Required__ 写操作不会使数据缓存里的数据转变为修改
+* __Caching Inhibited__ 对Caching Inhibited访问会直接在主存进行 
+* __Memory Coherence Required__ 对Memory Coherence Required访问需要保持一致性
+* __Guarded__  只有在下列情况才会对Guarded存储地址进行访问：
+	* 需要顺序执行模型的指令的访问
+	* 读访问且存储地址已经在缓存中
 
-These attributes have meaning only when an effective address is translated by the processor performing the storage access.
-The storage model for the ordering of storage accesses is weakly consistent. This model provides an opportunity for improved performance over a model that has stronger consistency rules, but places the responsibility on the program to ensure that ordering or synchronization instructions are properly placed when storage is shared by two or more programs.
+只有进行有效地址的转换的访问才受这些属性的影响。存储访问的内存模型是 __weakly consistent__ ，相对于 __stronger consistency__的模型提高了性能。
 
 ## 1.6 内存管理及虚拟化
-The translation mode is selected by the __Host Radix__ bit found in the __Partition Table Entry__ . The __Host Radix__  bit indicates whether the partition is using __ HPT(Hashed Page Table)__   or __ Radix Tree__  translation. Given the overall process, __ MSR.HV/PR/IR/DR__  determine where and how the process is entered.
+地址转换模式是由 __Partition Table Entry__ 里的 __Host Radix__ 位控制。__Host Radix__  位控制当前分区是使用 __ HPT(Hashed Page Table)__   还是 __ Radix Tree__  进行转换。__ MSR.HV/PR/IR/DR__  决定了地址转换入口和行为。
+
 ### 1.6.1 Ultravisor/Hypervisor Offset Real Mode Address
-If __MSR.HV = 1__  and __ EA.0 = 0__ , the access is controlled by the contents of the __Ultravisor Real Mode Offset Register__  or the __Hypervisor Real Mode Offset Register__ , depending on the value of __MSR.S__ , as follows.
-* When __MSR.S=1__ , bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the __URMOR__ , and the 60-bit result is used as the real address for the access
-* When __MSR.S=0__ , bits 4:63 of the effective address for the access are ORed with the 60-bit offset represented by the contents of the __HRMOR__ , and the 60-bit result is used as the real address for the access.
+当 __MSR.HV = 1__  且 __EA.0 = 0__ 时, 存储访问由 __Ultravisor Real Mode Offset Register__  或 __Hypervisor Real Mode Offset Register__ 控制, 根据 __MSR.S__ 值：
+* 当 __MSR.S=1__ 时, 有效地址4:63位和 __URMOR__ 里的60位偏移值按位或，得到的60位结果就是访问的真实地址
+* 当 __MSR.S=0__ 时, 有效地址4:63位和 __HRMOR__ 里的60位偏移值按位或，得到的60位结果就是访问的真实地址
 
 ### 1.6.2 Segment Translation
-Conversion of a 64-bit effective address to a virtual address is done by searching the Segment Lookaside Buffer (SLB) as shown. If no matching translation is found in the SLB, __ LPCR.UPRT=1__ , and either __ MSR.HV=0__  or __ LPID=0__ , the Segment Table is searched. The Segment Lookaside Buffer (SLB) specifies the mapping between Effective Segment IDs (ESIDs) and Virtual Segment IDs (VSIDs).
+下图展示了64位有效地址通过 __Segment Lookaside Buffer (SLB)__ 转换为78位虚拟地址的过程：
 ![Pasted image 20230905155844.png](/assets/images/power/Pasted image 20230905155844.png)
+如果 __SLB__ 未命中，, __ LPCR.UPRT=1__ , 且 __ MSR.HV=0__  或 __ LPID=0__ 时会搜索 __Segment Table__ 。__Segment Lookaside Buffer (SLB)__ 指定了 __Effective Segment IDs (ESIDs)__ 和 __Virtual Segment IDs (VSIDs)__ 的映射。
+
 In Paravirtualized HPT mode, conversion of a 78-bit virtual address to a real address is done by searching the Page Table. The Hashed Page Table (HTAB) is a variable-sized data structure that specifies the mapping between virtual page numbers and real page numbers. The HTAB contains Page Table Entry Groups (PTEGs). A PTEG contains 8 Page Table Entries (PTEs) of 16 bytes each; each PTEG is thus 128 bytes long. PTEGs are entry points for searches of the Page Table.
 Below shows Translation of 78-bit virtual address to 60-bit real address.
 ![Pasted image 20230906084212.png](/assets/images/power/Pasted image 20230906084212.png)
+
 ### 1.6.3 Radix Tree Translation
-A __Radix Tree root descriptor (RTRD)__  specifies the size of the address being translated, the size of the root table, and its location. Below shows Four level Radix Tree walk translating a 52b EA with __ NLS=13__  in the root PDE and __ NLS=9__  in the other PDEs.
+__Radix Tree root descriptor (RTRD)__  指定了转换的地址大小，root table的大小和位置。下图展示了4级Radix Tree在 __ PDE.NLS=13__  和 __NLS=9__ 时将52位EA转换成56位RA的过程：
 ![Pasted image 20230905170905.png](/assets/images/power/Pasted image 20230905170905.png)
-Radix Tree Page Directory Entry
+Radix Tree Page Directory Entry内容如下：
 ![Pasted image 20230905171134.png](/assets/images/power/Pasted image 20230905171134.png)
 ![Pasted image 20230905171203.png](/assets/images/power/Pasted image 20230905171203.png)
 Radix Tree Page Table Entry
 
-#### 1.6.3.1Nested Translation
-When __MSR.HV=0__  and translation is enabled, each guest real address must undergo partition-scoped translation using the hypervisor’s Radix Tree for the partition. Below shows Radix on Radix Page Table search for a 52-bit EA depicting memory reads 1-24 numbered in sequence
+#### 1.6.3.1 Nested Translation
+当 __MSR.HV=0__  且地址转换使能时，对于guest real address必须经过分区的hypervisor的Radix Tree转换。下图展示了Radix on Radix Page Table对52位EA转换过程，一共需要24次内存访问：
 ![Pasted image 20230905172603.png](/assets/images/power/Pasted image 20230905172603.png)
 ### 1.6.4 Secure Memory Protection
-When __SMFCTRL.E=1__ , Secure Memory Protection is enabled. Each location in main storage has a Secure Memory property __mem.SM__ . __mem.SM=1__  indicates secure memory. __mem.SM=0__  indicates ordinary memory. Generally, only secure partitions and the ultravisor may access secure memory for explicit and implicit accesses.
+当 __SMFCTRL.E=1__ 时使能Secure Memory Protection。每个内存地址有Secure Memory属性 __mem.SM__ 。当 __mem.SM=1__ 时表示是安全内存区域；__mem.SM=0__  表示是普通内存区域。通常只有安全分区和ultravisor会访问安全内存区域。
 
 ## 1.7 异常和中断
 Power指令集架构提供了中断机制，允许线程能够处理外部信号，错误或指令执行异常。系统复位和机器检查中断是不可覆盖的，其他中断可覆盖且处理器状态可保留。当中断发生时， __SRR0__ , __HSRR0__ 或 __USRR0__ 指向正在执行且未完成的指令。
@@ -756,9 +759,9 @@ Hardware Managed Cache Coherence
 • Enables the accelerator to participate in “Locks” as a normal thread Lowers Latency over IO communication model
 
 # 11. POWER 9
-Built on a 14nm process, each CPU package can contain up to 24 SMT4 cores or 12 SMT8 cores. Each pair of SMT4 cores, or singleton SMT8 core, comprises a slice; each slice in turn contains 512kB L2 cache and 10MB L3 cache. Chips can be fused as SMT4 or SMT8 during manufacturing.
-* SMT8 is optimized for IBM’s PowerVM (server virtualization) ecosystem
-* SMT4 is optimized for the Linux Ecosystem
+**POWER9**芯片有24个SMT4处理器核或12个SMT8处理器核，每队SMT4处理器核或者一个SMT8处理器核，组成一个slice，每个slice包含512kB L2缓存和10MB L3缓存。
+* SMT8 是为PowerVM优化
+* SMT4 Linux优化
 ![Pasted image 20230907145848.png](/assets/images/power/Pasted image 20230907145848.png)
 
 ## 11.1 POWER9 Core Execution Slice Microarchitecture
