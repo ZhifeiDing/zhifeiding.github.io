@@ -46,6 +46,34 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 
 * __Logical Partitioning Control Register (LPCR)__  __LPCR__ 控制资源的逻辑分区
 * __Logical Partition Identification Register (LPIDR)__  __LPIDR__ 设置逻辑分区ID
+* __Machine State Register (MSR)__ 是64位寄存器，控制和定义了线程的状态：
+	* 0 __Sixty-Four-Bit Mode (SF)__ 0 线程运行在32位模式，1 线程运行在64位模式。当线程处于ultravisor时软件要保证 __SF=1__ 
+	* 1:2 Reserved 
+	* 3 __Hypervisor State (HV)__ 具体意义参考特权模型章节
+	* 4 Reserved 
+	* 5 常0
+	* 6:37 Reserved 
+	* 38 __Vector Available (VEC)__ 0 线程不能执行任何向量指令 1 线程可以执行向量指令
+	* 39 Reserved 
+	* 40 __VSX Available (VSX)__ 0 向量不能执行 __Vector Scalar Extension(VSX)__ 指令1 向量可以执行 __VSX__ 指令
+	* 41 __Secure (S)__ 0 线程处于非安全态，不能访问安全域线程，且不在ultravisor态 1 线程处于安全态
+	* 42:47 Reserved 
+	* 48 __External Interrupt Enable (EE)__ 0 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__ 中断被禁止 1 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__使能
+	* 49 __Problem State (PR)__ 具体意义参考特权模型章节
+	* 50 __Floating-Point Available (FP)__ 0 线程不能执行浮点指令 1 线程可以执行浮点指令
+	* 51 __Machine Check Interrupt Enable (ME)__ 0 __Machine Check__ 中断禁止 1 __Machine Check__ 中断使能
+	* 52 __Floating-Point Exception Mode 0 (FE0)__ 
+	* 53:54 __Trace Enable (TE)__
+		* 00 Trace Disabled: 线程正常执行指令
+		* 01 Branch Trace: 当线程执行完分支指令之后产生 __Branch type Trace__ 中断
+		* 10 Single Step Trace: 当线程成功完成下一个指令时产生一个 __Single-Step type Trace__ 中断，__urfid__ , __hrfid__ , __rfid__ , __rfscv__ , 或 __Power-Saving Mode__ 指令除外。
+		* 11 Reserved
+	* 55 __Floating-Point Exception Mode 1 (FE1)__
+	* 56:57 Reserved 
+	* 58 __Instruction Relocate (IR)__ 0 禁止指令地址转换； 1 使能指令地址转换
+	* 59 __Data Relocate (DR)__ 0 禁止数据地址转换，并且不发生 __Effective Address Overflow (EAO)__ ；1 使能数据地址转换，__EAO__ 产生 __Data Storage__ 中断
+	* 60 Reserved 
+	* 61 __Performance Monitor Mark (PMM)__ 软件控制Performance Monitor
 ## 1.2 计算模式
 处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, __Condition Register__ 和 __XER__ 的设置, 当 __LK=1__ 时 __Link Register__ 被分支指令的设置 , 以及 __Count Register__  被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位( __General Purpose Registers__ , __Link Register__ , __Count Register__ 等) 并且产生64位结果。
 ## 1.3 指令格式
@@ -136,8 +164,8 @@ __MSR.SF__ 控制线程32/64位计算模式.
 ![Pasted image 20230905155844.png](/assets/images/power/Pasted image 20230905155844.png)
 如果 __SLB__ 未命中，, __ LPCR.UPRT=1__ , 且 __ MSR.HV=0__  或 __ LPID=0__ 时会搜索 __Segment Table__ 。__Segment Lookaside Buffer (SLB)__ 指定了 __Effective Segment IDs (ESIDs)__ 和 __Virtual Segment IDs (VSIDs)__ 的映射。
 
-In Paravirtualized HPT mode, conversion of a 78-bit virtual address to a real address is done by searching the Page Table. The Hashed Page Table (HTAB) is a variable-sized data structure that specifies the mapping between virtual page numbers and real page numbers. The HTAB contains Page Table Entry Groups (PTEGs). A PTEG contains 8 Page Table Entries (PTEs) of 16 bytes each; each PTEG is thus 128 bytes long. PTEGs are entry points for searches of the Page Table.
-Below shows Translation of 78-bit virtual address to 60-bit real address.
+在 __Paravirtualized HPT__ 模式，使用Page Table来将78位虚拟地址转换为真实地址。__Hashed Page Table (HTAB)__ 指定了虚拟页表和真实页表的映射，__Hashed Page Table (HTAB)__ 由 __Page Table Entry Groups (PTEGs)__ 组成。一个 __PTEG__包含8个 __Page Table Entries (PTEs)__ ，每个16。
+下图展示了使用 __HPT__ 将78位虚拟地址转换位60位真实地址过程
 ![Pasted image 20230906084212.png](/assets/images/power/Pasted image 20230906084212.png)
 
 ### 1.6.3 Radix Tree Translation
@@ -177,21 +205,20 @@ Power指令集架构提供了中断机制，允许线程能够处理外部信号
 * __Ultravisor Machine Status Save/Restore Registers__  中断发生时，处理器状态被保存在 __Ultravisor Machine Status Save/Restore registers__ ( __HSRR0__  and __HSRR1__ )。
 
 ### 1.7.2 中断处理
-shows all the types of interrupts and the values assigned to the __MSR__  for each. Below shows the effective address of the interrupt vector for each interrupt type. Interrupt processing consists of saving a small part of the thread’s state in certain registers, identifying the cause of the interrupt in other registers, and continuing execution at the corresponding interrupt vector location.
-1. __SRR0__ , __HSRR0__ , or __USRR0__  is loaded with an instruction address that depends on the type of interrupt;
-2. Bits 33:36 and 42:47 of __SRR1__ , __HSRR1__ , or __USRR1__  are loaded with information specific to the interrupt type.
-3. Bits 0:32, 37:41, and 48:63 of __SRR1__ , __HSRR1__ , or __USRR1__  are loaded with a copy of the corresponding bits of the __MSR__ .
-4. The __MSR__  is set. In particular, __MSR__  bits __IR__  and __DR__  are set as specified by __LPCR.AIL__  or __LPCR.HAIL__  as appropriate and __MSR.SF__  is set to 1, selecting 64-bit mode. The new values take effect beginning with the first instruction executed following the interrupt.
-5. Instruction fetch and execution resumes, using the new __ MSR__  value, at the effective address specific to the interrupt type. An offset may be applied to get the effective addresses, as specified by __LPCR.AIL__  or __LPCR.HAIL__  as appropriate
+中断处理包括保存一部分线程状态，识别中断原因，并从相应中断向量地址执行：
+1. 根据中断类型将指令地址加载到 __SRR0__ , __HSRR0__ , 或 __USRR0__  
+2. 根据中断类型将相关信息保存到 __SRR1__ , __HSRR1__ , 或 __USRR1__ 的33:36位和42:47位
+3. 将 __MSR__ 保存到 __SRR1__ , __HSRR1__ , 或 __USRR1__  的0:32, 37:41, 和 48:63位
+4. 根据 __LPCR.AIL__  或 __LPCR.HAIL__ 设置 __MSR.IR/DR__  位， 并且设置 __MSR.SF = 1__ 。第一条中断指令执行时生效
+5. 在新的 __ MSR__  设置下，从对应中断向量处取指执行代码。__LPCR.AIL__  或 __LPCR.HAIL__  决定地址是否需要偏移
+下表列出了所有类型的中断向量及其有效地址：
 ![Pasted image 20230906141329.png](/assets/images/power/Pasted image 20230906141329.png)
+
 ## 1.8 调试
 调试功能允许硬件和软件通过追踪指令流，比较数据地址，单步执行等进行调试：
-* __Come From Address Register__ 
-	* __Come From Address Register (CFAR)__ 是64位寄存器， 当执行 __rfebb__ , __rfid__ , 或 __rfscv__ 执行时，寄存器值设置为当前执行的有效地址。
-* __Completed Instruction Address Breakpoint__ 
-	* __Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由 __Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
-* __Data Address Watchpoint__ 
-	* __Data Address Watchpoint__ 提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个 __Data Address Watchpoint__ 是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__ 和 __Data Address Watchpoint Register Extension (DAWRXn)__ 
+* __Come From Address Register__  __Come From Address Register (CFAR)__ 是64位寄存器， 当执行 __rfebb__ , __rfid__ , 或 __rfscv__ 执行时，寄存器值设置为当前执行的有效地址。
+* __Completed Instruction Address Breakpoint__  __Completed Instruction Address Breakpoint__ 提供了发现完成执行特定地址指令的机制。地址比较是基于有效地址(EA)。__Completed Instruction Address Breakpoint__ 机制是由 __Completed Instruction Address Breakpoint Register (CIABR)__ 控制。
+* __Data Address Watchpoint__  __Data Address Watchpoint__ 提供了发现多个双字有效地址(EA)加载存储访问的机制。至少两个独立地址范围可以指定。每个 __Data Address Watchpoint__ 是由一对SPRs控制：__Data Address Watchpoint Register(DAWRn)__ 和 __Data Address Watchpoint Register Extension (DAWRXn)__ 
 
 # 2. POWER处理器概述
 * 1975年，IBM Thomas J. Watson Research Center发明了第一个RISC机器，801。801原始设计目标是1 IPC，研究重点是定义一个能够每周期执行多个指令，即超标量的架构。研究的结果是第二代RISC架构，称为"AMERICA architecture"
