@@ -818,7 +818,7 @@ ISU使用一个 __Global Completion Table (GCT)__ 来记录所有分发后的指
 ![Pasted image 20230918172837.png](/assets/images/power/Pasted image 20230918172837.png)
 LS0和LS1流水线，每一个都能够一个周期执行存储加载指令；L0和L1流水线，每一个都能够一个周期执行加载指令。另外，这四个流水线都能在3个周期执行简单的定点指令。LSU组要功能单元有：存储加载AGEN和执行, SRQ, store data queue (SDQ) , LRQ, load miss queue (LMQ), 包括D-ERAT, ERAT Miss Queue(EMQ), segment lookaside buffer (SLB) 和TLB的地址转换单元, 包括组预测和数据目录(DDIR)的L1数据缓存和数据预取 prefetch request queue (PRQ) 引擎。
 * *存储加载执行* 在ST模式时，存储加载指令可以在LS0或LS1执行存储指令，在LS0, LS1, L0 和L1中执行加载指令；在SMT2, SMT4, 和SMT8模式，一半线程的指令在LS0和L0执行, 另一半线程的指令在LS1和L1中执行。存储指令发射两次，AGEN发射到LS0或LS1, 数据操作发射到L0或L1。LSU主要数据流包括64B的L2的重加载总线接口，到L2的16B的写数据接口，到VSU的两个16B加载数据接口，来自VSU的两个16B的写数据接口，来自FXU的两个8B写数据接口。定点加载指令只有3个周期的加载使用延迟，在加载指令和依赖的定点指令之间有两个流水线气泡；VSU加载指令有5个周期的加载使用延迟，在加载指令和依赖的VSU指令之间会产生四个流水线气泡。每个LSU流水线也可以执行定点加和逻辑指令，提高了指令发射的灵活性
-* **存储加载顺序 尽管指令乱序发射和执行，LSU必须保证存储加载指令遵守架构上的编程顺序。LSU主要依赖SRQ和LRQ来实现编程顺序。SRQ是一个40条目，基于真实地址RA的CAM结构，每个线程有128虚拟条目，允许分发128个并发写；可以发射32个并发的写；SRQ由所有线程共享。SRQ条目在存储指令发射时分配，当数据写到L1数据缓存或发送到L2时释放。每个SRQ条目都有一个对应的16B的SDQ条目，存储指令每周期可以发送最多16B数据到L2。写数据可以转发给后面的读指令，即使读写指令都是投机执行。LRQ也是一个44条目，基于真实地址RA的CAM。每个线程有128虚拟条目，允许分发64个并发写；可以发射44个并发的写；LRQ由所有线程共享。LRQ记录读操作，检查是否有同一个地址的年轻的读在更老的读或写之前执行的冒险。当检查到这样冒险发生时，LRQ会将年轻的读和后面同一个线程的指令从流水线刷掉，加载指令重新取指并执行
+* *存储加载顺序* 尽管指令乱序发射和执行，LSU必须保证存储加载指令遵守架构上的编程顺序。LSU主要依赖SRQ和LRQ来实现编程顺序。SRQ是一个40条目，基于真实地址RA的CAM结构，每个线程有128虚拟条目，允许分发128个并发写；可以发射32个并发的写；SRQ由所有线程共享。SRQ条目在存储指令发射时分配，当数据写到L1数据缓存或发送到L2时释放。每个SRQ条目都有一个对应的16B的SDQ条目，存储指令每周期可以发送最多16B数据到L2。写数据可以转发给后面的读指令，即使读写指令都是投机执行。LRQ也是一个44条目，基于真实地址RA的CAM。每个线程有128虚拟条目，允许分发64个并发写；可以发射44个并发的写；LRQ由所有线程共享。LRQ记录读操作，检查是否有同一个地址的年轻的读在更老的读或写之前执行的冒险。当检查到这样冒险发生时，LRQ会将年轻的读和后面同一个线程的指令从流水线刷掉，加载指令重新取指并执行
 * *地址转换* 指令执行时，EA经过由两个48条目DERAT缓存和一个64条目的IERAT组成第一级地址转换逻辑转换成50位的真实地址。如果ERAT未命中，由每个线程32条目的SLB和所有线程共享的512条目的TLB组成的第二级地址转换逻辑进行转换。有效地址EA首先使用线段表转换成78位虚拟地址，然后78位虚拟地址经过 page frame table 转换成50位真实地址。**POWER8** 支持256 MB和1 TB两种大小的段, 以及4 KB, 64 KB, 16 MB, 和16 GB四种页表大小
 	* D-ERAT是基于CAM的全相联的缓存，物理上分成四个，每个LSU流水线一个。在ST模式, 四个D-ERAT保持同步；在SMT模式，一半线程使用LS0和L0关联的两个48条目的D-ERAT，另一半线程使用LS1和L1关联的两个48条目的D-ERAT。每个D-ERAT条目支持 4-KB, 64-KB, 或16-MB页表， 16 GB保存为多个16-MB页表。D-ERAT采用LRU替换算法。第二个DERAT是256条目全相联的CAM结构，由所有线程共享，当主DERAT未命中时查找第二个DERAT。
 	* SLB是每线程32条目，全相联的基于CAM的缓冲，每个SLB条目支持256 MB或1 TB段. **POWER8**支持 multiple pages per segment (MPSS) 扩展；MPSS使一个4KB基础页表的段可以同时有4-KB, 64-KB, 和16-MB页表；一个64KB基础页表的段可以同时有64-KB, 和16-MB页表。SLB由操作系统管理，当SLB缺失时发出数据或指令的段中断
@@ -855,61 +855,51 @@ memory buffer芯片额外提供了128M的L4缓存，同一个缓存的部分写�
 __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和**POWER8**连接的一致性加速接口，__Coherence Attach Processor Interface(CAPI)__ 使用PCIe Gen3连接设备，并和处理器共享缓存一致性的内存以及虚拟地址转换，加速器上的程序可以直接使用有效地址指针，CAPI使加速器在系统上是一个处理器，而不仅仅是一个IO设备。 使用CAPI的好处包括从处理器直接使用共享内存，核处理器缓存直接传输数据，简化编程模型。
 
 # 11. POWER 9
-**POWER9**芯片有24个SMT4处理器核或12个SMT8处理器核，每队SMT4处理器核或者一个SMT8处理器核，组成一个slice，每个slice包含512kB L2缓存和10MB L3缓存。
+**POWER9**芯片有24个SMT4处理器核或12个SMT8处理器核，每对SMT4处理器核或者一个SMT8处理器核，包含512kB L2缓存和10MB L3缓存。
 * SMT8 是为PowerVM优化
-* SMT4 Linux优化
+* SMT4 适用于Linux
 ![Pasted image 20230907145848.png](/assets/images/power/Pasted image 20230907145848.png)
 
-## 11.1 POWER9 Core Execution Slice Microarchitecture
-A **Slice** is the basic 64-bit computing block incorporating a single Vector and Scalar Unit(**VSU**) coupled with **Load/Store Unit** (**LSU**). VSU has a heterogeneous mix of computing capabilities including integer and floating point supporting scalar and vector operations. IBM claims this setup allows for higher utilization of resources while providing efficient exchanges of data between the individual slices. Two slices coupled together make up the **Super-Slice**, a 128-bit POWER9 physical design building block. Two super-slices together along with an **Instruction Fetch Unit** (**IFU**) and an **Instruction Sequencing Unit** (**ISU**) form a single POWER9 SMT4 core. The SMT8 variant is effectively two SMT4 units.
+## 11.1 POWER9 Core Execution Slice微架构
+一个**Slice**是一个集成 **Vector and Scalar Unit(VSU)**和**Load/Store Unit(LSU)**的64位计算模块，VSU混合了整型和浮点的标量和向量操作。IBM宣称提高了资源利用率同时提供了不同slice间高效数据交换。两个slices组成一个**Super-Slice**，每个**super-slice**是一个128位的**POWER9**物理设计模块。两个super-slices，一个**Instruction Fetch Unit(IFU)** 和一个**Instruction Sequencing Unit(ISU)**组成一个**POWER9** SMT4核，SMT8等效于两个SMT4。下图展示了相应的关系：
 ![Pasted image 20230907160728.png](/assets/images/power/Pasted image 20230907160728.png)
-## 11.2 POWER9 Core Pipeline
-POWER9 modular design allowed IBM to reduce fetch-to-compute latency by 5 cycles. Additional 3 cycles were shorten from map-to-retire for floating point instructions. POWER9 furthered increased fusion and reduced the number of instructions cracked (POWER handles complex instructions by 'cracking' them into two or three simple µOPs). Instruction grouping at dispatch that was done in POWER8 has also been entirely removed from POWER9.
+
+## 11.2 POWER9 Core流水线
+**POWER9**减少了5个从取值到计算的周期，对于浮点指令额外减少了3个从映射到退休的周期；增强了指令融合，减少了需要拆分成uOP的指令数， 移除了分发时的指令分组。下图展示了**POWER8**和**POWER9**的流水线对比图：
 ![Pasted image 20230907162021.png](/assets/images/power/Pasted image 20230907162021.png)
-Below is a more detailed pipeline diagram
+下图展示了**POWER9** SMT4的流水线：
 ![Pasted image 20230907180319.png](/assets/images/power/Pasted image 20230907180319.png)
+
 ## 11.3 POWER9 – Core Compute
-* Fetch / Branch
-	* 32kB, 8-way Instruction Cache
-	* 8 fetch, 6 decode
-	* 1x branch execution
-* Slices issue VSU and AGEN
-	* 4x scalar-64b / 2x vector-128b
-	* 4x load/store AGEN
-* Vector Scalar Unit (VSU) Pipes
-	* 4x ALU + Simple (64b)
-	* 4x FP + FX-MUL + Complex (64b)
-	* 2x Permute (128b)
-	* 2x Quad Fixed (128b)
-	* 2x Fixed Divide (64b)
-	* 1x Quad FP & Decimal FP
-	* 1x Cryptography
-* Load Store Unit (LSU) Slices
-	* 32kB, 8-way Data Cache
-	* Up to 4 DW load or store
+**POWER9** 处理器核IFU有8路组相联32K指令缓存；每周期可以取8条指令，译码6条指令；每个VSU有4个64位标量或2个128向量位执行单元，有4个存储加载单元；每个VSU可以执行4个64位算术运算，2个128位Permute，和加解密运算；LSU有8路组相联32K数据缓存，支持4个并发64位读写。下图展示了SMT4的指令流：
 ![Pasted image 20230907161654.png](/assets/images/power/Pasted image 20230907161654.png)
-the core microarchitecture diagram is shown in below figure
+下图展示了**POWER9** SMT4核的微架构：
 ![Pasted image 20230907180048.png](/assets/images/power/Pasted image 20230907180048.png)
-## 11.4 POWER9 – Premier Acceleration Platform
-**POWERAccel** is the collective name for all the interfaces and acceleration protocols provided by the POWER microarchitecture. POWER9 offers two sets of acceleration attachments: 
-* PCIe Gen4 which offers 48 lanes at 192 GB/s duplex bandwidth
-* 25G link which offers 96 lanes delivering up to 600 GB/s of duplex bandwidth.
-On top of the two physical interfaces are a set of open standard protocols that integrated onto those signaling interfaces. The four prominent standards are:
-- CAPI 2.0 - POWER9 introduces CAPI 2.0 over PCIe which quadruples the bandwidth offered by the original CAPI protocol offered in POWER8
-- OpenCAPI 4.0- A new interface that runs on top of the POWER9 25G link (300 GiB/s) interface, designed for CPU-Accelerators applications
-- NVLink 2.0 - High bandwidth and integration between the GPU and CPU.
-- OMI - serial high bandwidth memory interface
-- On-Chip Acceleration
-    - 1x GZip
-    - 2x 842 Compression
-    - 2x AES/SHA
+
+## 11.4 POWER9 片上加速器和加速器接口
+**POWERAccel**是**POWER**提供的所有片上接口和加速协议的集合。**POWER9**提供两套加速接口：
+* 48条PCIe Gen4，双向192 GB/s带宽
+* 96条25G接口，双向600GB/s带宽
+
+在这两个物理接口之上，主要有4套协议：
+- CAPI 2.0 **POWER9**基于PCIe引入的CAPI 2.0，是**POWER8**上的CAPI的带宽的4倍
+- OpenCAPI 4.0 基于**POWER9**的25G接口(300 GiB/s)，应用于CPU和加速器连接
+- NVLink 2.0 GPU和CPU高带宽互联
+- OMI 串行高带宽内存接口
+- 片上加速
+    - 1个GZip
+    - 2个842 Compression
+    - 2个AES/SHA
+
+下图展示了上述的接口和应用：
 ![Pasted image 20230907163735.png](/assets/images/power/Pasted image 20230907163735.png)
 
-## 11.5 POWER9 Variations
-* POWER9 Scale out - use direct attach memory and support 2 socket SMP
-* POWER9 Scale up  - use DMI Buffered Memory and support 16 socket SMP
-* POWER9 Advanced IO - use OMI buffered memory and support 16 socket SMP
+## 11.5 POWER9变种
+**POWER9**根据内存接口和扩展性分为3个变种，如下图所示：
 ![Pasted image 20230907165748.png](/assets/images/power/Pasted image 20230907165748.png)
+* *POWER9 Scale out* 使用直连内存并支持2路SMP
+* *POWER9 Scale up*  使用DMI Buffered Memory并支持16路SMP
+* *POWER9 Advanced IO*使用OMI buffered memory并支持16路SMP
 
 ## 11.6 POWER9 SMP
 * 16 Gbps X-Bus Fully connected fabric within a central electronics complex drawer
