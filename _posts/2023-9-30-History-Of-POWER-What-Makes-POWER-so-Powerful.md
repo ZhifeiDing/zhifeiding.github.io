@@ -902,54 +902,56 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 * *POWER9 Advanced IO*使用OMI buffered memory并支持16路SMP
 
 ## 11.6 POWER9 SMP
-* 16 Gbps X-Bus Fully connected fabric within a central electronics complex drawer
-* 25Gbps O-Bus fabric for Drawer to Drawer interconnect
-A Power E980 logical system architecture is shown as below
+* *16Gbps X-Bus* 用于drawer内全连接互联，一个drawer由4个**POWER9**组成
+* *25Gbps O-Bus* 用于Drawer与Drawer之间互联
+
+下图展示了基于**POWER9**的Power E980系统逻辑架构示意图：
 ![Pasted image 20230907174711.png](/assets/images/power/Pasted image 20230907174711.png)
-A drawer is consisted of 4 POWER9. Below shows the symmetric multiprocessing (SMP) connections between nodes for 2-, 3-, and 4-drawer configurations
+
+下图分别展示了由2-, 3-, 和4-drawer组成的SMP系统的示意图：
 ![Pasted image 20230907175136.png](/assets/images/power/Pasted image 20230907175136.png)
 ![Pasted image 20230907175155.png](/assets/images/power/Pasted image 20230907175155.png)
 
 # 12. POWER 10
-The Power10 processor is a superscalar symmetric multiprocessor that is manufactured in samsung 7-nm with 18 layers of metal. The processor contains up to 15 cores that support eight simultaneous multithreading (SMT8) independent execution contexts. Each core has private access to 2 MB L2 cache and local access to 8 MB of L3 cache capacity. The local L3 cache region of a specific core also is accessible from all other cores on the processor chip. The cores of one Power10 processor share up to 120 MB of latency optimized non-uniform cache access (NUCA) L3 cache.
-The modular design of the Power10 core provides for two core variants. An “SMT8 core” supports up to eight simultaneously active threads and has double the resources of an “SMT4 core” which supports up to four simultaneously active threads. Each Power10 chip is fabricated to support either SMT8 or SMT4 cores. The SMT8 cores are designed to operate with the PowerVM firmware and hypervisor. The SMT8 cores can operate with either one partition per thread or one partition per core. The SMT4 cores can operate with one partition per thread.
+**POWER10**最多有15个SMT8的处理器核，每个核有2 MB L2缓存和本地8 MB L3缓存，一共120M的 __non-uniform cache access (NUCA)__ L3缓存。**POWER10**在制造时候确定支持SMT8或SMT4；SMT8处理器核是为PowerVM固件和hypervisor设计，支持每线程一个分区或一个核一个分区；SMT4处理器核只支持每线程一个分区。下图展示了**POWER10**的全芯片规划图：
 ![Pasted image 20230906201517.png](/assets/images/power/Pasted image 20230906201517.png)
 
-## 12.1 Power10 Core Microarchitecture (per SMT4-Core-Resource)
-Below shows a block diagram of major Power10 core organizational features. Relative sizes and capacities compared with the POWER9 core are highlighted for reference.
-* Instructions are fetched from the L2 cache, 64 bytes to 32 bytes per cycle, then pre-decoded and stored in a 48 KB, 6-way, L1 instruction cache at a rate of up to 32 bytes per cycle. In each cycle, up to eight instructions are read from the L1 instruction cache or bypassed on write. Fetched instructions are scanned for branches and access a set of advanced predictors for both direction and target address prediction. Predicted taken branches redirect subsequent fetches.
-	* When a fetch misses the L1 cache, the request is serviced by the L2 cache after under-going address translation. Cache misses conditionally generate up to seven cache-line prefetches based on a prefetch predictor.
-	* Fetched instructions are bypassed into the decode pipeline when available. When decode is stalled or another thread is being selected for decode, the fetched instructions are buffered in a 128-entry instruction buffer.
-* Instruction decode processes up to eight instructions per cycle. The 8-byte prefixed instructions each use two of the eight decode lanes. A subset of instructions are cracked into two, three, or four internal operations. A limited set of instructions are expanded with a micro-code engine that generates internal operations across multiple cycles of the decode pipeline. Instructions flagged for fusion by pre-decode are processed at instruction decode. Fused instructions can be in one of several categories.
-* Up to eight internal operations or instructions are processed per cycle. Dispatch assigns execution resources as needed for each internal operation. A NOP is finished directly at dispatch and does not execute in a computational pipeline. The following resources are allocated at dispatch and when not available can cause dispatch holds.
-	* Issue queue entry and slice assignment
-	* Register renaming and dependency ordering
-	* Load/store queue virtual entry
-* Dispatched instructions are tracked in the Instruction Completion Table (ICT) until each operation has finished execution. The ICT holds up to 512 operations per SMT4-core-resource. Operations can be marked as finished either at dispatch or as they are executed in the pipelines. Operations are completed up to 64 instructions per cycle and on the granularity of two entries, called an “instruction-pair”.
+## 12.1 Power10 SMT4处理器核微架构
+下图展示了**POWER10**的微架构以及相对**POWER9**的对比：
 ![Pasted image 20230908111004.png](/assets/images/power/Pasted image 20230908111004.png)
 
-### 12.1.1 Issue Queue
-Each slice has an issue queue with 20 entries. Per SMT4-core-resource, there are four issue queues supporting a total of up to 80 operations awaiting dependency resolution.
-Each issue queue is associated with a native computation slice and paired with a second slice to form a super-slice. The super-slice contains an additional set of computation pipelines as well as a load port and a store/branch port. Each cycle, the issue queue in each slice can issue three instructions
-* a computational operation
-* a load
-* a store/branch/simple operation.
-Each super-slice selects a single load and a single store/branch/simple operation for execution.
-![Pasted image 20230908113518.png](/assets/images/power/Pasted image 20230908113518.png)
-### 12.1.2 POWER10 Core Pipeline
-The Power10 core pipeline stages show the nominal path through the load and store unit (LSU), arithmetic and logical unit (ALU), and floating-point unit (FPU) pipelines including the shortest latency data forwarding paths.
-* Branch Pipeline
-	* Branches are issued from an issue port shared with both store address generation and simple addition operations. Each SMT4-core-resource can resolve one branch per cycle. Branches are issued after the branch target-address source register (__ LNK__ , __ CNT__ , or __ TAR__ ), if any, is ready; even when a __ condition register (CR)__  source is still awaiting resolution. These partially executed branches awaiting __ CR__  results are held in the branch condition queues (BCQ). This enables target register dependent branches to resolve target register dependencies and extends the effective capacity of the main issue queues. Move-to and move-from operations between the target registers and GPRs are optimized for latency. The nominal latency of these operations has been reduced by sharing the physical register file between the LNK, CNT, TAR, and the GPRs. Further optimizations include dependency bypass at dispatch to completely eliminate the dependent latency between a target producing instruction and the consuming branch in some scenarios.
-* Simple Pipeline
-	* Add immediate instructions, such as those used for address manipulation, are supported on either the main ALU pipelines or share the simple pipeline used for some branch instructions by issuing to the store/branch/simple issue port. These operations can use either of the two simple ports per SMT4-core resource to produce a result with a nominal 2-cycle latency. A dynamic policy steers the add immediate instructions to the simple pipelines or the main ALU pipelines.
-* Local/Store Pipeline
-	* Load and store instructions are issued and released from the slice issue queues once operand dependencies are met and once the assigned entry is available in the load or store queue respectively. Store instructions issue with the address generation first and subsequently issue store data. Load and store pipeline hazards that require re-entry into the pipeline are handled locally by the load and store pipelines and queues. A load hazard such as a read-write cache bank conflict can be accommodated by a single cycle pipeline delay. Other hazards that require pipeline re-entry are managed by the load and store queues and are fully pipelined with operations from the main issue queues.
-![Pasted image 20230908111733.png](/assets/images/power/Pasted image 20230908111733.png)
-### 12.1.3 Instruction flow
-The high-level pipeline segments for instruction flow are depicted. The front end of the Power10 core operates with aggressive speculation and an in-order pipeline; decoding and dispatching up to eight instructions per cycle. After instruction execution resources are assigned at dispatch, internal operations (iops) are executed out-of-order in multi-slice, super-scalar compute and load/store pipelines.
-![Pasted image 20230908111421.png](/assets/images/power/Pasted image 20230908111421.png)
+* 每周期来自L2 cache的64B，先预译码并以每周期32B保存在6路组相联的48KB的L1指令缓存中。每周期，从L1中取8条指令，然后扫描分支指令，通过分支预测器来预测分支方向和目标地址。
+	* 当L1取值未命中时，请求发送到L2，基于一个预取预测器，缓存缺失通常最多会导致7个缓存行的预取
+	* 当可用时，指令会被旁路到译码流水线，当译码停滞或切换线程时，指令被缓存在128条目的指令缓冲中。
+* 每周期译码8条指令，8B的前缀指令暂用8条指令中的2条；少量指令被分解成2，3或4个内部操作，少数指令会使用微码引擎经过多个周期展开成内部操作。预译码标记的需要融合的指令在译码阶段处理。 
+* 每周期可以执行8条指令，分发阶段为指令指定执行资源，`NOP` 在分发阶段直接结束而不需用经过计算流水线，当下列资源不足时，会导致分发停止：
+	* 发射队列条目和slice分配
+	* 寄存器重命名和依赖顺序
+	* 存储加载队列虚拟条目
+* 分发指令使用 __Instruction Completion Table (ICT)__ 来记录和跟踪，直到指令结束执行；每个SMT4 拥有 512条目的 __ICT__  ；2个条目称为一个指令对，每周期可以完成64条指令。
 
-## 12.2 Thread and LPAR Management
+### 12.1.1 发射队列
+每个slice有20条目的发射队列，每个SMT4处理器核有4个发射队列，一共支持80个依赖指令。 每个发射队列有一个本地计算slice和结对组成的super-slice的第二个发射队列，super-slice包含一套额外的计算流水线和一个读端口和写端口。每周期，每个slice的发射队列能发射3条指令：
+* 一个计算指令
+* 一个加载指令
+* 一个存储或分支或简单指令
+
+每个super-slice选择一个加载和存储/分支/简单指令执行，下图展示了一个SMT4的发射队列组成示意图：
+![Pasted image 20230908113518.png](/assets/images/power/Pasted image 20230908113518.png)
+
+### 12.1.2 POWER10处理器核流水线
+下图展示了**POWER10**处理器核流水线，包括IFU流水线，LSU流水线和VSU流水线：
+![Pasted image 20230908111733.png](/assets/images/power/Pasted image 20230908111733.png)
+* __分支流水线__ 分支指令和存储地址计算以及简单加指令公用发射端口；每个SMT4每周期能处理一个分支指令，即使 __CR__ 寄存器还未确定，只要分支目标地址寄存器 __ LNK__ , __ CNT__ , 或 __ TAR__ 准备好之后分支指令就会发射；这些部分执行的分支指令会在 __branch condition queues (BCQ__ 里等待 __ CR__  结果，这样可以使依赖目标寄存器的分支解决目标寄存器依赖。目标寄存器(LNK, CNT, TAR)和GPRs之间通过共享物理寄存器来减少 __move_to__ 和 __move_from__ 指令的延迟；目标地址产生指令和分支指令之间的依赖通过数据转发来减少延迟。
+* __简单流水线__ 类似用来操作地址的立即数加指令，既可以在ALU流水线支持，也可以在存储/分支/简单流水线支持。这些指令可以使用每个SMT4里两个简单端口中任意一个，两个周期延迟计算结果；立即数加指令使用动态策略来发射到简单流水线或是ALU流水线。
+* __存储加载流水线__ 当存储加载指令的操作数依赖性满足并且对应加载或存储队列条目分配之后，存储加载指令发射，并且相应发射队列条目被释放。存储指令首先发射来生成地址，随后发射来存储数据；存储加载流水线冒险在本地的存储加载流水线及队列中处理。类似读写缓存bank冲突的读冒险可以使用一个周期流水线延迟解决，其他需要刷流水线的冒险使用存储和加载队列解决。
+
+### 12.1.3 POWER10处理器核指令流
+下图展示了**POWER10**的简化的指令流图：
+![Pasted image 20230908111421.png](/assets/images/power/Pasted image 20230908111421.png)
+**POWER10**实现了一个激进投机的顺序流水前端，每周期取值，译码和分发8条指令。
+
+## 12.2 Thread核LPAR管理
 With SMT8 cores, SMT4-core-resource_0 supports the even logical threads (0, 2, 4, 6) and SMT4-core resource_1 supports the odd logical threads (1, 3, 5, 7). All external interrupt lines and internal interrupts, such as decrementer, hypervisor, and door-bell interrupts, are steered to the correct resources to wake up the correct logical threads.
 Within an SMT4-core-resource, the following SMT modes are supported:
 * Single-thread (ST) mode: one thread active.
