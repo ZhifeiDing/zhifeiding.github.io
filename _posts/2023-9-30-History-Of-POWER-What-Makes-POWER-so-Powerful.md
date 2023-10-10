@@ -996,36 +996,29 @@ The SMP ports configured for coherency are used for both data and control inform
 1. The chip containing the master that is the source of the command issues the reflected command and the combined response to all other chips in the SMP system. Partial responses are collected and returned to the chip containing the master.
 2. Data is moved point-to-point. For read operations, the chip containing the source of the data directs the data to the chip containing the master. For write operations, the chip containing the master directs the data to the LPC that performs the write operation. The routing tag contains the chip and unit identifier information for this purpose.
 
-### 12.5.3 Power10 Coherency Flow
-1-Hop Broadcast Scope Definition
+### 12.5.3 Power10一致性
+1-Hop的广播范围定义如下图所示：
 ![Pasted image 20230909193458.png](/assets/images/power/Pasted image 20230909193458.png)
-2-Hop Broadcast Scope Definition
+2-Hop的广播范围定义如下图所示：
 ![Pasted image 20230909193512.png](/assets/images/power/Pasted image 20230909193512.png)
-Power10 System Real-Address Map
+**POWER10** 真实地址定义如下所示： 
 ![Pasted image 20230909193549.png](/assets/images/power/Pasted image 20230909193549.png)
 
 ## 12.6 NCU
-The Power10 Non-Cacheable Unit (NCU) is responsible for processing noncacheable load and store operations, word and doubleword load and store atomic instructions (lwat, ldat, stwat, stdat), and certain other uncacheable operations such as __ tlbie__  and portions of the various __ sync__  and __ ptesync__  instructions. One NCU unit is instantiated per SMT4-core resource.
+**POWER10**的*Non-Cacheable Unit (NCU)*负责处理非缓存的读写操作，字和双字的原子读写指令( `lwat` , `ldat` , `stwat` , `stdat` )，, `tlbie`  和 `sync`  and `ptesync` 指令，每一个SMT4有一个NCU单元。 下图展示了*NCU*的逻辑框图：
 ![Pasted image 20230909194305.png](/assets/images/power/Pasted image 20230909194305.png)
-The Power10 NCU provides one dedicated cache-inhibited load station (LDS) per thread to process cache inhibited loads and load word or doubleword atomics (lwat, ldat). Cache-inhibited loads (whether guarded or not) and load atomics are neither gathered nor are they reordered in the Power10 implementation.
-For cache-inhibited stores and store word and doubleword atomics (stwat, stdat), a store queue (STQ) consisting of sixteen 64-byte store gather stations is provided. The store gather stations are shared across the four core threads and hardware prevents any thread from blocking other threads in the store queue. A pair of 64-byte stations can “pair” together to gather up to 128 bytes.
-The Power10 NCU supports gathering and reordering for cache-inhibited stores in the unguarded caching inhibited (IG = ‘10’) space. In caching-inhibited, but guarded space (IG = ‘11’), cache-inhibited stores are neither reordered nor gathered as required by the architecture. Similarly, atomic word and doubleword stores (stwat, stdat) are never gathered, but might be re-ordered.
-The Power10 NCU provides eight store address machines (SAM) that manage the address tenure of the store allowing for up to eight outstanding cache-inhibited or store atomic word or doubleword instructions (stwat, stdat).
-Finally, the NCU provides eight snoop queues (TLBS) to process snooped TLBIE operations and four snoop queues (SLBS) to process SLBIE operations and forward these to the core.
+**POWER10**的*NCU*有一个专用的*cache-inhibited load station (LDS)*，每个线程一个，处理非缓存的读写操作，字和双字的原子读写指令( `lwat` , `ldat` )。非缓存的读，无论是否是guarded, 和原子读即不会合并也不会乱序；对于非缓存的写，字和双字的原子读写指令( `stwat` , `stdat` )，由一个16条目的*store gather station*组成的*store queue (STQ)*处理，4个线程共享，一对64B的*station*可以合并成128B。 
 
-## 12.7 Memory Controller
-The Power10 memory controller unit (MCU) provides the system memory interface between the on-chip SMP interconnect fabric and the OpenCAPI memory interface (OMI) links. These OMI links can be attached to external memory buffer chips that conform to the OpenCAPI 3.1 specification (Memory Interface Class only).
+**POWER10**的*NCU*有8个*address machines (SAM)*可以支持8个非缓存写或`stwat` , `stdat`。*NCU*还有8个*snoop queues (TLBS)*来处理侦察到的 `TLBIE` 和4个 `snoop queues (SLBS)`处理SLBIE并转发到处理器核。
 
-The buffer chips, in turn, directly connect to industry standard memory DIMM interfaces or other memory media (such as, storage-class memory). Each memory channel supports two OMI links. Physically, the MCUs are grouped into four instances of an extended memory OMI (EMO) unit. Each EMO unit contains two MCU channels. The MCUs process 128-byte read requests and 64-byte or 128-byte write requests from processor cores, caches, and I/O host bridges; 1 - 128-byte partial-line writes; and atomic memory operations (AMOs). The MCU also handles address-only operations for the purpose of address protection, acting as the lowest-point of coherency (LPC).
+## 12.7 内存控制器
+**POWER10**内存控制器提供了片上SMP互联和*OpenCAPI memory interface (OMI)*接口之间控制逻辑，OMI接口可以连接外部符合OpenCAPI 3.1(Memory Interface Class only)的*memory buffer*芯片，*memory buffer*芯片直接连接业界标准的DIMM。每个内存通道支持2个OMI连接，物理上，内存控制器组织成4个*extended memory OMI (EMO)*实例，每个*EMO*有两条通道。内存控制器可以处理来自处理器，缓存和IO的128B的读请求和64B写请求，1 - 128B部分写和内存原子操作(AMOs)。内存控制也处理地址保护，充当*lowest-point of coherency (LPC)*。
 
-The eight MCUs on the chip can be configured into one or more address interleave groups. Within each group, the address space is divided into portions, such that each sequential portion is handled by a different MCU in a round-robin fashion. The maximum memory addressing per Power10 chip is 128 TB.
-Within a single MCU channel, the two OMI sub-channels are always address interleaved on a 128-byte boundary (assuming both sub-channels are populated with memory).
-below is the Power10 System Memory High-Level Diagram
+8个内存控制器可以配置成1个或多个地址交织的组，每个组内部，地址空间被分成不同部分，每个连续的部分可以*round-robin*方式由不同内存控制器处理。**POWER10**最大可用地址空间是128 TB。在一个内存控制器通道里，两个OMI子通道总是以128B进行交织。下图展示了**POWER10**的内存系统示意图：
 ![Pasted image 20230909195300.png](/assets/images/power/Pasted image 20230909195300.png)
-To improve memory RAS for large systems, the memory controller supports:
-* Selective Memory Mirroring - In this configuration, memory sub-channels are grouped into mirrored pairs. Separate mirrored and non-mirrored BAR registers enable memory access to be targeted to either mirrored or non-mirrored space
-* Whole Memory Encryption - The memory controller supports Advanced Encryption Standard (AES) encryption/decryption of all traffic to system memory. Encryption is enabled via configuration bits accessible to firmware. Accesses to OMI configuration and MMIO spaces are never encrypted, because they are not part of the system memory media. Other than that, all traffic to system memory is encrypted (if enabled) or not.
-
+为了提高大型系统的RAS，内存控制器支持：
+* *Selective Memory Mirroring* 在这个配置下，内存子通道分成镜像对，不同镜像对和非镜像的 __BAR__ 寄存器允许访问镜像或非镜像区域
+* *Whole Memory Encryption* 内存控制器支持对所有的访存传输做*Advanced Encryption Standard (AES)*加解密。加密通过固件可访问配置寄存器使能，对OMI配置空间和MMIO空间不会加密。
 
 ## 12.8 片上加速器
 **Nest Accelerator unit (NX)** 由加解密和压缩解压缩引擎组成，下图展示了**NX**的基本结构框图： 
