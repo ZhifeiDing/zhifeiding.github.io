@@ -5,24 +5,24 @@ tags : [chip, cpu, architecture, history]
 ---
 
 # 前言
-最近几年系统性的学习并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，串联起不同技术，挖掘不同架构之间的渊源，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾IBM POWER系列。
+最近几年系统性的学习并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，串联起不同技术，挖掘不同架构之间的渊源，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾*IBM POWER*系列。
 # 0. 概述
-POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的RISC System/6000产品。1991年，Apple, IBM, 和Motorola一起合作开发了PowerPC架构。1997, Motorola和IBM合作将PowerPC用于嵌入式系统。2006, Freescale和IBM合作制定了POWER ISA 2.03。 2019年8月21, 开源了POWER Instruction Set Architecture (ISA)。PowerISA由必须的基础架构，4组可选特性，一组过时特性组成。OpenPOWER也允许自定义扩展。
+*POWER (Performance Optimization With Enhanced RISC)*架构起源于1990年IBM的RISC System/6000产品。1991年，Apple, IBM, 和Motorola一起合作开发了*PowerPC*架构。1997, Motorola和IBM合作将*PowerPC*用于嵌入式系统。2006, Freescale和IBM合作制定了POWER ISA 2.03。 2019年8月21, 开源了POWER Instruction Set Architecture (ISA)。PowerISA由必须的基础架构，4组可选特性，一组过时特性组成。OpenPOWER也允许自定义扩展。
 
-本文通过系统性回顾整个POWER系列处理器，试图通过POWER系列处理器发展的历史脉络，来展现近30年计算架构的变迁，技术的演进，进而窥见计算技术发展的未来。
+本文通过系统性回顾整个*POWER*系列处理器，试图通过*POWER*系列处理器发展的历史脉络，来展现近30年计算架构的变迁，技术的演进，进而窥见计算技术发展的未来。
 
 本文组织形式如下:
-* 第一章简单介绍POWER指令集架构3.1B版本， 也是最新POWER10处理器使用的指令集。通过本章介绍，可以了解程序在POWER架构上运行的过程及预期结果，掌握异常处理，特权模型，以及POWER调试手段
-* 第二章简单回顾整个POWER系列处理器，总结各代处理器的面积，功耗，缓存，IO等基本内容
-* 第三章，第四章，第五章分别描述POWER 1和POWER 2的整体架构，简单介绍了POWER 3的微架构，主要是了解这些古老系统结构
-* 第六章详细描述POWER 4微架构以及从单核到双核的进化
-* 第七章详细描述POWER 5微架构，从单线程到双线程的演进，以及集成的片上内存控制器
-* 第八章介绍POWER 6处理器微架构，了解从之前乱序执行变为顺序执行的取舍
-* 第九章介绍POWER 7处理器微架构，了解在支持更多线程情况下如何减少面积和功耗，以及内部缓存协议状态
-* 第十章介绍POWER 8处理器微架构，了解如何从上一代SMT4到SMT8
-* 第十一章主要介绍POWER 9处理器微架构，了解基本单元之间解耦，SMP互联
-* 第十二章完整介绍POWER 10处理器微架构，SMP互联，片上加速器，中断
-* 文章最后列出了主要的参考文献，主要是**POWER*指令集架构，各代**POWER**的架构和微架构论文，以及各代**POWER**服务器的技术文档
+* 第一章简单介绍**POWER**指令集架构3.1B版本， 也是最新**POWER10**处理器使用的指令集。通过本章介绍，可以了解程序在**POWER**架构上运行的过程及预期结果，掌握异常处理，特权模型，以及**POWER**调试手段
+* 第二章简单回顾整个**POWER**系列处理器，总结各代处理器的面积，功耗，缓存，IO等基本内容
+* 第三章，第四章，第五章分别描述**POWER 1**和**POWER 2**的整体架构，简单介绍了**POWER 3**的微架构，主要是了解这些古老系统结构
+* 第六章详细描述**POWER 4**微架构以及从单核到双核的进化
+* 第七章详细描述**POWER 5**微架构，从单线程到双线程的演进，以及集成的片上内存控制器
+* 第八章介绍**POWER 6**处理器微架构，了解从之前乱序执行变为顺序执行的取舍
+* 第九章介绍**POWER 7**处理器微架构，了解在支持更多线程情况下如何减少面积和功耗，以及内部缓存协议状态
+* 第十章介绍**POWER 8**处理器微架构，了解如何从上一代SMT4到SMT8
+* 第十一章主要介绍**POWER 9**处理器微架构，了解基本单元之间解耦，SMP互联
+* 第十二章完整介绍**POWER 10**处理器微架构，SMP互联，片上加速器，中断
+* 文章最后列出了主要的参考文献，主要是**POWER**指令集架构，各代**POWER**的架构和微架构论文，以及各代**POWER**服务器的技术文档
 
 # 1. POWER指令集架构
 ## 1.1 寄存器
@@ -32,8 +32,8 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * __VR Save Register (VRSAVE)__ 是32位寄存器，软件作为SPR使用。
 * __Fixed-Point Exception Register (XER)__ 是64位寄存器
 	* 0:31 Reserved
-	* 32 __Summary Overflow (SO)__ Summary Overflow置位当Overflow置位.
-	* 33 __Overflow (OV)__ 指令执行溢出时Overflow置位
+	* 32 __Summary Overflow (SO)__ 当Overflow置位时Summary Overflow置位
+	* 33 __Overflow (OV)__ 指令执行溢出时置位
 	* 34 __Carry (CA)__ 
 	* 35:43 Reserved
 	* 44 __Overflow32 (OV32)__ OV32 32位运行模式时溢出位
@@ -47,31 +47,47 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * __Logical Partitioning Control Register (LPCR)__  __LPCR__ 控制资源的逻辑分区，__Logical Partitioning (LPAR)__ 功能将线程和存储空间分配到一个逻辑分区，用来隔离不同分区之间的线程；通过一个hypervisor，这种隔离可以作用于problem和privileged non-hypervisor态。
 * __Logical Partition Identification Register (LPIDR)__  __LPIDR__ 设置逻辑分区ID
 * __Machine State Register (MSR)__ 是64位寄存器，控制和定义了线程的状态：
-	* 0 __Sixty-Four-Bit Mode (SF)__ 0 线程运行在32位模式，1 线程运行在64位模式。当线程处于ultravisor时软件要保证 __SF=1__ 
+	* 0 __Sixty-Four-Bit Mode (SF)__ 当线程处于ultravisor时软件要保证 __SF=1__ 
+		* 0 线程运行在32位模式
+		* 1 线程运行在64位模式
 	* 1:2 Reserved 
 	* 3 __Hypervisor State (HV)__ 具体意义参考特权模型章节
 	* 4 Reserved 
 	* 5 常0
 	* 6:37 Reserved 
-	* 38 __Vector Available (VEC)__ 0 线程不能执行任何向量指令 1 线程可以执行向量指令
+	* 38 __Vector Available (VEC)__ 
+		* 0 线程不能执行任何向量指令 
+		* 1 线程可以执行向量指令
 	* 39 Reserved 
-	* 40 __VSX Available (VSX)__ 0 向量不能执行 __Vector Scalar Extension(VSX)__ 指令1 向量可以执行 __VSX__ 指令
-	* 41 __Secure (S)__ 0 线程处于非安全态，不能访问安全域线程，且不在ultravisor态 1 线程处于安全态
+	* 40 __VSX Available (VSX)__ 
+		* 0 向量不能执行 __Vector Scalar Extension(VSX)__ 指令
+		* 1 向量可以执行 __VSX__ 指令
+	* 41 __Secure (S)__ 
+		* 0 线程处于非安全态，不能访问安全域线程，且不在ultravisor态 
+		* 1 线程处于安全态
 	* 42:47 Reserved 
-	* 48 __External Interrupt Enable (EE)__ 0 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__ 中断被禁止 1 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__使能
+	* 48 __External Interrupt Enable (EE)__ 
+		* 0 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__ 中断被禁止 
+		* 1 __External__ , __Decrementer__ , __Performance Monitor__ , 和 __Privileged Doorbell__使能
 	* 49 __Problem State (PR)__ 具体意义参考特权模型章节
-	* 50 __Floating-Point Available (FP)__ 0 线程不能执行浮点指令 1 线程可以执行浮点指令
-	* 51 __Machine Check Interrupt Enable (ME)__ 0 __Machine Check__ 中断禁止 1 __Machine Check__ 中断使能
+	* 50 __Floating-Point Available (FP)__ 
+		* 0 线程不能执行浮点指令 
+		* 1 线程可以执行浮点指令
+	* 51 __Machine Check Interrupt Enable (ME)__ 
+		* 0 __Machine Check__ 中断禁止 
+		* 1 __Machine Check__ 中断使能
 	* 52 __Floating-Point Exception Mode 0 (FE0)__ 
 	* 53:54 __Trace Enable (TE)__
 		* 00 Trace Disabled: 线程正常执行指令
 		* 01 Branch Trace: 当线程执行完分支指令之后产生 __Branch type Trace__ 中断
-		* 10 Single Step Trace: 当线程成功完成下一个指令时产生一个 __Single-Step type Trace__ 中断，__urfid__ , __hrfid__ , __rfid__ , __rfscv__ , 或 __Power-Saving Mode__ 指令除外。
+		* 10 Single Step Trace: 当线程成功完成下一个指令时产生一个 __Single-Step type Trace__ 中断，__urfid__ , __hrfid__ , __rfid__ , __rfscv__ , 或 __Power-Saving Mode__ 指令除外
 		* 11 Reserved
 	* 55 __Floating-Point Exception Mode 1 (FE1)__
 	* 56:57 Reserved 
 	* 58 __Instruction Relocate (IR)__ 0 禁止指令地址转换； 1 使能指令地址转换
-	* 59 __Data Relocate (DR)__ 0 禁止数据地址转换，并且不发生 __Effective Address Overflow (EAO)__ ；1 使能数据地址转换，__EAO__ 产生 __Data Storage__ 中断
+	* 59 __Data Relocate (DR)__ 
+		* 0 禁止数据地址转换，并且不发生 __Effective Address Overflow (EAO)__
+		* 1 使能数据地址转换，__EAO__ 产生 __Data Storage__ 中断
 	* 60 Reserved 
 	* 61 __Performance Monitor Mark (PMM)__ 软件控制Performance Monitor
 
@@ -190,15 +206,41 @@ __MSR.SF__ 控制线程32/64位计算模式.
 ![Pasted image 20230906084212.png](/assets/images/power/Pasted image 20230906084212.png)
 
 ### 1.6.3 Radix Tree Translation
-__Radix Tree root descriptor (RTRD)__  指定了转换的地址大小，root table的大小和位置。下图展示了4级Radix Tree在 __PDE.NLS=13__  和 __NLS=9__ 时将52位EA转换成56位RA的过程：
+__Radix Tree root descriptor (RTRD)__  指定了转换的地址大小，根表的大小和位置。下图展示了4级Radix Tree在 __PDE.NLS=13__  和 __NLS=9__ 时将52位EA转换成56位RA的过程：
 ![Pasted image 20230905170905.png](/assets/images/power/Pasted image 20230905170905.png)
 Radix Tree Page Directory Entry内容如下：
 ![Pasted image 20230905171134.png](/assets/images/power/Pasted image 20230905171134.png)
 ![Pasted image 20230905171203.png](/assets/images/power/Pasted image 20230905171203.png)
 Radix Tree Page Table Entry
+![radix_tree_pte.png](/assets/images/power/radix_tree_pte.png)
+* 0 V 有效位
+* 1 L 叶节点
+* 2 sw SW bit 0 
+* 7:51 RPN Real Page Number 
+* 52:54 sw SW bits 1:3 
+* 55 R Reference 
+* 56 C 修改位
+* 58:59 ATT 属性
+	* 0b00- normal memory (0010) 
+	* 0b01- reserved 
+	* 0b10- non-idempotent I/O (0111) 
+	* 0b11- tolerant I/O (0110) 
+* 60:63 EAA 访问权限
+	* 0 Privilege (只应用于process-scoped translation) 
+		* 0 - problem可访问; privileged访问由 __[I]AMR__ 位0控制
+		* 1 - 只可privileged访问
+	* 1 Read 
+		* 0 不可读 
+		* 1 可读
+	* 2 Read/Write 
+		* 0 不可读写
+		* 1 可读写
+	* 3 Execute 
+		* 0 不可执行 
+		* 1 可执行
 
 #### 1.6.3.1 Nested Translation
-当 __MSR.HV=0__  且地址转换使能时，对于guest real address必须经过分区的hypervisor的Radix Tree转换。下图展示了Radix on Radix Page Table对52位EA转换过程，一共需要24次内存访问：
+当 __MSR.HV=0__  且地址转换使能时，对于guest real address必须经过分区的hypervisor的Radix Tree转换。下图展示了Radix on Radix Page Table对52位EA转换过程，一共需要25次内存访问：
 ![Pasted image 20230905172603.png](/assets/images/power/Pasted image 20230905172603.png)
 ### 1.6.4 Secure Memory Protection
 当 __SMFCTRL.E=1__ 时使能Secure Memory Protection。每个内存地址有Secure Memory属性 __mem.SM__ 。当 __mem.SM=1__ 时表示是安全内存区域；__mem.SM=0__  表示是普通内存区域。通常只有安全分区和ultravisor会访问安全内存区域。
