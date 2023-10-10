@@ -1027,32 +1027,24 @@ To improve memory RAS for large systems, the memory controller supports:
 * Whole Memory Encryption - The memory controller supports Advanced Encryption Standard (AES) encryption/decryption of all traffic to system memory. Encryption is enabled via configuration bits accessible to firmware. Accesses to OMI configuration and MMIO spaces are never encrypted, because they are not part of the system memory media. Other than that, all traffic to system memory is encrypted (if enabled) or not.
 
 
-## 12.8 On-Chip Accelerators
-The Nest Accelerator unit (NX) consists of cryptographic and memory compression/decompression engines(coprocessors) with support hardware. Below figure shows a block diagram of the NX.
+## 12.8 片上加速器
+**Nest Accelerator unit (NX)** 由加解密和压缩解压缩引擎组成，下图展示了**NX**的基本结构框图： 
 ![Pasted image 20230911083955.png](/assets/images/power/Pasted image 20230911083955.png)
-To support coprocessor invocation by user code, use of effective addresses, high-bandwidth storage accesses, and interrupt notification of job completion, NX includes the following support hardware:
-* SMP interconnect unit (SIU)
-	* Interfaces to SMP interconnect and direct memory access (DMA) controller, Provides 16-bytes per cycle data bandwidth per direction to both
-	* Employs SMP interconnect common queue (SICQ) multiple parallel read and write machine architecture to maximize bandwidth
-	* User-mode access control (UMAC) coprocessor invocation block
-		* After the Virtual Accelerator Switchboard (VAS) accepts a CRB that was initiated by a copy/paste instruction, the UMAC snoops the VAS’s notification for an available coprocessor request block (CRB or job).
-		* Supports one high- and one low-priority queue per coprocessor type
-		* Retrieves CRBs from queues and dispatches CRBs to the DMA controller
-	* Effective-to-real address translation (ERAT) table stores 32 recently used translations
-* DMA Controller - Decodes CRB to initiate coprocessor and move data on behalf of coprocessors
+为了支持用户态使用有效地址对加速器调用，访问存储空间以及中断通知任务完成，**NX**包括下列逻辑：
+* *SMP interconnect unit (SIU)* 和SMP互联以及DMA控制器的接口，每个16B的数据位宽；使用支持多个并行读写的**SMP interconnect common queue (SICQ)**最大化带宽； *User-mode access control (UMAC)* 协处理器调用模块，当*Virtual Accelerator Switchboard (VAS)*接收到 `copy/paste` 指令发出的*coprocessor request block (CRB)* 后，*UMAC*侦查*VAS*获取可用的*CRB*。每个协处理器分别支持一个高优先级和一个低优先级队列；*SIU*负责从队列获取*CRB*并分发到DMA控制器；*Effective-to-real address translation (ERAT)* 表可以保存最近32个地址转换。
+* DMA控制器 解码CRB并代表协处理器搬运数据
 
-below figure shows the Flow for NX Invocation through the VAS.
+下图展示了通过VAS来调用NX的流程图：
 ![Pasted image 20230911090237.png](/assets/images/power/Pasted image 20230911090237.png)
-1. After a send window has been established, the user process can begin using the NX accelerator. First, it must create a coprocessor request block (CRB). The NX specification defines the format of the CRB. This CRB is sent to the VAS unit by using the Power10 copy/paste instructions. The copy instruction places the CRB into the copy buffer. The user process then issues a paste instruction using the effective address given by the operating system during send window creation to store the copy data to the VAS. The copy data contains the 128-byte CRB. The effective address is translated to a real address by translation hardware in the core. The store to the real address is issued to the SMP interconnect as a remote memory access write (RMA_write) command and has the send window identifier embedded within the real address. The 128-byte RMA_write payload (the CRB) is stored into one of 64 VAS data buffers. The VAS has the ability to hold 128 unique window contexts. Upon snooping the RMA_write, the VAS uses the send window identifier to fetch the Send Window Table Entry from memory if not already resident with the VAS window cache logic.
-2. The VAS reads the Receive Window Identifier field in the send window context to determine which receive window the send window from the RMA_write points to. Each NX coprocessor type (CT) has a unique receive window corresponding to a unique FIFO for each of the accelerators. If the receive window is not cached, it will be fetched from memory.
-3. Using the FIFO address from the receive window context, VAS stores the RMA_write payload to memory, thereby placing the CRB onto the NX accelerator FIFO. VAS stamps or overlays a portion of the CRB with the send and receive window identifiers. NX uses this information when processing the CRB. In particular, the send window identifier in the CRB is used by NX to fetch the send window and obtain translation information for the addresses contained within the CRB. The receive FIFOs are implemented as circular queues. After reaching the end of the FIFO, VAS wraps back to the beginning of the FIFO and writes the next entry.
-4. After writing the CRB to the FIFO, VAS sends an ASB_notify command on the SMP interconnect. The ASB_notify contains a logical partition identifier (LPID), process identifier (PID), and thread identifier (TID).
-5. Each NX FIFO has a particular LPID:PID:TID combination associated with it. When NX snoops an ASB_notify that matches its programmed LPID:PID:TID, it increments the corresponding counter for the associated FIFO, indicating a new work item has been placed on the accelerator FIFO.
-6. When an NX CT queue is empty and its counter is nonzero, NX reads the next CRB from the receive FIFO. As soon as the CRB is read from the FIFO, NX does a memory mapped (MMIO) store to the VAS unit to return a credit. VAS ensures that the receive FIFO does not overflow by managing credits. The hypervisor initializes the receive window with credits equal to the number of CRBs that can be stored to the receive FIFO based on the size of the FIFO. VAS decrements the receive credit count when it stores a CRB to the receive FIFO and increments the count when NX returns a credit via MMIO store after NX pulls the CRB off of the FIFO. NX uses the stamped information from the CRB to read the send window context from memory and decrements its internal counter.
-7. NX dispatches the job to the associated CT, which can have multiple acceleration engines, and executes the CRB.
-8. Upon completion of the job, NX returns a send window credit to VAS via an MMIO store. Each send window, when created by the hypervisor, is assigned a number of send credits. This allows the hypervisor to implement quality of service by managing numerous users sharing the same accelerator resource, and preventing one process from using more than its share. When an RMA_write command is received by VAS, VAS decrements the send credit for the associated send window. VAS increments the count when NX completes the CRB and returns a send credit with an MMIO store.
-9. NX writes a __ coprocessor status block (CSB)__  and can optionally send an interrupt, which notifies the user that the job has completed. NX also updates the __ accelerator processed byte count (XPBC)__  in the send window indicating the number of bytes that were processed on behalf of the user.
-
+1. 当操作系统建立发送窗口之后，用户进程就可以使用NX了。首先，创建一个*coprocessor request block (CRB)*，*CRB*的格式由NX的规范定义。然后CRB通过 `copy/paste` 指令发送到*VAS*，`copy` 指令将*CRB*写到*copy buffer*，用户进程随后使用`paste` 指令将128B的*CRB*写到*VAS*。到真实地址的写传输作为*remote memory access write (RMA_write)*发送到SMP互联，真实地址里包含了发送窗口标识。128B的 `RMA_write` 的 *CRB*写到*VAS*的64个数据缓冲中的一个。*VAS*可以维护128个单独的窗口上下文，当侦查到 `RMA_write` 时，VAS使用发送窗口标识来查找 __Send Window Table Entry__ , 如果不在VAS的窗口缓存中，则从内存读取
+2. VAS从发送窗口上下文中读取*Receive Window Identifier*，然后判断发送窗口对应的接收窗口。每个*NX coprocessor type (CT)*有一个单独的接收窗口，对应每个加速器的FIFO；如果接收窗口没有被缓存，则会从内存中读取
+3. 使用接收窗口上下文中FIFO地址，*VAS*将 `RMA_write` 负载即*CRB*写入到NX的FIFO，VAS将发送和接收窗口标识附加到CRB里。NX在处理CRB时可以使用这些信息，CRB里的发送窗口标识可以被NX用来读取发送窗口和获取CRB里的地址的转换信息；接收FIFO是一个循环队列，当到达FIFO队尾时，VAS回到FIFO队头继续写下一个条目
+4. 将*CRB*写到FIFO之后，VAS会发送一个 `ASB_notify` 命令到SMP互联；`ASB_notify` 命令包含*logical partition identifier (LPID)*, *process identifier (PID)*, 和thread identifier (TID)
+5. 每个NX FIFO有一个特别的LPID:PID:TID，当NX侦查到 `ASB_notify` 并且匹配到自己的LPID:PID:TID时，会递增相关联的FIFO的计数器，指示有新的工作
+6. 当NX CT队列为空但是计数器不为0时，NX从接收FIFO读取下一个CRB；一旦从FIFO里获取到CRB，NX通过对VAS的MMIO的写来返回信用。通过管理信用，VAS保证不会发生接收FIFO溢出。hypervisor基于FIFO的大小来初始化接收窗口的信用，当VAS将CRB写到FIFO时将信用计数器减一，当NX通过MMIO写返回信用时加一。NX使用CRB里附加的发送窗口标识来读取发送窗口上下文并减小内部计数器
+7. NX将任务分发到关联的CT，CT可能有多个加速引擎并执行CRB
+8. 任务完成之后，NX通过MMIO的写返回一个发送窗口信用给VAS；当hypervisor创建发送窗口时，会分配很多发送信用，这样hypervisor可以对多个用户共享同样加速器资源做调度，实现QoS，防止进程使用允许之外的资源。当VAS收到 `RMA_write` 写命令时，VAS减少关联的发送窗口的发送信用
+9. NX写 __ coprocessor status block (CSB)__  并且可选的发送一个中断，通知用户任务已经完成；同时更新发送窗口里的 __ accelerator processed byte count (XPBC)__  来指示处理的字节数。
 
 ## 12.9 Nest MMU
 
