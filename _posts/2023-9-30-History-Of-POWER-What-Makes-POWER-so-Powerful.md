@@ -22,7 +22,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * 第十章介绍POWER 8处理器微架构，了解如何从上一代SMT4到SMT8
 * 第十一章主要介绍POWER 9处理器微架构，了解基本单元之间解耦，SMP互联
 * 第十二章完整介绍POWER 10处理器微架构，SMP互联，片上加速器，中断
-* 第十三章列出了主要的参考文献
+* 文章最后列出了主要的参考文献，主要是**POWER*指令集架构，各代**POWER**的架构和微架构论文，以及各代**POWER**服务器的技术文档
 
 # 1. POWER指令集架构
 ## 1.1 寄存器
@@ -576,9 +576,9 @@ __fabric bus controller (FBC)__ 控制片间的通信，互联拓扑称为分布
 
 ### 7.4.1 Fabric bus controller
 FBC对L2/L3, 内存控制器，MCM的片内总线和缓冲和MCM的片间总线传输进行缓冲和保序。总线地址和数据是分开的，允许乱序返回。
-* **Address bus** MCM内部的address buses是8 bytes位宽，运行在1/2处理器频率，MCM之间address buses是4 bytes宽，运行在处理器频率，每个地址传输使用4个处理器周期。Address bus使用ECC，支持SECDED。地址传输包括50位真实地址(RA)，地址标签，传输类型和其他信息。MCM内部有12个点对点的地址总线，MCM之间总线使用环拓扑来广播地址，在64路SMP系统中，地址串行经过8个MCM。环上每个芯片负责转发地址到环上的下一个MCM， 并且到MCM内部其他芯片。当发起传输的芯片收到发出的地址之后，停止传播。
-* **Response bus** 类似地址总线，MCM内部的response buses运行在1/2处理器频率.，MCM之间response buses运行在处理器频率。response bus是延迟之后的address bus， 包括每个处理器芯片上内存系统侦查到地址之后缓存一致性相关的操作。response bus使用parity保护。response bus在地址总线之后延迟固定的周期。一旦MCM内部源芯片收到MCM内部其他3个芯片的侦查响应，就将这些响应，自身响应以及来自环前面MCM的响应结合起来并转发到环上下一个MCM。当发起侦查的芯片收到自己发起的侦查响应之后，会生成一个合并的响应并像地址一样广播到系统中。 这个结合的响应详细列出了相应地址上应该做出的动作，比如应该进入什么状态，对于读操作应该哪一个芯片提供数据，那些必须做无效操作等。为了减少cache-to-cache传输延迟，**POWER5**增加了一个early combined response机制，允许remote chip收到地址之后从自己处于S状态的L2或L3发送数据到请求处理器 。early combined response通过和MCM侦查响应来比较找到第一个可以提供数据的一致性侦查者。
-* **Data bus** 数据总线用于所有数据传输，比如缓存介入。也用于地址传输之后的数据传输，比如cast-outs, snoop pushes, 和DMA写。 数据总线使用ECC，支持SECDED。在**POWER4**系统上, 数据使用简单的环拓扑进行广播传输。在**POWER5**中，一个MCM内部的数据总线增加到8个，MCM之间也增加到8个，另外，fabric bus路由数据到指定的芯片。
+* **地址总线** MCM内部的地址总线是8 bytes位宽，运行在1/2处理器频率，MCM之间地址总线是4 bytes宽，运行在处理器频率，每个地址传输使用4个处理器周期。地址总线使用ECC，支持SECDED。地址传输包括50位真实地址(RA)，地址标签，传输类型和其他信息。MCM内部有12个点对点的地址总线，MCM之间总线使用环拓扑来广播地址，在64路SMP系统中，地址串行经过8个MCM。环上每个芯片负责转发地址到环上的下一个MCM， 并且到MCM内部其他芯片。当发起传输的芯片收到发出的地址之后，停止传播。
+* **响应总线** 类似地址总线，MCM内部的响应总线运行在1/2处理器频率.，MCM之间响应总线运行在处理器频率。响应总线是延迟之后的地址总线， 包括每个处理器芯片上内存系统侦查到地址之后缓存一致性相关的操作。响应总线使用奇偶效验保护。响应总线在地址总线之后延迟固定的周期。一旦MCM内部源芯片收到MCM内部其他3个芯片的侦查响应，就将这些响应，自身响应以及来自环前面MCM的响应结合起来并转发到环上下一个MCM。当发起侦查的芯片收到自己发起的侦查响应之后，会生成一个合并的响应并像地址一样广播到系统中。 这个结合的响应详细列出了相应地址上应该做出的动作，比如应该进入什么状态，对于读操作应该哪一个芯片提供数据，那些必须做无效操作等。为了减少cache-to-cache传输延迟，**POWER5**增加了一个early combined response机制，允许remote chip收到地址之后从自己处于S状态的L2或L3发送数据到请求处理器 。early combined response通过和MCM侦查响应来比较找到第一个可以提供数据的一致性侦查者。
+* **数据总线** 数据总线用于所有数据传输，比如缓存介入。也用于地址传输之后的数据传输，比如cast-outs, snoop pushes, 和DMA写。 数据总线使用ECC，支持SECDED。在**POWER4**系统上, 数据使用简单的环拓扑进行广播传输。在**POWER5**中，一个MCM内部的数据总线增加到8个，MCM之间也增加到8个，另外，fabric bus路由数据到指定的芯片。
 
 ## 7.5 POWER5 RAS
 **POWER5**系统上，很多固件能直接升级而不需要重启或不影响系统运行。所有系统互连都实现ECC保护，单bit互联错误会动态修正，如果错误持续，会调度修复程序。对于不可修复的错误，包含错误的部分会被下线而不需要人工干预。内存使用SECDED，并且后台会做memory scrubbing来修正错误。并且每个内存区有一个额外的DRAM可以透明的替换出错的DRAM。
@@ -605,9 +605,9 @@ IFU从L2加载指令到L1，这些请求要么是L1指令缓存缺失发起，�
 	* 一个指令组不能有对 __XER__ 的*read-after-write*依赖
 	* 一个指令组不能有对 __GPR__ 的*read-after-write*依赖
 	* 一个指令组不能有对 __CR__ 的*read-after-write*依赖
-	* 一个指令组有读目标FPR的指令跟随FMA指令
-	* 一个指令组不能有对同一个FPR的浮点存储指令跟随浮点加载指令
-* Branch execution **POWER6**每周期能预测8条分支指令，分支预测使用16K条目2位的BHT; 8个条目全相联的 __count cache__ ; 和一个6条目的 __link stack__ ，BHT和 __count cache__ 由两个线程共享。 每个线程可以由10条分支等待。
+	* 一个指令组有读目标 __FPR__ 的指令跟随FMA指令
+	* 一个指令组不能有对同一个 __FPR__ 的浮点存储指令跟随浮点加载指令
+* Branch execution **POWER6**每周期能预测8条分支指令，分支预测使用16K条目2位的BHT; 8个条目全相联的 __count cache__ ; 和一个6条目的 __link stack__ ，__BHT__ 和 __count cache__ 由两个线程共享。 每个线程可以由10条分支等待。
 
 ### 8.1.2 IDU
 IDU负责指令分发，跟踪，发射和完成。在分发阶段，一个线程的指令组里的所有指令一起分发。如果两个线程的指令数不超过可用的执行单元，两个线程可以同时分发。**POWER6**每个线程能分发5条指令，两个线程一起7条指令。为了提高分发带宽，IDU使用两个并行的指令数据流，一个线程一个。每个线程有一个每周期能从指令缓存接收8条指令的I-buffer，每个线程每次最多从I-buffers取5条指令。每个线程指令然后经过非FPU和VMX依赖性跟踪，如果指令组里的指令依赖性解决，指令组被分发。否则，指令组被停在分发阶段直到解决依赖性。非FPU和VMX指令的依赖性使用目标表跟踪，一个线程一个。目标表保存指令当前在流水线里的位置信息，当指令从I-buffer进入到到分发阶段，这些指令的信息写入到目标表。随后的定点指令访问目标表来获取依赖数据，然后被分发。FPU和VMX指令的依赖性由分发阶段后面的FPQ解决。FPU和VMX算术指令被分发到FPQ，每个FPQ能保存8个指令组，每个组可以有2个FPU或VMX算术指令，FPQ每周期发射2个FPU或VMX算术指令。为了在加载指令和依赖的浮点指令之间实现零周期的加载使用，浮点指令在FPQ会额外多六个周期，以便和来自LSU的加载数据对齐。如果加载的数据不能写入FPR，数据被写入32条目的 __load target buffer__ 。__load target buffer__ 允许每个线程有16个加载指令在浮点算术指令之前执行，从而消除额外6个浮点流水周期的影响。 IDU使用一个完成表来记录执行中的大量的指令，每个线程使用10条目的完成表，每个条目可以记录32个指令的信息。当遇到要执行的分支时，预测执行的分支指令之后新分配一个完成表条目。
@@ -620,9 +620,9 @@ IDU负责指令分发，跟踪，发射和完成。在分发阶段，一个线�
 
 ### 8.1.5 LSU
 **LSU**由存储加载地址生成和执行逻辑，L1数据缓存，地址转换，store queue, load miss queue (LMQ), 和数据预取引擎组成，实现下面功能：
-	* 存储加载执行 为了实现**POWER6**高频设计，LSU执行单元采用了相对简单的数据流，保存最少的状态。大部分存储加载指令执行一个操作，一个硬件状态机用来处理 __load/store multiple and string__ 指令。对于跨缓存行的操作，内部分成2个操作。
-	* L1数据缓存 **POWER6**处理器包含8路组相联的64KB的L1数据缓存，缓存行大小是128B，由4个32B的区组成。L2数据以32B大小发送，并且缓存行的无效操作也以32B大小处理，加载操作能命中部分有效的缓存行。L1数据缓存由2个端口，可以支持2个读或一个写。缓存行重加载拥有最高的优先级，并且阻塞已经分发的存储加载指令。执行的加载指令拥有第二高优先级。最后如果没有缓存行重新加载或加载指令，完成的存储指令能够从存储队列写到L1数据缓存。 L1数据缓存是store-through，所有的写操作发送到L2 cache。
-	* 组预测 为了满足访问路径的周期, 实现了一个组预测。 组预测基于有效地址EA并且可以用作一个小目录来从8个L1数据缓存组里选择。虽然L1数据缓存的目录也可以使用，但是需要ERAT之后的真实地址，要花费更多时间。 组预测使用EA(51:56)索引，8路组相联，每个组或条目包含11个EA哈希位, 2个有效位（每个线程一个）和一个奇偶位,11位EA哈希值使用下面公式生成: `(EA(32:39) XOR EA(40:47)) + EA(48:50)` 。当读缓存时，生成的EA(51:56)来索引组预测, 并且生成11位哈希值和8个组的内容比较，如果匹配并且对应线程有效位是置位，使用预测的信号访问L1数据缓存。
+* 存储加载执行 为了实现**POWER6**高频设计，LSU执行单元采用了相对简单的数据流，保存最少的状态。大部分存储加载指令执行一个操作，一个硬件状态机用来处理 __load/store multiple and string__ 指令。对于跨缓存行的操作，内部分成2个操作。
+* L1数据缓存 **POWER6**处理器包含8路组相联的64KB的L1数据缓存，缓存行大小是128B，由4个32B的区组成。L2数据以32B大小发送，并且缓存行的无效操作也以32B大小处理，加载操作能命中部分有效的缓存行。L1数据缓存由2个端口，可以支持2个读或一个写。缓存行重加载拥有最高的优先级，并且阻塞已经分发的存储加载指令。执行的加载指令拥有第二高优先级。最后如果没有缓存行重新加载或加载指令，完成的存储指令能够从存储队列写到L1数据缓存。 L1数据缓存是store-through，所有的写操作发送到L2 cache。
+* 组预测 为了满足访问路径的周期, 实现了一个组预测。 组预测基于有效地址EA并且可以用作一个小目录来从8个L1数据缓存组里选择。虽然L1数据缓存的目录也可以使用，但是需要ERAT之后的真实地址，要花费更多时间。 组预测使用EA(51:56)索引，8路组相联，每个组或条目包含11个EA哈希位, 2个有效位（每个线程一个）和一个奇偶位,11位EA哈希值使用下面公式生成: `(EA(32:39) XOR EA(40:47)) + EA(48:50)` 。当读缓存时，生成的EA(51:56)来索引组预测, 并且生成11位哈希值和8个组的内容比较，如果匹配并且对应线程有效位是置位，使用预测的信号访问L1数据缓存。
 
 ## 8.2 POWER6一致性协议
 **POWER5**中使用的广播侦查协议中，一致性传输需要的带宽随着系统规模而增长。因此，基于目录的NUMA (nonuniform memory access)方案更有吸引力，基于目录的协议使用目录来指示内存区域的归属，因此限制广播在一个小的节点内，减少了节点外的传输。**POWER6**开发了基于目录的NUMA方式的广播协议。下表总结了**POWER6**的一致性协议中的缓存状态：
@@ -637,9 +637,11 @@ scope-state和4个新的缓存状态降低了基于目录的NUMA的成本，并�
 **POWER6**处理器核包含64KB L1 I-cache和64-KB L1 D-cache分别在IFU和LSU中。每个处理器核还有4-MB L2 cache，片上两个处理器核共享32-MB L3缓存， L3缓存控制器在片上，但是数据阵列在片外，L3缓存行是128B，16路组相联。下表总结了各级缓存的特性和组织形式：
 ![Pasted image 20230914170540.png](/assets/images/power/Pasted image 20230914170540.png)
 4-MB L2缓存是8路组相联，每个缓存行128B，并且和**POWER5**上L2缓存实现三个独立控制器不同，**POWER6**上是一个控制器。L2缓存数据阵列分成4个间隔区，每个包含一个缓存行的32B。处理器发出的缓存行读，castout读和介入读操作使用4个间隔区，但是read-modify-write和L2重新加载时writeback只使用一个缓存行的一个或多个32B的区。目录和一致性管理逻辑分成两个地址哈希区，每个目录区每两个处理器周期能接受一个处理器请求，或一个侦查请求或一根更新操作。不同于**POWER5**上的L2使用不同的读端口处理处理器请求和侦查请求，**POWER6** L2使用滑动窗口来调度侦察请求而不和处理器请求冲突，从而减少面积和功耗。
+
 因为L1 D-cache是store-through，L2每个目录区使用一个8条目128B宽的队列来累积处理器请求。一个条目累积的所有写操作都被L2处理成read-modify-write操作，只影响使用到的间隔区。L2使用每个目录区的16个read/claim (RC) machines中的一个来处理处理器发出的所有读和L2存储队列发出的read-modify-write操作。RC machines 管理所有处理器发出的缓存读写操作。如果L2 cache缺失,L2会等待L3 cache的响应。如果L3命中，数据返回到L2。如果L3未命中，L2 cache会发出请求到SMP一致性互联总线，数据最终通过SMP一致性互联总线从其他L2, L3返回。如果新的缓存行需要释放L2中缓存行，L2会使用每个目录区4个castout machines中一个来将数据或状态转移到L3 victim cache或内存。
 为了处理SMP一致性互联总线上的侦查请求，L2首先查询目录，如果需要响应，使用每个目录区4个snoop machines中一个来处理。snoop machine操作包括从缓存读取数据分发送到SMP一致性互联总线，更新目录状态或者从缓存读取数据发送给内存，并无效目录状态，或者只是更新或无效目录状态。
 片上两个L2之间有一个高速cache-to-cache接口来提高两个缓存的传输延迟。处理器发出的读操作首先检查自己的L2目录，同时转发到另一个L2，如果自己L2缺失而另一个L2命中，数据会从该L2转发到处理器核和L2。 
+
 L3分为两个目录区，分别对应两个L2，L3使用每个目录区8个read machines中的一个来处理L2发送过来的读操作。如果命中，数据返回L2和处理器核，否则，发送响应到对应的L2指示需要发送请求到SMP一致性互联总线。L3使用每个目录区8个write machines中的一个来处理L2发送过来的castout写操作。如果新的缓存行需要释放已有的缓存行，L3使用和write machine关联的castout machine来将数据写回内存。对于SMP一致性互联总线的侦察请求，L3首先查询目录，如果需要响应，L3使用每个目录区4个snoop machine中的一个来处理。
 
 ## 8.4 POWER6内存系统
@@ -654,6 +656,7 @@ L3分为两个目录区，分别对应两个L2，L3使用每个目录区8个read
 4个**POWER6**芯片组成一个基本互联单元Node，每个**POWER6**有5个运行在1/2处理器频率的8B位宽的SMP接口，三个专门用于Node内部互联。如下图所示：
 ![Pasted image 20230914163617.png](/assets/images/power/Pasted image 20230914163617.png)
 依赖于一致性协议上的创新，一致性总线和数据时分复用同一个物理链路，可以67%带宽分配给数据，33%分配给一致性，或者50%分配给数据，50%分配给一致性。 在一个Node内，4个**POWER6**组成全连接网络。
+
 不同于之前的环拓扑，**POWER6**可以使用8个Node组成的全连接拓扑，如下图所示：
 ![Pasted image 20230914163644.png](/assets/images/power/Pasted image 20230914163644.png)
 
@@ -694,7 +697,7 @@ IFU从L2中取指并写入L1指令缓存，每次取值请求返回4个32B。这
 
 __Instruction fetch address registers (IFARs)__ 记录每个线程的 __program counter__ ，每周期 __IFAR__ 选择一个线程的PC并作为取指地址送到指令缓存和分支预测逻辑。指令缓存每周期可以提供8条指令，并写入 __IBUF__ , 随后被组装成分发组。线程优先级，缓存缺失，__IBUF__ 满和线程资源平衡都会影响线程的调度。 IBUF有20个条目，每个可保存4条指令。在SMT4模式，每个线程有5个条目，在ST和SMT2 模式，每个线程有10个条目。特殊的线程优先级逻辑每个周期选择一个线程进行分组，从线程对应的IBUF里读取最多4个非分支指令和2个分支指令并组成一个组。和**POWER4**和**POWER5**不同，分支指令不会结束一个组。分组之后，指令要么被解码，要么被送到微码硬件将复杂指令拆分成一系列内部简单操作。
 
-分支的方向使用分支历史表来预测，由8-K条目的本地BHT (LBHT)，16-K条目的全局BHT (GBHT)和8-K条目的全局选择器(GSEL) 组成。这些预测器每周期可以对8条分支指令进行分支预测，由所有活跃线程共享。LBHT由10位取值地址索引，GBHT和GSEL由取值地址和每个线程单独的21位的 __global history vector (GHV)__ 哈希成11位的值索引。GSEL条目里的值用来选择LBHT和GBHT作为分支预测结果。所有BHT条目都是2比特, 高位决定预测的方向，低位提供hysteresis。
+分支的方向使用分支历史表来预测，由8-K条目的本地BHT (LBHT)，16-K条目的全局BHT(GBHT)和8-K条目的全局选择器(GSEL) 组成。这些预测器每周期可以对8条分支指令进行分支预测，由所有活跃线程共享。LBHT由10位取值地址索引，GBHT和GSEL由取值地址和每个线程单独的21位的 __global history vector (GHV)__ 哈希成11位的值索引。GSEL条目里的值用来选择LBHT和GBHT作为分支预测结果。所有BHT条目都是2比特, 高位决定预测的方向，低位提供hysteresis。
 
 分支的目标地址使用下面两个机制预测：
 1. 非子函数返回的间接分支指令使用所有线程共享的128条目的 __count cache__ , __count cache__ 使用取值地址和GHV异或生成7位值索引，__count cache__ 每个条目包含62位预测地址和2位置信位。当预测结果不准确时，置信位用来决定何时进行条目的替换。 
@@ -726,7 +729,7 @@ ISU还负责记录和完成指令，使用一个 __global completion table (GCT)
 ISU还需要处理刷流水线操作，像分支预测错误，存储加载执行发生冒险，上下文同步指令或异常处理，都可能需要将投机指令从流水线刷掉。完成单元使用20位的掩码来完成刷流水线操作，每一位对应一个组；同时当分支预测错误的分支指令不是组里第一条指令，需要从线程里刷掉后续指令组时对部分组刷流水线操作会发出 __GTAG__ ，以及4位槽掩码指示是哪些指令。
 
 ### 9.1.3 LSU微架构
-LSU有两个对称的LS0和LS1流水线，每一个能够一个周期执行存储加载指令。LSU组要功能单元有：存储加载AGEN和执行, SRQ, __store data queue (SDQ)__ , LRQ, __load miss queue (LMQ)__, 包括D-ERAT, ERAT miss queue, __segment lookaside buffer (SLB)__ 和TLB的地址转换单元, 包括组预测和数据目录(DDIR)的L1数据缓存和数据预取 __prefetch request queue (PRQ)__ 引擎。下图展示了LSU的微架构：
+LSU有两个对称的LS0和LS1流水线，每一个能够一个周期执行存储加载指令。LSU组要功能单元有：存储加载AGEN和执行, __SRQ__ , __store data queue (SDQ)__ , __LRQ__ , __load miss queue (LMQ)__, 包括*D-ERAT* , *ERAT miss queue*, *segment lookaside buffer (SLB)*和TLB的地址转换单元, 包括组预测和数据目录(DDIR)的L1数据缓存和数据预取 __prefetch request queue (PRQ)__ 引擎。下图展示了LSU的微架构：
 ![Pasted image 20230915154725.png](/assets/images/power/Pasted image 20230915154725.png)
 * 存储加载执行 在ST和SMT2模式时，存储加载指令可以在LS0或LS1执行；在SMT4模式，线程T0和T1的指令在LS0流水线执行，线程T2和T3的指令在LS1流水线执行。存储指令发射两次，AGEN发射到LSU, 数据操作发射到FXU或VSU。LSU主要数据流包括32B的L2的重加载总线接口，到L2的16B的写数据接口，到VSU的16B加载数据接口，来自VSU的16B的写数据接口，来自FXU的8B写数据接口。**POWER7** 的L1数据缓存只有32 KB, 减少了数据缓存访问延迟。定点加载指令只有2个周期的加载使用延迟，在加载指令和依赖的定点指令之间只有一个流水线气泡；VSU加载指令有3个周期的加载使用延迟，在加载指令和依赖的VSU指令之间会产生两个流水线气泡。每个LSU流水线也可以执行定点加和逻辑指令，提高了指令发射的灵活性
 * 存储加载顺序 尽管指令乱序发射和执行，LSU必须保证存储加载指令遵守架构上的编程顺序。LSU主要依赖SRQ和LRQ来实现编程顺序。SRQ是一个32条目，基于真实地址RA的 __content-addressable memory (CAM)__ 。每个线程有64虚拟条目，允许分发64个并发写；可以发射32个并发的写；SRQ由所有线程共享。SRQ条目在存储指令发射时分配，当数据写到L1数据缓存或发送到L2时释放。每个SRQ条目都有一个对应的16B的SDQ条目，存储指令每周期可以发送最多16B数据到L2。写数据可以转发给后面的读指令，即使读写指令都是投机执行。LRQ也是一个32条目，基于真实地址RA的 __content-addressable memory (CAM)__ 。每个线程有64虚拟条目，允许分发64个并发写；可以发射32个并发的写；LRQ由所有线程共享。LRQ记录读操作，检查是否有同一个地址的年轻的读在更老的读或写之前执行的冒险。当检查到这样冒险发生时，LRQ会将年轻的读和后面同一个线程的指令从流水线刷掉，加载指令重新取指并执行
@@ -788,7 +791,7 @@ FXU有两个相同的FX0和FX1组成，下图展示了FX0的逻辑视图:
 指令从内存系统经过解码，分发和发射队列，然后送到功能单元执行，除了分支和条件寄存器逻辑指令，大部分指令都被分发到 __Unified Issue Queue (UniQueue)__ ，由对称两半UQ0和UQ1组成；GPR和VSR物理上也分为两部分，GPR0和GPR1，VSR0和VSR1；GPR0和VSR0用于UQ0，GPR1和VSR1用于UQ1。相应的定点，浮点，向量，存储加载流水线也分成两部分FX0, FP0, VSX0, VMX0, L0, LS0和FX1, FP1, VSX1, VMX1, L1, LS1，分别对应UQ0和UQ1。在单线程模式，GPR和VSR的两部分是一样的值，指令可以分发到UQ0或UQ1，根据指令类型每周期轮换分发的发射队列来保证负载平衡。在SMT(SMT2, SMT4, SMT8)模式，线程分成两个组，每个组对应一个发射队列和相应的执行流水线。偶数线程 (T0, T2, T4, T6)的定点，浮点，向量和加载存储指令只能使用UQ0，访问GPR0和VSR0，在FX0, LS0, L0, FP0, VSX0, 和VMX0流水线上执行；奇数线程(T1, T3, T5, T7)的定点，浮点，向量和加载存储指令只能使用UQ1, 访问GPR1和VSR1, 在FX1, LS1, L1, FP1, VSX1, 和VMX1流水线上执行。加密和十进制浮点指令也只能发射到线程对应的发射队列，但是在同一个流水线上执行。分支和条件寄存器逻辑指令有自己专门的发射队列，并由所有线程共享。
 下图展示了**POWER8**处理器核的流水线：
 ![Pasted image 20230919095043.png](/assets/images/power/Pasted image 20230919095043.png)
-和**POWER7**最大的不同是
+和**POWER7**最大的不同是是分发由两个流水线组成。
 
 ### 10.1.2 POWER8 IFU
 为了支持SMT8和 __LPARs (logical partitions)__ 需要修改IFU里的很多资源：
@@ -945,7 +948,7 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 ### 12.1.2 POWER10处理器核流水线
 下图展示了**POWER10**处理器核流水线，包括IFU流水线，LSU流水线和VSU流水线：
 ![Pasted image 20230908111733.png](/assets/images/power/Pasted image 20230908111733.png)
-* __分支流水线__ 分支指令和存储地址计算以及简单加指令公用发射端口；每个SMT4每周期能处理一个分支指令，即使 __CR__ 寄存器还未确定，只要分支目标地址寄存器 __ LNK__ , __ CNT__ , 或 __ TAR__ 准备好之后分支指令就会发射；这些部分执行的分支指令会在 __branch condition queues (BCQ__ 里等待 __ CR__  结果，这样可以使依赖目标寄存器的分支解决目标寄存器依赖。目标寄存器(LNK, CNT, TAR)和GPRs之间通过共享物理寄存器来减少 __move_to__ 和 __move_from__ 指令的延迟；目标地址产生指令和分支指令之间的依赖通过数据转发来减少延迟。
+* __分支流水线__ 分支指令和存储地址计算以及简单加指令公用发射端口；每个SMT4每周期能处理一个分支指令，即使 __CR__ 寄存器还未确定，只要分支目标地址寄存器 __LNK__ , __CNT__ , 或 __TAR__ 准备好之后分支指令就会发射；这些部分执行的分支指令会在 __branch condition queues (BCQ)__ 里等待 __CR__  结果，这样可以使依赖目标寄存器的分支解决目标寄存器依赖。目标寄存器(LNK, CNT, TAR)和GPRs之间通过共享物理寄存器来减少 __move_to__ 和 __move_from__ 指令的延迟；目标地址产生指令和分支指令之间的依赖通过数据转发来减少延迟。
 * __简单流水线__ 类似用来操作地址的立即数加指令，既可以在ALU流水线支持，也可以在存储/分支/简单流水线支持。这些指令可以使用每个SMT4里两个简单端口中任意一个，两个周期延迟计算结果；立即数加指令使用动态策略来发射到简单流水线或是ALU流水线。
 * __存储加载流水线__ 当存储加载指令的操作数依赖性满足并且对应加载或存储队列条目分配之后，存储加载指令发射，并且相应发射队列条目被释放。存储指令首先发射来生成地址，随后发射来存储数据；存储加载流水线冒险在本地的存储加载流水线及队列中处理。类似读写缓存bank冲突的读冒险可以使用一个周期流水线延迟解决，其他需要刷流水线的冒险使用存储和加载队列解决。
 
@@ -1058,18 +1061,18 @@ below figure shows the Flow for NX Invocation through the VAS.
 ## 12.10 中断控制器
 **POWER10** 中断控制器INT由三部分组成：
 * 虚拟化控制器(P3VC)
-* presentation controller (P3PC)
+* 表现层控制器(P3PC)
 * 总线接口公共队列(P3CQ)
 
 这些逻辑接收中断并将中断发送到对应的处理器线程，各逻辑之间使用**POWER10**的总线互联，下图展示了中断控制器的逻辑框图及中断之间交互：
 ![Pasted image 20230911102017.png](/assets/images/power/Pasted image 20230911102017.png)
 
-* P3VC通过**POWER10**的总线互联(比如cache-inhibited的写 `ci_wr` )接收来自 __interrupt source controllers (P3SCs)__ 的消息，使用主存里和每个触发源关联的 __event assignment entry (EAE)__ 里的信息进行处理。This processing can include updating an event queue entry and then forwarding the notification to the P3PC, which signals an exception to one of the processor threads. The P3VC also handles notification redistribution if a state change to the assigned processor thread preclude it from handling the interrupt or notification escalation, if there is no processor thread that is currently capable of handling the interrupt.
-* The P3PC has an exception bus towards the cores to notify the individual processor threads. Three signals are created for each thread, one to generate hypervisor interrupts, another to generate operating-system interrupts, and a third to generate an event-based branch. Associated with each of the exception-notification signals in the P3PC is prioritization and exception-queuing logic that prevents less favored events from preempting more favored ones or from loss due to dropping an event. Associated with each of the exception notification wires is one or more logical server numbers stored in CAM-like lines. This structure is also referred to as the thread interrupt management area (TIMA). These logical server numbers identify which software entities are currently dispatched on the specific physical processor thread. When the P3VC issues fabric bus operations to route an event notification, these CAM-like lines are searched to identify candidate processor threads. In addition to the CAM-like lines, priority and exception-queuing logic mentioned previously, each interrupt-generating exception has logic to track how much interrupt work has been handled by the associated processor thread. This information is used to evenly distribute interrupt processing load among the candidates.
-* The P3CQ serves as the Power10 Fabric bus interface controller between the interrupt logic and the rest of the Power10 chip. This unit is responsible for sequencing the appropriate fabric bus protocol when the interrupt controller drives or receives commands. It performs compares to determine if the interrupt controller is the destination of a command (for example, a store operation used for an interrupt trigger). It is also responsible for driving the fabric bus histogram, poll, and assign commands to find the correct presentation controller for an interrupt trigger. Another key P3CQ function is sending and receiving the AIB interface to the virtualization and presentation controllers.
+* **P3VC**通过**POWER10**的总线互联(比如cache-inhibited的写 `ci_wr` )接收来自 __interrupt source controllers (P3SCs)__ 的消息，使用主存里和每个触发源关联的 __event assignment entry (EAE)__ 里的信息进行处理，包括更新事件队列条目，转发消息到**P3PC**，**P3PC**然后将异常发送到一个处理器的线程。如果由于分配的处理器状态变化导致当前没有处理器处理中断，**P3VC**会重新分配中断消息。
+* **P3PC**通过一个到处理器核的异常总线来提醒处理器线程，每个线程有三个信号，一个产生hypervisor中断，一个产生操作系统中断，最后一个产生基于事件的分支。P3PC里和三个信号相关联的逻辑是优先级和异常队列，用来防止低优先级事件抢占高优先级事件并且记录每个处理器线程处理的中断数量以便平衡负载；另外还有一个或多个保存在类似CAM的*logical server numbers*，称为 __thread interrupt management area (TIMA)__ ，这些*logical server numbers*用来识别物理线程上的软件实体。 当**P3VC**发送总线消息时，会查找这些 __thread interrupt management area (TIMA)__ 来识别候选处理器线程。
+* **P3CQ**充当中断逻辑和系统之间的接口，主要负责中断控制器的消息接收和发送的顺序，比较中断控制器是否是命令的目的地，以及通过总线查询找到当前触发的中断的正确的**P3PC**。
 
 
-# 13. 参考文献
+# 参考文献
 1. Power ISA (Version 3.1B), 2021.
 2. R. R. Oehler and R. D. Groves, "IBM RISC System/6000 processor architecture," in IBM Journal of Research and Development, vol. 34, no. 1, pp. 23-36, Jan. 1990, doi: 10.1147/rd.341.0023.
 3. S. W. White and S. Dhawan. 1994. POWER2: next generation of the RISC System/6000 family. IBM J. Res. Dev. 38, 5 (Sept. 1994), 493–502. https://doi.org/10.1147/rd.385.0493
