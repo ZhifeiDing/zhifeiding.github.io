@@ -974,35 +974,24 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 一个SMT4处理器核有16路组相联，4M的私有L3缓存，缓存行128B，使用4个bank，支持并行读写，到L2有64B的读端口，和来自L2的64B的写端口；目录也是16路组相联每两个周期支持不同bank的4个读或2个写；LRU算法使用4个比特来记录使用率和数据类型。L3缓存有4个分发流水线可以处理来自总线的侦查请求，侦察分发流水通过L3目录决定如何处理请求。如果请求需要发送数据或侦查推送或无效相关的缓存行，相应的请求被发送到16个侦查状态机处理；如果请求是 __lateral cast-out (LCO)__ 或接受的缓存注入，请求被发送到侦擦号状态及和写注入状态机。
 
 ## 12.5 SMP互联
-* General Features
-	* Master command/data request arbitration.
-	* Command requests are tagged and broadcast using a snooping protocol that enables high-speed cache-to-cache transfers.
-	* Multiple command scopes are used to reduce the bus-utilizations system wide. The SMP interconnect architecture uses cache states indicating the last known location of a line (sent off chip), information maintained in the system memory (memory domain indicator [MDI] bits), a coarse grained directory that indicates when a line has gone off the chip, and combined response equations that indicate if the scope of the command is sufficient to complete the command or if a larger scope is necessary.
-	* The command snoop responses specified by the SMP interconnect implementation are used to create a combined response that is broadcast to maintain system cache state coherency. Combined responses are not tagged. Instead, the order of commands from a chip source, using a specific command-broadcast scope, is the same order that combined responses are issued from that source. The order is also affected by the snoop bus usage as well.
-	* Data is tagged and routed along a dynamically selected path using staging/buffering along the way to overcome data routing collisions.
-	* Command throttling and retry command back-off mechanisms for livelock prevention.
-	* Multiple data links between chips are supported (link aggregation).
 
-### 12.5.1 Power10 Fabric SMP Topology
-The Power10 off-chip SMP interconnect is a highly scalable, multi-tiered, fully-connected topology. The off-chip links use 18-bit high-speed differential links running up to 32 Gbps and can be configured in either a 1-hop or 2-hop configuration.
-* 1-Hop SMP Topology
-In the 1-hop configuration, the Power10 processor chip can fully connect up to seven other processor chips to create an eight-chip SMP system. Each chip is a group using up to seven inter-group A-links for a maximum system of eight processor chips.
-![Pasted image 20230909093241.png](/assets/images/power/Pasted image 20230909093241.png)
-* 2-Hop SMP Topology
-In the 2-hop configuration, the Power10 processor chip can fully connect up to three other processor chips to create a four-chip group. The intra-group links are designated as __ X-links__ . Each Power10 processor in a group connects to its corresponding processor chip in each other group. Three of the inter-group __ A-links__  are provided per chip supporting a total of four groups, each containing four processor chips. A full four-group system of four chips per group comprises a maximum system of 16 processor chips.
-![Pasted image 20230909093315.png](/assets/images/power/Pasted image 20230909093315.png)
-### 12.5.2 Protocol and Data Routing in Multi-Chip Configurations
-The SMP ports configured for coherency are used for both data and control information transport. The buses are used as follows:
-1. The chip containing the master that is the source of the command issues the reflected command and the combined response to all other chips in the SMP system. Partial responses are collected and returned to the chip containing the master.
-2. Data is moved point-to-point. For read operations, the chip containing the source of the data directs the data to the chip containing the master. For write operations, the chip containing the master directs the data to the LPC that performs the write operation. The routing tag contains the chip and unit identifier information for this purpose.
+发送命令的芯片负责发送反射的命令和结合的响应到SMP系统所有其他芯片，其他芯片返回合并的部分响应到发送命令的芯片。数据在点到点之间移动，对于读，包含数据的芯片直接将数据发送给请求芯片；对于写，包含数据的芯片直接将数据发送到*lowest-point of coherency (LPC)*，路由标签里包含芯片的标识。命令请求使用标签并且使用侦查协议广播，多个广播范围用于减少总线的利用率，SMP互联使用缓存状态确定缓存行最后的位置，是否需要更大范围的广播。
 
-### 12.5.3 Power10一致性
 1-Hop的广播范围定义如下图所示：
 ![Pasted image 20230909193458.png](/assets/images/power/Pasted image 20230909193458.png)
 2-Hop的广播范围定义如下图所示：
 ![Pasted image 20230909193512.png](/assets/images/power/Pasted image 20230909193512.png)
-**POWER10** 真实地址定义如下所示： 
+**POWER10**真实地址定义如下所示： 
 ![Pasted image 20230909193549.png](/assets/images/power/Pasted image 20230909193549.png)
+
+### 12.5.1 Power10 SMP互联拓扑
+**POWER10**片外SMP互联是高度可扩展，多层，全连接拓扑，片外接口使用18位32Gbps的高速差分接口，可以配置成1-hop或2-hop
+* 1-Hop SMP拓扑
+在1-Hop配置下，**POWER10**能够和最多8个处理器芯片全连接组成8路SMP系统，每个芯片最多使用7个A-link互联。1-Hop SMP系统拓扑如下图所示：
+![Pasted image 20230909093241.png](/assets/images/power/Pasted image 20230909093241.png)
+* 2-Hop SMP拓扑
+在2-hop配置下，**POWER10**能够和其他3个芯片全连接组成一个4芯片的组，组内使用 __X-links__ ，组内每个**POWER10**芯片和其他组的芯片连接；组内每个芯片提供3个 __A-links__ 和其他组连接，一共可以互联4个组。2-Hop SMP系统拓扑如下图所示：
+![Pasted image 20230909093315.png](/assets/images/power/Pasted image 20230909093315.png)
 
 ## 12.6 NCU
 **POWER10**的*Non-Cacheable Unit (NCU)*负责处理非缓存的读写操作，字和双字的原子读写指令( `lwat` , `ldat` , `stwat` , `stdat` )，, `tlbie`  和 `sync`  and `ptesync` 指令，每一个SMT4有一个NCU单元。 下图展示了*NCU*的逻辑框图：
