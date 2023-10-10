@@ -4,9 +4,9 @@ categories : [history]
 tags : [chip, cpu, architecture, history]
 ---
 
-# 0. 概述
+# 前言
 最近几年系统性的学习并梳理了近30多年的计算技术发展历史，稍有感悟。遂决定将之整理成文，目的有二，一来作为知识沉淀，串联起不同技术，挖掘不同架构之间的渊源，二来通过整理再次审视历史，期望窥见未来发展方向。我将本系列命名为**鉴往知远**, 主要关注**计算与互联**。 本文为第一篇，主要回顾IBM POWER系列。
-
+# 0. 概述
 POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的RISC System/6000产品。1991年，Apple, IBM, 和Motorola一起合作开发了PowerPC架构。1997, Motorola和IBM合作将PowerPC用于嵌入式系统。2006, Freescale和IBM合作制定了POWER ISA 2.03。 2019年8月21, 开源了POWER Instruction Set Architecture (ISA)。PowerISA由必须的基础架构，4组可选特性，一组过时特性组成。OpenPOWER也允许自定义扩展。
 
 本文通过系统性回顾整个POWER系列处理器，试图通过POWER系列处理器发展的历史脉络，来展现近30年计算架构的变迁，技术的演进，进而窥见计算技术发展的未来。
@@ -19,8 +19,8 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 * 第七章详细描述POWER 5微架构，从单线程到双线程的演进，以及集成的片上内存控制器
 * 第八章介绍POWER 6处理器微架构，了解从之前乱序执行变为顺序执行的取舍
 * 第九章介绍POWER 7处理器微架构，了解在支持更多线程情况下如何减少面积和功耗，以及内部缓存协议状态
-* 第十章介绍POWER 8处理器微架构
-* 第十一章主要介绍POWER 9处理器微架构，SMP互联
+* 第十章介绍POWER 8处理器微架构，了解如何从上一代SMT4到SMT8
+* 第十一章主要介绍POWER 9处理器微架构，了解基本单元之间解耦，SMP互联
 * 第十二章完整介绍POWER 10处理器微架构，SMP互联，片上加速器，中断
 * 第十三章列出了主要的参考文献
 
@@ -44,7 +44,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 
 ![Pasted image 20230904172658.png](/assets/images/power/Pasted image 20230904172658.png)
 
-* __Logical Partitioning Control Register (LPCR)__  __LPCR__ 控制资源的逻辑分区
+* __Logical Partitioning Control Register (LPCR)__  __LPCR__ 控制资源的逻辑分区，__Logical Partitioning (LPAR)__ 功能将线程和存储空间分配到一个逻辑分区，用来隔离不同分区之间的线程；通过一个hypervisor，这种隔离可以作用于problem和privileged non-hypervisor态。
 * __Logical Partition Identification Register (LPIDR)__  __LPIDR__ 设置逻辑分区ID
 * __Machine State Register (MSR)__ 是64位寄存器，控制和定义了线程的状态：
 	* 0 __Sixty-Four-Bit Mode (SF)__ 0 线程运行在32位模式，1 线程运行在64位模式。当线程处于ultravisor时软件要保证 __SF=1__ 
@@ -153,11 +153,22 @@ __MSR.SF__ 控制线程32/64位计算模式.
 
 ## 1.6 内存管理及虚拟化
 地址转换模式是由 __Partition Table Entry__ 里的 __Host Radix__ 位控制。__Host Radix__  位控制当前分区是使用 __HPT(Hashed Page Table)__   还是 __Radix Tree__  进行转换。__MSR.HV/PR/IR/DR__  决定了地址转换入口和行为。
+* __Partition Table Control Register (PTCR)__ 是64位寄存器，保存了分区表的host的真实基地址。
+	* 4:51 __PATB__ 分区表基地址
+	* 59:63 __PATS__ 分区表大小=2^(12+PATS)且 PATS ≤24
+![ptcr.png](/assets/images/power/ptcr.png)
 
-### 1.6.1 Ultravisor/Hypervisor Offset Real Mode Address
+### 1.6.1 Ultravisor Real, Hypervisor Real, 和Virtual Real Addressing Modes
+当指令地址转换或数据地址转换功能被禁止时，根据当前处于的特权模式，内存访问被称为 __ultravisor real addressing mode__ , __hypervisor real addressing mode__ 和 __virtual real addressing mode__ 。这三种模式内存访问 __MSRS.HV__ , __PATE.HR__ , __PATE.PS__ , __URMOR__ , __HRMOR__ , 有效地址第0位 (EA0), 和 __RMCF__分为不同方式。 有效地址1:3位不使用。
+
+#### 1.6.1.1 Ultravisor/Hypervisor Offset Real Mode Address
 当 __MSR.HV = 1__  且 __EA.0 = 0__ 时, 存储访问由 __Ultravisor Real Mode Offset Register__  或 __Hypervisor Real Mode Offset Register__ 控制, 根据 __MSR.S__ 值：
 * 当 __MSR.S=1__ 时, 有效地址4:63位和 __URMOR__ 里的60位偏移值按位或，得到的60位结果就是访问的真实地址
 * 当 __MSR.S=0__ 时, 有效地址4:63位和 __HRMOR__ 里的60位偏移值按位或，得到的60位结果就是访问的真实地址
+
+#### 1.6.1.2 Virtual Real Mode Addressing Mechanism
+当 __MSR.HV = 0__  且 __MSR.DR=0__ 或 __MSR.IR=0__ 时，分区使用 __Paravirtualized HPT(PATE.HR=0)__ 进行地址转换，能够访问的内存空间由 __Virtualized Real Mode Area (VRMA)__ 控制。地址转换和存储保护仍然像地址转换使能一样处理，只是有效地址到虚拟地址的转换使用 __VRMA.SLBE__ ，而不是通过SLB。有效地址的0:23位不使用。下图展示了 SLBE 的内容：
+![vrma.slbe.png](/assets/images/power/vrma.slbe.png)
 
 ### 1.6.2 Segment Translation
 下图展示了64位有效地址通过 __Segment Lookaside Buffer (SLB)__ 转换为78位虚拟地址的过程：
@@ -952,27 +963,18 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 **POWER10**实现了一个激进投机的顺序流水前端，每周期取值，译码和分发8条指令。
 
 ## 12.2 Thread核LPAR管理
-With SMT8 cores, SMT4-core-resource_0 supports the even logical threads (0, 2, 4, 6) and SMT4-core resource_1 supports the odd logical threads (1, 3, 5, 7). All external interrupt lines and internal interrupts, such as decrementer, hypervisor, and door-bell interrupts, are steered to the correct resources to wake up the correct logical threads.
-Within an SMT4-core-resource, the following SMT modes are supported:
-* Single-thread (ST) mode: one thread active.
-* SMT2 mode: two threads active.
-* SMT4 mode: three or four threads active.
-When the number of active threads per SMT4-core-resource moves between SMT2 and SMT4 modes, an SMT mode change procedure is executed by the hardware to re-balance resources. Threads become active via enabled interrupts and are de-activated by the stop instruction.
+对于SMT8的处理器核，一个SMT4的处理器核负责偶数逻辑线程(0, 2, 4, 6), 另一个SMT4的处理器核负责奇数逻辑线程(1, 3, 5, 7)。一个SMT4处理器核支持ST, SMT2核SMT4模式，当在SMT4和SMT2之前切换时，硬件会重新平衡线程资源；线程通过中断激活，使用 __stop__ 指令休眠。下图展示了一个SMT8处理器核的资源划分和组成情况：
 ![Pasted image 20230908140921.png](/assets/images/power/Pasted image 20230908140921.png)
-a subset of the core resources are dynamically partitioned between threads based on the SMT mode. A number of resources are shared between pairs of active threads (thread-pair). A summary of thread partitioning follows:
-• Fetch is toggled between active threads while honoring dynamic thread priority.
-• In SMT4 mode, decode and dispatch are split to support up to four instructions per thread-pair per cycle. Each four-instruction pipe flows independently from the others except in the case of the microcode engine, which is shared within an SMT4-core-resource.
-• In SMT4 mode, issue queues, execution units, load and store execution units are divided by thread-pair, with each thread-pair using a single super-slice.
-• The load miss queue and L1 caches are shared dynamically by threads within an SMT4-core-resource.
-• Prefetch queues are shared dynamically for hardware detected streams and are statically partitioned based on the active thread count for software-initiated streams.
+处理器的资源基于SMT的模式会动态分配，资源的共享以线程对为单位，一般如下:
+* 在动态线程优先级的基础上，在所有激活的线程之间切换取值
+* 在SMT4模式，译码和分发逻辑通过分割，可以支持每个线程对每周期4条指令，除了微码引擎，每个4指令的流水都是互相独立的
+* 在SMT4模式，发射队列，执行单元，存储加载执行单元都是以指令对为单位切分，每个指令对使用一个super-slice
+* __load miss queue(LMQ)__ 和L1缓存所有SMT4线程共享
+* 对于硬件检测到的预取，预取队列是共享的；对于软件发起的预取，预取队列根据线程数静态分配
 
 ## 12.3 L2 Cache
-The SMT4 L2 cache features are summarized as follows:
-* 1 MB private cache per SMT4-core-resource:
-	* 128-byte line, 8-way set associative.
-	* Both instruction side (I-side) and data side (D-side) inclusive for a Power10 core.
-	* Quad-banked cache design interleaved across a four consecutive cache-line boundary.
-	* L2 cache can perform a read from one cache bank while writing to one of the other cache banks.
+一个SMT4处理器核有8路组相联，1M的L2缓存，缓存行是128B；对于L1指令缓存和L1数据缓存都是inclusive，缓存分为4个bank，不同bank的读写可同时进行；
+
 * 8-way directory, quad-banked multi-ported:
 	* One processor read port, two snoop read ports, and one write port per physical bank.
 	* The processor port operates at ½ the processor clock rate into a given bank (initiated on a 2:1 clock boundary).
