@@ -74,6 +74,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 	* 59 __Data Relocate (DR)__ 0 禁止数据地址转换，并且不发生 __Effective Address Overflow (EAO)__ ；1 使能数据地址转换，__EAO__ 产生 __Data Storage__ 中断
 	* 60 Reserved 
 	* 61 __Performance Monitor Mark (PMM)__ 软件控制Performance Monitor
+
 ## 1.2 计算模式
 处理器提供两种执行模式, 64位模式和32位模式。 两种模式下，设置64位寄存器指令仍然影响所有64位。计算模式控制有效地址的解释, __Condition Register__ 和 __XER__ 的设置, 当 __LK=1__ 时 __Link Register__ 被分支指令的设置 , 以及 __Count Register__  被条件分支指令的使用。几乎所有指令都可以在两种模式下运行。在两种模式下，有效地址的计算都使用所有相关寄存器的64位( __General Purpose Registers__ , __Link Register__ , __Count Register__ 等) 并且产生64位结果。
 ## 1.3 指令格式
@@ -92,6 +93,7 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 5. 使用 __Target Address Register__ 里的地址 ( __Branch Conditional to Target Address Register__ ).
 ![Pasted image 20230905092520.png](/assets/images/power/Pasted image 20230905092520.png)
 ![Pasted image 20230905092500.png](/assets/images/power/Pasted image 20230905092500.png)
+
 ### 1.3.2 条件寄存器指令
 这些是操作条件寄存器 __CR__ 的指令
 ![Pasted image 20230905093726.png](/assets/images/power/Pasted image 20230905093726.png)
@@ -99,12 +101,14 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905094031.png](/assets/images/power/Pasted image 20230905094031.png)
 ![Pasted image 20230905094050.png](/assets/images/power/Pasted image 20230905094050.png)
 ![Pasted image 20230905094419.png](/assets/images/power/Pasted image 20230905094419.png)
+
 ### 1.3.3 系统调用指令
 系统调用指令主要用于切换特权模式
 * 当 __LEV=1__ 时，唤起hypervisor
 * 当 __LEV=2__ 和 __SMFCTRL.E = 1__ 时, 唤起ultravisor
 * 当 __LEV=2__ 和 __SMFCTRL.E = 0__ 时, 唤起hypervisor。但是，这种方式是编程错误
 ![Pasted image 20230905095119.png](/assets/images/power/Pasted image 20230905095119.png)
+
 ### 1.3.4 定点加载存储指令
 * 有效地址(EA)索引的字节，半字，字，双字被加载到 __RT__ 寄存器
 * __RS__ 寄存器里字节，半字，字，双字被存储到有效地址(EA)索引空间
@@ -115,9 +119,11 @@ POWER (Performance Optimization With Enhanced RISC)架构起源于1990年IBM的R
 ![Pasted image 20230905102630.png](/assets/images/power/Pasted image 20230905102630.png)
 ![Pasted image 20230905102726.png](/assets/images/power/Pasted image 20230905102726.png)
 ![Pasted image 20230905102804.png](/assets/images/power/Pasted image 20230905102804.png)
+
 ### 1.3.5 定点算术指令
 * __addic__ , __addic__ , __subfic__ , __addc__ , __subfc__ , __adde__ , __subfe__ , __addme__ , __subfme__ , __addze__ , 和 __subfze__ 指令设置 __CR.CA__ , 在64位模式下反映位0的进位，在32位模式反映位32的进位
 * 对于XO形式的`Multiply Low`和`Divide`指令, __CR.SO/OV/OV32__ 设置依赖计算模式, 反映 __mulld__ , __divd__ , __divde__ , __divdu__ 和 __divdeu__ 的64位溢出, __mullw__ , __divw__ , __divwe__ , __divwu__ 和 __divweu__ 低32位的溢出.
+
 ### 1.3.6 定点比较指令
 定点比较指令将寄存器 __RA__ 和如下值比较
 a 符号扩展SI
@@ -125,12 +131,15 @@ b 无符号扩展UI
 c __RB__ 寄存器的值
 __cmpi__ 和 __cmp__ 是有符号比较, __cmpli__ 和 __cmpl__ 是无符号比较.
 ![Pasted image 20230905103727.png](/assets/images/power/Pasted image 20230905103727.png)
+
 ### 1.3.7 定点逻辑指令
 定点逻辑指令对64位进行按位操作
 ![Pasted image 20230905104113.png](/assets/images/power/Pasted image 20230905104113.png)
+
 ### 1.3.8 定点旋转和移位指令
 定点旋转和移位指令对通用寄存器值进行旋转和移位操作，从位0开始
 ![Pasted image 20230905104311.png](/assets/images/power/Pasted image 20230905104311.png)
+
 ### 1.3.9 Binary Coded Decimal (BCD) 辅助指令
 Binary Coded Decimal辅助指令操作BCD( __cbcdtd__ 和 __addg6s__ )和十进制浮点操作数
 ![Pasted image 20230905104845.png](/assets/images/power/Pasted image 20230905104845.png)
@@ -140,6 +149,7 @@ __Machine State Register (MSR)__ 是64位寄存器，定义了线程的特权状
 线程的特权状态由 __MSR.S__ , __MSR.HV__ 和 __MSR.PR__ 组成，意义如下:
 ![Pasted image 20230905144055.png](/assets/images/power/Pasted image 20230905144055.png)
 __MSR.SF__ 控制线程32/64位计算模式.
+
 ## 1.5 存储模型
 存储属性是以页表为单位设置，每一个读写访问都需要检查对应的存储属性。主要有下列存储属性：
 * __Write Through Required__ 写操作不会使数据缓存里的数据转变为修改
@@ -156,10 +166,10 @@ __MSR.SF__ 控制线程32/64位计算模式.
 * __Partition Table Control Register (PTCR)__ 是64位寄存器，保存了分区表的host的真实基地址。
 	* 4:51 __PATB__ 分区表基地址
 	* 59:63 __PATS__ 分区表大小=2^(12+PATS)且 PATS ≤24
-![ptcr.png](/assets/images/power/ptcr.png)
+![ptcr.png](/assets/images/power/ptcr.PNG)
 
 ### 1.6.1 Ultravisor Real, Hypervisor Real, 和Virtual Real Addressing Modes
-当指令地址转换或数据地址转换功能被禁止时，根据当前处于的特权模式，内存访问被称为 __ultravisor real addressing mode__ , __hypervisor real addressing mode__ 和 __virtual real addressing mode__ 。这三种模式内存访问 __MSRS.HV__ , __PATE.HR__ , __PATE.PS__ , __URMOR__ , __HRMOR__ , 有效地址第0位 (EA0), 和 __RMCF__分为不同方式。 有效地址1:3位不使用。
+当指令地址转换或数据地址转换功能被禁止时，根据当前处于的特权模式，内存访问被称为 __ultravisor real addressing mode__ , __hypervisor real addressing mode__ 和 __virtual real addressing mode__ 。这三种模式内存访问根据 __MSRS.HV__ , __PATE.HR__ , __PATE.PS__ , __URMOR__ , __HRMOR__ , 有效地址第0位 (EA0), 和 __RMCF__ 值分为不同方式。 有效地址1:3位不使用。
 
 #### 1.6.1.1 Ultravisor/Hypervisor Offset Real Mode Address
 当 __MSR.HV = 1__  且 __EA.0 = 0__ 时, 存储访问由 __Ultravisor Real Mode Offset Register__  或 __Hypervisor Real Mode Offset Register__ 控制, 根据 __MSR.S__ 值：
@@ -168,7 +178,7 @@ __MSR.SF__ 控制线程32/64位计算模式.
 
 #### 1.6.1.2 Virtual Real Mode Addressing Mechanism
 当 __MSR.HV = 0__  且 __MSR.DR=0__ 或 __MSR.IR=0__ 时，分区使用 __Paravirtualized HPT(PATE.HR=0)__ 进行地址转换，能够访问的内存空间由 __Virtualized Real Mode Area (VRMA)__ 控制。地址转换和存储保护仍然像地址转换使能一样处理，只是有效地址到虚拟地址的转换使用 __VRMA.SLBE__ ，而不是通过SLB。有效地址的0:23位不使用。下图展示了 SLBE 的内容：
-![vrma.slbe.png](/assets/images/power/vrma.slbe.png)
+![vrma.slbe.png](/assets/images/power/vrma.slbe.PNG)
 
 ### 1.6.2 Segment Translation
 下图展示了64位有效地址通过 __Segment Lookaside Buffer (SLB)__ 转换为78位虚拟地址的过程：
@@ -321,13 +331,13 @@ POWER3由7个功能单元组成：
 下图展示了*POWER3* 处理器功能模块图：
 ![Pasted image 20230912085752.png](/assets/images/power/Pasted image 20230912085752.png)
 
-* *Instruction processing unit* 和*instruction ﬂow unit* *IPU* 和*IFU* 负责取值，缓存以及指令分发和完成整个生命流程。IPU有32KB指令缓存和*cache reload buffer(CRB)* 。 指令缓存缓存行大小是128B，因此一共有256行，组织成128路组相联，并且单周期访问。*CRB* 保存从内存读取最新缓存行。另外实现虚拟地址转换，实现了256-entry 2路组相联*instruction translation lookaside buffer (ITLB)* 和16-entry *instruction segment lookaside buffer (ISLB)* 。每周期可以取8条指令，分发4条指令，并且完成4条指令。为了调高吞吐，指令顺序分发，大部分可以乱序执行和结束，顺序完成。指令分发到不同功能单元指令队列并且由32-entry *completion queue*记录。这些功能单元指令队列确保对应功能单元有足够指令可以选择来执行，并且阻塞的指令不会阻碍IFU的指令分发。*completion queue* 确保处理器的架构状态的正确性，强制指令顺序完成和中断以及异常的正常处理。**POWER3** 采用两种机制来提高分支预测的准确性。首先，通过跟踪所有并发的带条件码的指令，处理器能够在指令分发时就确定分支结果。另外，对于在指令分发时无法确定的分支，会进行投机。当带条件码指令完成并且分支结果投机错误，分支指令之后所有指令会取消并重新分发正确指令。
+* *Instruction processing unit* 和*instruction ﬂow unit* *IPU* 和*IFU* 负责取值，缓存以及指令分发和完成整个生命流程。IPU有32KB指令缓存和*cache reload buffer(CRB)* 。 指令缓存缓存行大小是128B，因此一共有256行，组织成128路组相联，并且单周期访问。*CRB* 保存从内存读取最新缓存行。另外实现虚拟地址转换，实现了256条目2路组相联*instruction translation lookaside buffer (ITLB)* 和16条目 *instruction segment lookaside buffer (ISLB)* 。每周期可以取8条指令，分发4条指令，并且完成4条指令。为了调高吞吐，指令顺序分发，大部分可以乱序执行和结束，顺序完成。指令分发到不同功能单元指令队列并且由32-entry *completion queue*记录。这些功能单元指令队列确保对应功能单元有足够指令可以选择来执行，并且阻塞的指令不会阻碍IFU的指令分发。*completion queue* 确保处理器的架构状态的正确性，强制指令顺序完成和中断以及异常的正常处理。**POWER3** 采用两种机制来提高分支预测的准确性。首先，通过跟踪所有并发的带条件码的指令，处理器能够在指令分发时就确定分支结果。另外，对于在指令分发时无法确定的分支，会进行投机。当带条件码指令完成并且分支结果投机错误，分支指令之后所有指令会取消并重新分发正确指令。
 * *Fixed-point execution units* **POWER3** 包含3个定点执行单元：2个单周期执行单元和一个多周期执行单元。单周期执行单元执行算术，移位，逻辑，比较，*trap* 和 *count leading zero* 指令。其他比如乘法，除法等都由多周期执行单元执行。两个单周期执行单元共享一个 *six-entry* 指令队列, 多周期执行单元使用一个*three-entry* 的指令队列。不同于**POWER 2** 包含两个执行定点和加载存储的对称的执行单元，**POWER3** 有两个专门的存储加载单元。独立的定点执行单元和存储加载单元对于类似Monte Carlo仿真这样整数操作占比大的应用很显然有比较大性能提升，但是即使是对浮点运算也很重要。像在*sparse-matrix-vector multiply* 中，整数索引必须先转换成字节偏移。
 * *Floating-point execution units* *FPU* 包含两个对称的执行融合乘加流水的执行单元。所有浮点指令都需要经过乘法和加法阶段。对于浮点乘，加法阶段0作为一个操作数。对于浮点加，乘法阶段1作为一个操作数。
-* *Load/store execution units* 所有的存储加载操作都由两个存储加载执行单元完成。加载指令将数据从内存转移到定点或浮点重命名寄存器，存储指令将数据从寄存器转移到内存。存储指令使用一个*16 entries store buffer* 来提高性能. 当存储指令获取到数据之后就可以完成，而不必等到写进数据缓存。两个加载存储执行单元共享一个 *six-entry* 指令队列。 *LSU* 乱序执行允许加载指令超过存储指令同时记录数据依赖性。存储指令的顺序在执行阶段和存储队列中维护。
+* *Load/store execution units* 所有的存储加载操作都由两个存储加载执行单元完成。加载指令将数据从内存转移到定点或浮点重命名寄存器，存储指令将数据从寄存器转移到内存。存储指令使用一个16条目*store buffer* 来提高性能. 当存储指令获取到数据之后就可以完成，而不必等到写进数据缓存。两个加载存储执行单元共享一个6条目的*指令队列*。 *LSU* 乱序执行允许加载指令超过存储指令同时记录数据依赖性。存储指令的顺序在执行阶段和存储队列中维护。
 * *Data cache unit* *DCU* 主要由数据内存管理单元*MMU* ， L1缓存和数据预取单元组成
-	* *Memory management unit* *MMU* 主要负责数据的地址转换，包括一个*16-entry segment lookaside buffer (SLB)* 和两个镜像的*256-entry两路组相联*data translation lookaside buffers (DTLB) 以便支持两个存储加载执行单元。*MMU* 支持1T物理内存，64位有效地址和80位的虚拟地址。
-	* *L1 data cache* L1数据缓存是单周期访问的64 KB，由4个bank，一共512个128B缓存行组成。每个bank是128路组相联。每个bank，由地址A55/A56决定，根据双字地址(A60)地址分成2个子bank。 *least-recently-used (LRU)* 替换算法不适用于128路组相联缓存，因此，**POWER3** 在L1指令缓存和L1数据缓存中采用*round-robin* 替换方案。为了适应不同位宽和频率以便重建缓存行，需要在传输路径上加入*linewidth buffers* 。L1数据缓存和BIU之间, 每个bank有一个*cache- reload buffers (CRBs)* 和一个*cache-storeback buffers (CSBs)*。 加载操作命中*CRB* 直接提供数据，不必等到缓存行加载。*CSB* 和 *BIU* 之间是64-byte 接口。L1数据缓存可以支持4个缓存缺失，可以有效掩盖内存延迟。当加载操作没有命中L1数据缓存，指令会被放入*six-entry load-miss queue(LMQ)* , 同时*BIU*发出数据加载传输， 后续加载指令可以继续执行。只有当第五个加载操作没有命中L1数据缓存，并且*LMQ* 里已经有4个未命中加载指令，加载操作才会被暂停，直到*LMQ* 里任意一个加载指令执行完成。
+	* *Memory management unit* *MMU* 主要负责数据的地址转换，包括一个16条目 *segment lookaside buffer (SLB)* 和两个镜像的256条目两路组相联*data translation lookaside buffers (DTLB)* 以便支持两个存储加载执行单元。*MMU* 支持1T物理内存，64位有效地址和80位的虚拟地址。
+	* *L1 data cache* L1数据缓存是单周期访问的64 KB，由4个bank，一共512个128B缓存行组成。每个bank是128路组相联。每个bank，由地址A55/A56决定，根据双字地址(A60)地址分成2个子bank。 *least-recently-used (LRU)* 替换算法不适用于128路组相联缓存，因此，**POWER3** 在L1指令缓存和L1数据缓存中采用*round-robin* 替换方案。为了适应不同位宽和频率以便重建缓存行，需要在传输路径上加入*linewidth buffers* 。L1数据缓存和BIU之间, 每个bank有一个*cache- reload buffers (CRBs)* 和一个*cache-storeback buffers (CSBs)*。 加载操作命中*CRB* 直接提供数据，不必等到缓存行加载。*CSB* 和 *BIU* 之间是64-byte 接口。L1数据缓存可以支持4个缓存缺失，可以有效掩盖内存延迟。当加载操作没有命中L1数据缓存，指令会被放入6条目的*load-miss queue(LMQ)* , 同时*BIU*发出数据加载传输， 后续加载指令可以继续执行。只有当第五个加载操作没有命中L1数据缓存，并且*LMQ* 里已经有4个未命中加载指令，加载操作才会被暂停，直到*LMQ* 里任意一个加载指令执行完成。
 	* 数据预取 **POWER3**处理器一大创新是硬件数据预取功能。**POWER3**处理器根据监控到的缓存行缺失及匹配到的模式进行数据预取。当一个模式或数据流被探测到，处理器会对缓存行进行投机预取，假设数据会马上被使用。数据预取对于掩藏内存延迟非常关键。预取的数据流在地址上是连续的缓存行，要么是递增，要么是递减的。 **POWER3**处理器预取引擎包括一个*ten- entry stream ﬁlter* 和一个 *stream prefetcher* 。 *stream ﬁlter* 观察所有数据缓存缺失的真实地址(RA)，检测潜在的预取数据流。*stream ﬁlter* 根据加载指令的地址操作数，猜测下一个缓存行的真实地址是增加还是减少，并记录到*FIFO ﬁlter* 。当发生新的缓存缺失时，如果发生缓存缺失的真实地址和猜测的地址一致，这样就检测到一个数据流。如果*stream prefetcher* 当前少于4个数据预取流，当前数据流会被接受，并且预测下一个缓存行加载操作会通过*BIU* 发出。一旦数据流被放入*stream prefetcher* , 数据流保持活跃直到数据流到达终点或者有新的缓存缺失进入*stream ﬁlter*。数据预取引擎会尝试保持预取2个缓存行，前一个缓存行会被放到L1 缓存，后一个缓存行会被放到BIU里一个预取缓冲区。因此，数据预取引擎可以并发预取4个数据流，每个2个缓存行，一共8个预取操作。数据预取引擎监控所有加载操作的地址操作数，当LSU结束当前缓存行并开始加载下一个缓存行，数据预取引擎将预取缓冲区数据传输到L1，并预取下一个缓存行到预取缓冲区。
 
 下图展示了预取引擎框图
@@ -337,57 +347,49 @@ POWER3由7个功能单元组成：
 * *L2 cache* **POWER3** 支持1MB-16MB的L2缓存，可以是组相连或直接映射。总线和L2以32B位宽相连，一个128B缓存行需要4个周期传输。
 
 # 6. POWER 4
-**POWER 4** 是一个双核乱序处理器，通过一个*core interface unit(CIU)* 共享一个统一的片上二级缓存。
-* *CIU* 是3个L2控制器和2个处理器之间的*crossbar switch* 。每个L2控制器每周期能提供32B数据。*CIU* 通过一个8B的接口接受来自处理器的存储操作。
-* 每一个处理器有一个相关联的*noncacheable unit(NC unit)*，负责处理指令串行功能和非缓存存储加载操作。
-* L3控制器和目录在**POWER4** 片上，但是实际L3位于片外。
-* *fabric controller* 负责L2和L3之间的数据流以及**POWER 4** SMP通信。
-* *GX controller* 控制器负责IO。
-每个处理器芯片包括四种类型IO:
-* 和同一个模块内其他**POWER4** 芯片通信，4个16-byte接口。物理是线上，这4个逻辑总线有6个总线组成，3个输入，3个输出。
-* 和不同模块的**POWER4** 芯片通信，2个8-byte的总线，一个输入，一个输出。
-* 片外L3接口，2个16-byte总线，一个输入，一个输出，运行在1/3处理器频率。
-* 2个4-byte GX总线, 一个输入，一个输出，运行在1/3处理器频率。
-
-下图展示了**POWER4** 芯片的逻辑框图:
+**POWER 4** 是一个双核乱序处理器，通过一个*core interface unit(CIU)* 共享一个统一的片上二级缓存，下图展示了**POWER4** 芯片的逻辑框图:
 ![Pasted image 20230912171951.png](/assets/images/power/Pasted image 20230912171951.png)
+* *CIU* 是3个L2控制器和2个处理器之间的*crossbar switch* 。每个L2控制器每周期能提供32B数据。*CIU* 通过一个8B的接口接受来自处理器的存储操作
+* 每一个处理器有一个相关联的*noncacheable unit(NC unit)*，负责处理指令串行功能和非缓存存储加载操作
+* L3控制器和目录在**POWER4** 片上，但是实际L3位于片外
+* *fabric controller* 负责L2和L3之间的数据流以及**POWER 4** SMP通信
+* *GX controller* 控制器负责IO
 
+每个处理器芯片包括四种类型IO:
+* 和同一个模块内其他**POWER4** 芯片通信，4个16-byte接口。物理是线上，这4个逻辑总线有6个总线组成，3个输入，3个输出
+* 和不同模块的**POWER4** 芯片通信，2个8-byte的总线，一个输入，一个输出
+* 片外L3接口，2个16-byte总线，一个输入，一个输出，运行在1/3处理器频率
+* 2个4-byte GX总线, 一个输入，一个输出，运行在1/3处理器频率
 
-同时 **POWER4** 增加了 __logical partition ID__ , __real mode offset register (RMOR)__ , __real mode limit register (RMLR)__ 和 __hypervisor RMOR__ 寄存器，提供将SMP系统分成逻辑分区的功能。这些寄存器只能在hypervisor模式下修改。逻辑分区可以提高系统的稳定性，并且可以用于虚拟化。
-
-下图展示了**POWER 4**的全芯片图：
-
+同时 **POWER4** 增加了 __logical partition ID__ , __real mode offset register (RMOR)__ , __real mode limit register (RMLR)__ 和 __hypervisor RMOR__ 寄存器，提供将SMP系统分成逻辑分区的功能。这些寄存器只能在hypervisor模式下修改。逻辑分区可以提高系统的稳定性，并且可以用于虚拟化。下图展示了**POWER 4**的全芯片图：
 ![Pasted image 20230809154420.png](/assets/images/power/Pasted image 20230809154420.png)
 
 ## 6.1 POWER4 Core
 **POWER 4** 处理器是一个乱序的超标量设计，一共实现了16级流水线，每周期可以取指8条指令，发射5条指令，完成5条指令，可以同时处理超过200条指令。为了增强指令级并行，**POWER 4**处理器拥有8个执行单元，2个相同的可以每周期执行融合乘加的浮点执行单元，2个存储加载单元，2个定点执行单元，一个分支执行单元和一个操作条件寄存器的执行单元。下图展示了**POWER4**处理器的框图
-
 ![Pasted image 20230912172922.png](/assets/images/power/Pasted image 20230912172922.png)
 
 ### 6.1.1 分支预测
-**POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-to-count-register (bcctr)__ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个branch-history tables来预测分支方向：
-* 第一个是本地预测器，类似于分支历史表BHT，使用分支指令地址来索引16 384-entry数组，产生1-bit预测分支是否发生
-* 第二个是全局预测器，通过一个执行过的分支指令的11-bit向量，和分支指令地址进行按位异或，来索引16 384-entry全局历史表来产生1-bit预测分支是否发生
-* 第三个是选择表，记录上面两个预测器预测表现来选择其中一个预测器，16 384-entry 选择表和全局预测器使用同样方式索引来产生1bit的选择信号。
+**POWER4** 使用多级分支预测机制来预测条件分支是否发生。每周期直接相连的64KB的指令缓存提供8个指令，分支预测逻辑每周期可以查找两条分支指令。根据找到的分支类别，不同分支预测机制用来预测分支方向或分支目标地址。无条件分支的方向不做预测，所有条件分支都做预测，即使在取值阶段通过 __condition register__ 已知。对于 __branch-to-link-register (bclr)__ 和 __branch-to-count-register (bcctr)__ 指令，分支目标分别通过硬件实现的 *link stack* 和 *count cache*机制预测。 绝对和相对分支目标地址在分支指令扫描时候直接计算。POWER4使用3个分支历史表来预测分支方向：
+* 第一个是本地预测器，类似于分支历史表BHT，使用分支指令地址来索引16 384条目的数组，产生1比特预测分支是否发生
+* 第二个是全局预测器，通过一个执行过的分支指令的11比特向量，和分支指令地址进行按位异或，来索引16 384-entry全局历史表来产生1比特预测分支是否发生
+* 第三个是选择表，记录上面两个预测器预测表现来选择其中一个预测器，16 384条目的选择表和全局预测器使用同样方式索引来产生1比特的选择信号。
 
 动态分支预测能够被软件覆盖，通过设置条件分支指令的2个保留位，一个用来指示软件覆盖，一个用来预测方向。**POWER4** 使用 *link stack* 来预测 __branch-to-link__ 指令的目标地址，一般用于子函数返回。通过设置 __branch-to-link__ 指令的提示位，软件可以将 __branch-to-link__ 是否代表子函数返回，目标地址是否重复通知处理器。当取值逻辑取到 __branch-and-link__ 指令并预测发生分支跳转时，处理器会将下一条指令的地址推入 *link stack* 。当取到一个提示位指示是子函数返回并预测发生分支跳转的 __branch-to-link__ 指令时，*link stack* 会被弹出，并从弹出的地址继续取值。 
 **POWER4** 使用一个32-entry, tagless直接映射的 *count cache* 来预测软件提示的重复的目标。*count cache* 每一条能记录62位地址。当软件提示目标地址可重复的 __branch-to-link__ 和 __branch-to-count__ 指令执行时，目标地址被写入 *count cache* 。当再次取值这样指令时，目标地址通过 *count cache* 来预测。
 
 ### 6.1.1 取指
+一旦 __instruction-fetch address register (IFAR)__ 被加载，指令缓存没被访问，并每周期提供8条指令。每个指令缓存缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为指令缓存缺失比较少，为了省面积，指令缓存只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。当I-cache缺失时，指令从L2以4个32B传输，最需要的区域在前两个周期传输。缓存行被写入*instruction-prefetch buffer*，指令缓存可以继续被后续指令访问。当取值逻辑不使用指令缓存时，例如发生另一个指令缓存访问缺失，缓存行会被写入指令缓存。这样指令缓存的写入操作可以被掩藏而不影响正常的取指操作。
+EA, RA对被保存在128条目的2路组相联的 __effective-to-real address translation (ERAT)__ 表中。**POWER4** 分别实现了*IERAT*和*DERAT*，都是用有效地址(EA)访问。 每个处理器实现了一个1024条目的4路组相联的 *TLB* 。
 
-一旦 __instruction-fetch address register (IFAR)__ 被加载，I-cache没被访问，并每周期提供8条指令。每个I-cache缓存行是128B，可以提供32个指令，因此每个缓存行被分为4个相等的区域。因为I-cache缺失比较少，为了省面积，I-cache只有一个端口，每周期可以读或写一个区域。__I-cache directory (IDIR)__ 每条包含42位的真实地址(RA)，由有效地址访问(EA)。当I-cache缺失时，指令从L2以4个32B传输，最需要的区域在前两个周期传输。缓存行被写入instruction-prefetch buffer，I-cache可以继续被后续指令访问。当取值逻辑不使用I-cache时，例如发生另一个I-cache访问缺失，缓存行会被写入I-cache。这样 I-cache的写入操作可以被掩藏而不影响正常的取指操作。
-EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address translation (ERAT)__ 表中。**POWER4** 分别实现了 IERAT 和 DERAT，都是用有效地址(EA)访问。 每个处理器实现了一个1024-entry 4路组相联的 *TLB* 。
+当指令流水线准备好接受指令时，IFAR的值被发送到指令缓存, IDIR, IERAT, 和分支预测逻辑，同时IFAR被更新为下一个顺序区域的地址。下一个周期，指令从指令缓存转发到译码，分解和分组的指令队列，同时从IDIR接收真实地址(RA), 从IERAT接收EA, RA对，以及分支方向预测信息。IERAT会被检查是否有有效的记录并且RA和IDIR的RA匹配。如果IERAT是无效的记录，EA必须从TLB和SLB进行翻译，取值会被暂停。假设IERAT记录是有效的，并且 IERAT的RA和IDIR的RA匹配，, I-cache访问命中。使用分支预测逻辑重新加载IFAR，然后重复上面过程。填充译码，分解和分组前面的指令队列可以允许取指逻辑提前运行，而且当发生指令缓存缺失时，指令队列可以继续提供指令而不必停止后面的流水线。
 
-当指令流水线准备好接受指令时，IFAR的值被发送到I-cache, IDIR, IERAT, 和分支预测逻辑，同时IFAR被更新为下一个顺序区域的地址。下一个周期，指令从 I-cache转发到decode, crack, 和group formation的指令队列，同时从IDIR接收真实地址(RA), 从IERAT接收EA, RA对，以及分支方向预测信息。IERAT会被检查是否有有效的记录并且RA和IDIR的RA匹配。如果IERAT是无效的记录，EA必须从TLB和SLB进行翻译，取值会被暂停。假设IERAT记录是有效的，并且 IERAT的RA和IDIR的RA匹配，, I-cache访问命中。使用分支预测逻辑重新加载IFAR，然后重复上面过程。填充decode, crack, and group formation logic前面的指令队列可以允许取指逻辑提前运行，而且当发生I-cache缺失时，指令队列可以继续提供指令而不必停止后面的流水线。
+如果发生指令缓存缺失，首先，*instruction-prefetch buffers*会被检查是否有请求的指令，如果有，会将指令发送到流水线并写入指令缓存。如果*instruction-prefetch buffer*也不存在请求的指令，取指命令被发送到L2，L2高优先级处理指令重载传输。当数据从L2返回，会尝试写入到I-cache。除了这些取指命令，**POWER4** 会预取指令缓存行到 *instruction-prefetch buffer*，*instruction-prefetch buffer*可以保存4个32条指令。 指令预取逻辑监控取指请求，当*instruction-prefetch buffer*里存在请求缓存行时，会预取下一个缓存行；当*instruction-prefetch buffer*里不存在请求缓存行时，会预取下两个缓存行。这些预取操作需要保证I-cache里不存在预取的缓存行。预取的缓存行会被保存在*instruction-prefetch buffer*里，从而保证不会污染指令缓存。
 
-如果发生 I-cache缺失，首先，instruction-prefetch buffers会被检查是否有请求的指令，如果有，会将指令发送到流水线并写入I-cache。如果instruction-prefetch buffer也不存在请求的指令，取指命令被发送到L2，L2高优先级处理指令重载传输。当数据从L2返回，会尝试写入到I-cache。除了这些取指命令，**POWER4** 会预取指令缓存行到 instruction-prefetch buffer，instruction-prefetch buffer可以保存4个32条指令。 指令预取逻辑监控取指请求，当instruction-prefetch buffer里存在请求缓存行时，会预取下一个缓存行；当instruction-prefetch buffer里不存在请求缓存行时，会预取下两个缓存行。这些预取操作需要保证I-cache里不存在预取的缓存行。预取的缓存行会被保存在instruction-prefetch buffer里，从而保证不会污染I-cache。
-
-### 6.1.2 Decode, crack, 和group formation
-一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，no-ops 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。为了保证正确性，一些指令不允许投机执行，为了确保这些指令不会被投机执行，这些指令只有作为下一个完成的指令时才会被执行，这被称为completion serialization。为了简化实现，这些指令单独组成单指令组。completion serialization例子包括guarded space的存储加载指令和context synchronizing 指令，例如修改处理器状态的 __move-to-machinestate-register__ 指令。
+### 6.1.2 译码，分解和分组
+一组包含5个内部指令，称为IOPs。解码阶段，指令被顺序放入一个组。最老的指令放到槽0， 余下依次放入，槽4保留给分支指令。如果必要，`no-ops` 被强制放入槽4。一个周期分发一个组的指令。组按照程序顺序分发，不同的IOPs被发射队列乱序发射到执行单元。当组完成时侯，结果被commit。一个周期只能完成一个组，并且只有一个组里所有指令都完成，并且更老的组已经完成，这个组才能完成。为了保证正确性，一些指令不允许投机执行，为了确保这些指令不会被投机执行，这些指令只有作为下一个完成的指令时才会被执行，这被称为完成序列化。为了简化实现，这些指令单独组成单指令组。完成序列化例子包括guarded space的存储加载指令和context synchronizing 指令，例如修改处理器状态的 __move-to-machinestate-register__ 指令。
 
 ### 6.1.3 组分发和指令发射
 一次分发一个指令组到指令队列，当指令组分发时，控制信息被保存在 __group completion table (GCT)__ 。GCT可以保存20个组。GCT会记录指令组里第一条指令的地址。当指令执行结束，也会被记录到对应的GCT，记录会一直维护直到指令组退休。每个指令槽对应不同的执行单元的发射队列。定点执行单元和存储加载单元共享一个发射队列。下表列出了不同发射队列的深度和不同类型的队列的个数：
-
 ![Pasted image 20230913150523.png](/assets/images/power/Pasted image 20230913150523.png)
 
 指令被分发到发射队列的顶端，当指令从发射队列发射出去后，队列内指令往下移动。对于两个发射队列对应一个执行单元的，两个队列间隔发射，所有的源操作数都准备好的最老的指令被发射到执行单元。当指令组分发时，指令组需要的所有资源都需要可用，不然指令组会被停住直到所有资源可用。成功的分发需要下列资源：
@@ -397,18 +399,17 @@ EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address tran
 
 ![Pasted image 20230913154714.png](/assets/images/power/Pasted image 20230913154714.png)
 
-* Load reorder queue (LRQ)条目: 指令组里加载指令必须有可用的LRQ条目，当指令组完成时被释放。LRQ一共32条目
-* Store reorder queue (SRQ) 条目: 指令组里存储指令必须有可用的SRQ，当指令组完成，并且存储操作成功写到L2之后释放。SRQ一共32条目
+* __Load reorder queue (LRQ)__ 条目: 指令组里加载指令必须有可用的*LRQ*条目，当指令组完成时被释放。*LRQ*一共32条目
+* __Store reorder queue (SRQ)__ 条目: 指令组里存储指令必须有可用的*SRQ*，当指令组完成，并且存储操作成功写到L2之后释放。*SRQ*一共32条目
 
 ### 6.1.4 存储加载执行单元
-每一个SRQ条目关联一个store data queue (SDQ)条目，SDQ条目维护存储指令的数据直到指令组commit。一旦commit，SDQ里的数据会被写入到缓存。另外，三个特别hazards需要避免：
-* Load hit store: 当对同一个内存地址的年轻的读在更老的写把数据写回缓存之前执行时必须从SDQ获取数据。当读指令执行时，会检查SRQ，是否有对同一个地址的更老的写指令，如果有，数据从SDQ转发。当数据不能转发时比如读写地址重叠但是并不完全一致时，包含读指令的指令组被遗弃并重新取指执行。如果更老的写指令还未将数据写到SDQ，读指令被拒绝，并重新发射。
-* Store hit load: 当对同一个内存地址的年轻的读在知道有更老的写之前执行完时，读操作接收到数据是错误的。为了避免这种情况，当写指令执行时，需要检查LRQ，如果存在更年轻的读已经执行了，包含读指令的指令组和后续的指令组都被遗弃，并重新取指执行。写指令之后所有指令组也被遗弃。如果读写指令在同一个指令组，指令组被遗弃，并且指令组里的指令单独组成一个指令组。
-* Load hit load: 对同一个内存地址的读必须保证顺序。在LRQ条目里有一个位，指示对当前条目里的数据发生了侦查。当读指令执行时，和LRQ里的所有地址进行比较，当和一个被侦查过的更年轻的写匹配时，顺序一致性可能存在问题。为了简化实现，老的读指令之后的指令组都被遗弃。如果两个读指令在同一个指令组，当前指令组被遗弃，并且指令组里的指令单独组成指令组。
+每一个*SRQ*条目关联一个*store data queue (SDQ)*条目，*SDQ*条目维护存储指令的数据直到指令组commit。一旦commit，*SDQ*里的数据会被写入到缓存。另外，三个特别hazards需要避免：
+* *Load hit store* 当对同一个内存地址的年轻的读在更老的写把数据写回缓存之前执行时必须从SDQ获取数据。当读指令执行时，会检查SRQ，是否有对同一个地址的更老的写指令，如果有，数据从SDQ转发。当数据不能转发时比如读写地址重叠但是并不完全一致时，包含读指令的指令组被遗弃并重新取指执行。如果更老的写指令还未将数据写到SDQ，读指令被拒绝，并重新发射。
+* *Store hit load* 当对同一个内存地址的年轻的读在知道有更老的写之前执行完时，读操作接收到数据是错误的。为了避免这种情况，当写指令执行时，需要检查*LRQ*，如果存在更年轻的读已经执行了，包含读指令的指令组和后续的指令组都被遗弃，并重新取指执行。写指令之后所有指令组也被遗弃。如果读写指令在同一个指令组，指令组被遗弃，并且指令组里的指令单独组成一个指令组。
+* *Load hit load* 对同一个内存地址的读必须保证顺序。在*LRQ*条目里有一个位，指示对当前条目里的数据发生了侦查。当读指令执行时，和*LRQ*里的所有地址进行比较，当和一个被侦查过的更年轻的写匹配时，顺序一致性可能存在问题。为了简化实现，老的读指令之后的指令组都被遗弃。如果两个读指令在同一个指令组，当前指令组被遗弃，并且指令组里的指令单独组成指令组。
 
 ## 6.2 POWER4 Core Pipeline
 下图展示了 **POWER 4**处理器的流水线:
-
 ![Pasted image 20230912173004.png](/assets/images/power/Pasted image 20230912173004.png)
 
 在MP(mapper)阶段所有依赖性被确定，资源被分配，指令组被分发到对应的发射队列。在ISS阶段, IOP被发射到对应的执行单元。在RF阶段读取对应寄存器获取源操作数。在EX阶段执行。在WB阶段写回执行的结果到对应寄存器，这个时候，指令结束执行但还未结束。至少经过Xfer和CP两个周期，所有更老的指令组已经完成并且同一个组里其他指令结束执行指令才能完成。如果指令打包成指令组速度没有取指速度快，从指令缓存里取出的进入指令缓存的指令处于D1阶段。 同样，如果没有资源分发指令组到发射队列，指令等待在MP之前；指令在ISS之前在发射队列等待；在CP之前等待完成。
@@ -419,10 +420,8 @@ EA, RA对被保存在128-entry 2路组相联的 __effective-to-real address tran
 
 对于存储指令，数据被保存到SDQ，一旦存储指令对应的指令组完成，会尝试将SDQ数据写到数据缓存。如果数据已经存在L1数据缓存，修改的数据会写回到数据缓存；如果不存在，不会写回到L1。修改的数据都会写回到L2。**POWER4** 的缓存一致性点是L2。另外，L2缓存对L1是包含的，即所有L1数据都在L2中。
 
-
 ## 6.3 POWER4 L2 Cache
 **POWER4** 上L2由两个处理器共享，下图展示了L2的逻辑视图：
-
 ![Pasted image 20230912173042.png](/assets/images/power/Pasted image 20230912173042.png)
 
 L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制器之间做哈希。每个块包括4块SRAM分区，每一个分区每两个周期能提供16B数据；4个分区每周期能提供32B数据，需要4个周期传输一个128B缓存行。数据阵列实现SECDED，并且有冗余的wordline和bitline；L2缓存目录由2个冗余的8路组相联，parity保护阵列组成。冗余的阵列除了提供备份，同时也提供了2个非阻塞的读端口，允许snoop而不影响存储加载请求。L2实现了pseudo-LRU替换算法。因为L1是写入设计，到L2的写请求最多8B，L2有2个4条目的64B的队列来合并写请求，减少到L2的请求。每个控制器里有4个一致性处理器来管理L2，每个一致性处理器处理一个请求。请求可能来自两个处理器的L1数据缓存或者取指，或者存储存储队列。一致性处理器负责:
@@ -439,7 +438,7 @@ L2由3个相同块组成，每一个都自己控制器。缓存行在3个控制�
 * 将修改的数据写回到内存
 * 将数据发送到其他L2
 
-除了分配一个侦查处理器，L2对于所有侦查操作提供一个snoop response。对于侦查请求，L2目录会被访问以确定缓存行是否存在以及对应的一致性状态，同时侦查的地址会和当前活跃的一致性处理器比较来发现可能的地址冲突。基于这些信息，会返回对应的snoop response。
+除了分配一个侦查处理器，L2对于所有侦查操作提供一个侦查响应。对于侦查请求，L2目录会被访问以确定缓存行是否存在以及对应的一致性状态，同时侦查的地址会和当前活跃的一致性处理器比较来发现可能的地址冲突。基于这些信息，会返回对应的侦查响应。
 L2缓存控制器也充当两个处理器的保留站来支持 __load [double] word and reserve indexed (lwarx/ldarx)__ 和 __store [double] word conditional (stwcx/stdcx)__ 指令。每个处理器一个地址寄存器用来保存保留的地址。当 __lwarx__ 或 __ldarx__ 指令执行时会设置一个标志，当侦查到无效操作包括从其他处理器发送的对保留地址的写，或者 __stwcx__ 或 __stdcx__ 执行成功 (通过 __condition register__ 里一位来通知处理器执行结果)，会清除标志。L2实现增强的MESI一致性协议，一共7个状态：
 * I (invalid state): 数据无效
 * SL (shared state): 数据有效，缓存行可能在其他L2。数据可以传输到同一个MCM内的其他L2。当处理器L1数据缓存加载或指令未命中L2并且数据来自其他缓存或内存时会进入 __SL__ 状态
@@ -450,7 +449,6 @@ L2缓存控制器也充当两个处理器的保留站来支持 __load [double] w
 * T (tagged state): 数据有效，但是和内存比有修改，并且数据已经传输给其他缓存，在这个状态，数据不能传输给其他L2除非收到回应。当 __M__ 状态时收到侦查读时候会进入该状态。
 
 下表列出了L2和L1可能对应的缓存状态:
-
 ![Pasted image 20230913172331.png](/assets/images/power/Pasted image 20230913172331.png)
 
 L2系统里还有两个noncacheable units (NCU)， 分别对应两个处理器。NCUs处理分缓存的读写，以及缓存同步操作。每个NCU由NCU master 和 NCU snooper组成。
@@ -459,7 +457,6 @@ L2系统里还有两个noncacheable units (NCU)， 分别对应两个处理器�
 
 ## 6.4 POWER4 L3 Cache
 下图展示了L3的逻辑视图：
-
 ![Pasted image 20230912173114.png](/assets/images/power/Pasted image 20230912173114.png)
 
 L3由控制器和数据阵列组成，控制器在**POWER4** 芯片上，包含标签目录，仲裁逻辑等。数据阵列在包含两个16MB eDRAM的L3芯片上，后面可以连接单独的内存控制器。为了物理实现和减少bank冲突，L3上的eDRAM组织成8个bank， 每个bank 2M，并分成4个4M的组。L3控制器也分成4个组，每个有两个一致性处理器，可以处理来自总线的请求，L3和内存的访问，以及更新L3标签目录。另外，每个组包含两个处理器来进行内存的踢出，无效操作和IO的DMA操作。  每两个组共享一个L3标签目录。L3是8路组相联，缓存行512B，并以128B大小和L2维持一致性。每个缓存行支持下面5个状态：
@@ -473,10 +470,9 @@ L3缓存数据要么来自直接连接的内存，或者连接的其他处理器
 
 ## 6.5 POWER4 Memory System
 下图展示了**POWER4**的内存系统视图：
-
 ![Pasted image 20230912173158.png](/assets/images/power/Pasted image 20230912173158.png)
 
-每个**POWER4** 芯片有一个可选的内存控制器连接到L3缓存后面，每个内存控制器有1或2个内存接口。每个芯片有2个8-byte总线，一个输入，一个输出。system memory interface (SMI)芯片和DRAM芯片由4个4-byte 双向总线连接，工作在400MHz内存控制器有一个64条目的读命令缓存，65条目的写命令缓存和一个16条目的写缓存队列。
+每个**POWER4** 芯片有一个可选的内存控制器连接到L3缓存后面，每个内存控制器有1或2个内存接口。每个芯片有2个8-byte总线，一个输入，一个输出。*system memory interface (SMI)*芯片和DRAM芯片由4个4-byte 双向总线连接，工作在400MHz内存控制器有一个64条目的读命令缓存，65条目的写命令缓存和一个16条目的写缓存队列。
 
 ## 6.6 POWER4 IO
 下图展示了 **POWER4** 的IO结构，GX总线连接远程IO桥芯片。
@@ -484,7 +480,6 @@ L3缓存数据要么来自直接连接的内存，或者连接的其他处理器
 
 ## 6.7 MCM
 下图展示了4个 **POWER4** 芯片通过4个逻辑总线组成8路SMP系统。
-
 ![Pasted image 20230913100716.png](/assets/images/power/Pasted image 20230913100716.png)
 
 每个芯片写到独立的总线，并和L2，I/O控制器，L3控制器进行仲裁。每个芯片侦查所有的总线，从L2发出的读请求被所有芯片侦查到: 
@@ -495,20 +490,18 @@ L3缓存数据要么来自直接连接的内存，或者连接的其他处理器
 
 ## 6.8 32-way SMP
 下图展示了4个MCMs组成更大的SMPs
-
 ![Pasted image 20230913092752.png](/assets/images/power/Pasted image 20230913092752.png)
 
 一到四个MCMs可以进行互联，当多个MCMs互联时，中间的芯片的总线充当repeaters，将请求以环状拓扑从一个模块传输到另一个模块。和单个MCM类似，每个芯片有单独的请求/命令和数据总线，但是侦查所有总线。多个MCMs配置比单个会轻微增加10%的的内存访问延迟，但是提供了统一的内存模型，简化编程。
 
 ## 6.9 POWER4 RAS
-L1缓存使用parity保护，L1数据缓存错误会被当成同步的machine-check中断。 machine-check中断处理函数实现在固件代码里以便支持错误恢复，当中断发生时，固件会保存处理器的架构状态，并检查处理器寄存器来决定恢复和错误状态。如果是可恢复的，固件会无效L1数据缓存来清除错误，并递增错误计数器。如果数据计数器比预设的阈值大，表示是一个不可恢复的错误，固件会禁止发生错误的L1数据缓存部分。固件然后恢复处理器架构状态，以fully recovered的状态回调操作系统的machine-check处理函数。操作系统检查固件返回的状态并继续执行。
-L3 标签目录是ECC保护，支持SECDED。不可修正的错误会导致system checkstop。如果是可修正的错误，访问会被暂停直到错误被修正，同时会发送recovered attention message到service processor。
+L1缓存使用奇偶效验保护，L1数据缓存错误会被当成同步的*machine-check*中断。 *machine-check*中断处理函数实现在固件代码里以便支持错误恢复，当中断发生时，固件会保存处理器的架构状态，并检查处理器寄存器来决定恢复和错误状态。如果是可恢复的，固件会无效L1数据缓存来清除错误，并递增错误计数器。如果数据计数器比预设的阈值大，表示是一个不可恢复的错误，固件会禁止发生错误的L1数据缓存部分。固件然后恢复处理器架构状态，以fully recovered的状态回调操作系统的machine-check处理函数。操作系统检查固件返回的状态并继续执行。
+L3 标签目录是ECC保护，支持SECDED。不可修正的错误会导致*system checkstop*。如果是可修正的错误，访问会被暂停直到错误被修正，同时会发送recovered attention message到service processor。
 L3地址, 内存地址和控制总线有parity，可以发现单bit的错误。L3和内存的数据总线支持ECC的SECDED。不可修正的错误会被发送到requesting processor并导致machine-check中断。
 L3 标签目录发生stuck fault或L3 cache-embedded DRAMs发生超过 line-delete控制寄存器范围的stuck faults，包含对应L3缓存的处理器芯片可以被重新配置，从逻辑上在系统里删掉而不影响系统里其他L3缓存。
 
 # 7. POWER 5
 **POWER5** 将L3直连到L2，作为victim cache，另外，**POWER5** 还集成了片上内存控制器，以提高主存访问速度。每个处理器核支持双线程，对于操作系统，**POWER5** 是一个4路SMP处理器。两个处理器共享1.875MB L2 缓存，并分为3个分区，每一个分区是10路组相联。 L3分为3个slice，分别作为L2的victim cache，每个slice是12路组相联，缓存行大小为256B，分为2个128B的sector。**POWER5** 芯片和L3通过2个16B的双向总线以1/2处理器速度相连。4 bytes宽的I/O bus称为GX bus，运行在1/3处理频率。下图展示了**POWER 5**的全芯片图：
-
 ![Pasted image 20230914085010.png](/assets/images/power/Pasted image 20230914085010.png)
 
 ## 7.1 多线程的演进
@@ -522,15 +515,15 @@ L3 标签目录发生stuck fault或L3 cache-embedded DRAMs发生超过 line-dele
 ![Pasted image 20230809154930.png](/assets/images/power/Pasted image 20230809154930.png)
 
 在**POWER5**处理器中, 为了实现SMT，相比**POWER 4**：
-* segment table缓存在全相联的64个条目的 __segment lookaside buffer (SLB)__ , 每个线程一个
-* page table缓存在1,024个条目, 4路组相联的 __translation lookaside buffer (TLB)__
+* 段表缓存在全相联的64个条目的 __segment lookaside buffer (SLB)__ , 每个线程一个
+* 页表缓存在1,024个条目, 4路组相联的 __translation lookaside buffer (TLB)__
 * BHT和 __count cache__ 没有因为SMT而修改
-* return address stack，每个线程一个
+* *return address stack*，每个线程一个
 * 4个 __instruction prefetch buffers__ ，每个线程一半，每个线程可以独立处理指令缓存缺失和指令预取
-* GCT修改为 *linked list* 实现，这样每个线程可以独立分配和释放。共享的GCT保持和**POWER4**一样的条目数
+* *GCT*修改为 *linked list* 实现，这样每个线程可以独立分配和释放。共享的*GCT*保持和**POWER4**一样的条目数
 * 寄存器重命名有一些小修改，每个逻辑寄存器有一个线程位，每种重命名资源增加一些
 * 除了浮点发射队列从20增加到24， 其他发射队列保持不变
-* 对于LRQ和SRQ，**POWER4**是32个条目，对于SMT，需要分成每个线程一个，这样会导致LRQ和SRQ容易用完。为了不增加队列物理大小，每一个队列都提供了32个虚拟队列条目。虚拟队列条目包含足够信息来分辨指令而不是存储加载指令地址和数据。这种方案以很小成本扩展了LRQ和SRQ大小，从而不会停止指令分发。当指令分发时，真实的LRQ或SRQ已满，指令可以分发到虚拟条目。当真实条目可用时，虚拟条目转换成真实条目。在存储加载指令发射时必须使用真实的LRQ和SRQ
+* 对于*LRQ*和*SRQ*，**POWER4**是32个条目，对于SMT，需要分成每个线程一个，这样会导致*LRQ*和*SRQ*容易用完。为了不增加队列物理大小，每一个队列都提供了32个虚拟队列条目。虚拟队列条目包含足够信息来分辨指令而不是存储加载指令地址和数据。这种方案以很小成本扩展了LRQ和SRQ大小，从而不会停止指令分发。当指令分发时，真实的LRQ或SRQ已满，指令可以分发到虚拟条目。当真实条目可用时，虚拟条目转换成真实条目。在存储加载指令发射时必须使用真实的*LRQ*和*SRQ*
 * __Branch Issue Queue(BIQ)__ 保持和**POWER4**一样的16条目大小，每个线程8条
 * __load miss queue (LMQ)__ 增加了一个线程位，有2个线程共享
 
@@ -592,7 +585,6 @@ FBC对L2/L3, 内存控制器，MCM的片内总线和缓冲和MCM的片间总线�
 
 # 8. POWER 6
 **POWER6** 是一个双核，每核双线程的顺序处理器，增加了虚拟化，十进制算术运算，向量多媒体运算功能，并且实现了检查点重试和 处理器冗余功能。*recovery unit (RU)* 保存处理器的状态，并且使用ECC保护，当发生错误时，处理器使用这些状态恢复。下图展示了**POWER6**的全芯片图:
-
 ![Pasted image 20230726195941.png](/assets/images/power/Pasted image 20230726195941.png)
 
 ## 8.1 POWER6 Core流水线
@@ -630,7 +622,7 @@ IDU负责指令分发，跟踪，发射和完成。在分发阶段，一个线�
 **LSU**由存储加载地址生成和执行逻辑，L1数据缓存，地址转换，store queue, load miss queue (LMQ), 和数据预取引擎组成，实现下面功能：
 	* 存储加载执行 为了实现**POWER6**高频设计，LSU执行单元采用了相对简单的数据流，保存最少的状态。大部分存储加载指令执行一个操作，一个硬件状态机用来处理 __load/store multiple and string__ 指令。对于跨缓存行的操作，内部分成2个操作。
 	* L1数据缓存 **POWER6**处理器包含8路组相联的64KB的L1数据缓存，缓存行大小是128B，由4个32B的区组成。L2数据以32B大小发送，并且缓存行的无效操作也以32B大小处理，加载操作能命中部分有效的缓存行。L1数据缓存由2个端口，可以支持2个读或一个写。缓存行重加载拥有最高的优先级，并且阻塞已经分发的存储加载指令。执行的加载指令拥有第二高优先级。最后如果没有缓存行重新加载或加载指令，完成的存储指令能够从存储队列写到L1数据缓存。 L1数据缓存是store-through，所有的写操作发送到L2 cache。
-	* 组预测 为了满足访问路径的周期, 实现了一个组预测。 组预测基于有效地址EA并且可以用作一个小目录来从8个L1数据缓存组里选择。虽然L1数据缓存的目录也可以使用，但是需要ERAT之后的真实地址，要花费更多时间。 组预测使用EA(51:56)索引，8路组相联，每个组或条目包含11个EA哈希位, 2个有效位（每个线程一个）和一个奇偶位,11位EA哈希值使用下面公式生成: (EA(32:39) XOR EA(40:47)) + EA(48:50)。当读缓存时，生成的EA(51:56)来索引组预测, 并且生成11位哈希值和8个组的内容比较，如果匹配并且对应线程有效位是置位，使用预测的信号访问L1数据缓存。
+	* 组预测 为了满足访问路径的周期, 实现了一个组预测。 组预测基于有效地址EA并且可以用作一个小目录来从8个L1数据缓存组里选择。虽然L1数据缓存的目录也可以使用，但是需要ERAT之后的真实地址，要花费更多时间。 组预测使用EA(51:56)索引，8路组相联，每个组或条目包含11个EA哈希位, 2个有效位（每个线程一个）和一个奇偶位,11位EA哈希值使用下面公式生成: `(EA(32:39) XOR EA(40:47)) + EA(48:50)` 。当读缓存时，生成的EA(51:56)来索引组预测, 并且生成11位哈希值和8个组的内容比较，如果匹配并且对应线程有效位是置位，使用预测的信号访问L1数据缓存。
 
 ## 8.2 POWER6一致性协议
 **POWER5**中使用的广播侦查协议中，一致性传输需要的带宽随着系统规模而增长。因此，基于目录的NUMA (nonuniform memory access)方案更有吸引力，基于目录的协议使用目录来指示内存区域的归属，因此限制广播在一个小的节点内，减少了节点外的传输。**POWER6**开发了基于目录的NUMA方式的广播协议。下表总结了**POWER6**的一致性协议中的缓存状态：
@@ -973,39 +965,12 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 * 对于硬件检测到的预取，预取队列是共享的；对于软件发起的预取，预取队列根据线程数静态分配
 
 ## 12.3 L2 Cache
-一个SMT4处理器核有8路组相联，1M的L2缓存，缓存行是128B；对于L1指令缓存和L1数据缓存都是inclusive，缓存分为4个bank，不同bank的读写可同时进行；
-
-* 8-way directory, quad-banked multi-ported:
-	* One processor read port, two snoop read ports, and one write port per physical bank.
-	* The processor port operates at ½ the processor clock rate into a given bank (initiated on a 2:1 clock boundary).
-	* The snoop port into a given bank operates at ½ the processor clock rate (initiated on a 2:1 clock boundary) allowing for up to four snoops per 2:1 clock across the four banks.
-	* The quad-banked directory can initiate:
-		* Up to five directory reads in a given 2:1 cycle (four snoop ports and one on processor port).
-		* One write in a given processor clock cycle (where directory writes are scheduled on the second half of a 2:1 cycle, such that they never conflict with directory reads).
-* 1024 × 13-bit LRU arrays (logical configuration).
-	* 2 × 4 LRU vector tracking tree with cache invalidate state biasing.
-	* Supports LRU, direct map, single-member, and pseudo-random modes.
-* Point of global coherency.
-* Reservation stations: one per processor thread.
-* Support for Power10 Synthetic_TM core mode.
-* Four snoop-bus ports selected by the cache-line “real-address” bits [55:56].
-* Hardware directory line delete capabilities to support faulty L2 cache elements.
+一个SMT4处理器核有8路组相联，1M的L2缓存，缓存行是128B；对于L1指令缓存和L1数据缓存都是inclusive，缓存分为4个bank，不同bank的读写可同时进行；并使用一个8路组相联，4个bank多端口的缓存目录，每个bank有一个处理器核读端口，两个侦查读端口，一个写端口；处理器读端口和侦查端口工作在1/2处理器频率，写操作被安排在第二个周期，因此不会和读操作冲突。L2缓存是全局一致性的点，每个处理器线程有一个保留站；当L2缓存出现错误时，目录支持行删除功能。
 
 ## 12.4 L3 Cache
-SMT4 L3 cache features:
-* Private 4 MB L3 cache; shared L3.1
-* 16-way set associativity.
-* 128-byte cache lines.
-* Data cache consists of 4 banks of high-efficiency SRAMs with interleaving for read/write overlapping.
-* 64-byte wide data bus to the L2 cache for reads.
-* 64-byte wide data bus from the L2 cache for L2 castouts.
-* Sixty-six, 600 kb SRAM macros; two of the SRAM macros are for redundancy.
-* All cache accesses have the same latency.
-* 16-way directory organized as four banks, with up to four reads or two reads and two writes every 2 pclks to differing banks. Physically implemented as eight 512 × 8 way × 50-bit SRAMs.
-* LRU algorithm for victim selection using 4-bit per member utilization tracking using data type and re-use awareness.
-The L3 cache has four dispatch pipes that handle incoming reflected-command (snoop) requests from the fabric. The snoop dispatch pipes perform an L3 directory read to determine how to handle the request. If the request requires the sending of intervention data, the executing of a snoop push, or the invalidating of the associated cache line, then the snoop dispatch pipe forwards the request to one of 16 snoop (SN) state machines. If the request is an incoming lateral cast-out (LCO) or a cache-injection that is accepted, the request is forwarded to both a snoop state machine (SN) and a write inject (WI) state machine.
+一个SMT4处理器核有16路组相联，4M的私有L3缓存，缓存行128B，使用4个bank，支持并行读写，到L2有64B的读端口，和来自L2的64B的写端口；目录也是16路组相联每两个周期支持不同bank的4个读或2个写；LRU算法使用4个比特来记录使用率和数据类型。L3缓存有4个分发流水线可以处理来自总线的侦查请求，侦察分发流水通过L3目录决定如何处理请求。如果请求需要发送数据或侦查推送或无效相关的缓存行，相应的请求被发送到16个侦查状态机处理；如果请求是 __lateral cast-out (LCO)__ 或接受的缓存注入，请求被发送到侦擦号状态及和写注入状态机。
 
-## 12.5 SMP Interconnect
+## 12.5 SMP互联
 * General Features
 	* Master command/data request arbitration.
 	* Command requests are tagged and broadcast using a snooping protocol that enables high-speed cache-to-cache transfers.
@@ -1090,17 +1055,19 @@ below figure shows the Flow for NX Invocation through the VAS.
 
 ![Pasted image 20230911094531.png](/assets/images/power/Pasted image 20230911094531.png)
 
-## 12.10 Interrupt Controller
-The Power10 interrupt controller (INT) consists of three major units:
-* the virtualization controller (P3VC)
-* the presentation controller (P3PC)
-* the Power10 Fabric bus interface common queue (P3CQ).
-These units work together to take triggers from interrupt sources and deliver exceptions to the appropriate processor thread. This section provides an overview of the interrupt architecture, describes the INT units and their interfaces, and also describes how they operate with the interrupt sources and software in the Power10 infrastructure.
-The high-level diagram depicts the conceptual interaction among sources and the controller blocks in interrupt signaling and notification. The individual elements are interconnected and communicate via the Power10 Fabric bus.
-* The P3VC receives notification triggers from interrupt source controllers (P3SCs) via a Power10 Fabric bus store operation (for example, a cache-inhibited write: ci_wr). It processes the notification using information contained in the event assignment entry (EAE) that is located in main memory and associated with the specific trigger. This processing can include updating an event queue entry and then forwarding the notification to the P3PC, which signals an exception to one of the processor threads. The P3VC also handles notification redistribution if a state change to the assigned processor thread preclude it from handling the interrupt or notification escalation, if there is no processor thread that is currently capable of handling the interrupt.
+## 12.10 中断控制器
+**POWER10** 中断控制器INT由三部分组成：
+* 虚拟化控制器(P3VC)
+* presentation controller (P3PC)
+* 总线接口公共队列(P3CQ)
+
+这些逻辑接收中断并将中断发送到对应的处理器线程，各逻辑之间使用**POWER10**的总线互联，下图展示了中断控制器的逻辑框图及中断之间交互：
+![Pasted image 20230911102017.png](/assets/images/power/Pasted image 20230911102017.png)
+
+* P3VC通过**POWER10**的总线互联(比如cache-inhibited的写 `ci_wr` )接收来自 __interrupt source controllers (P3SCs)__ 的消息，使用主存里和每个触发源关联的 __event assignment entry (EAE)__ 里的信息进行处理。This processing can include updating an event queue entry and then forwarding the notification to the P3PC, which signals an exception to one of the processor threads. The P3VC also handles notification redistribution if a state change to the assigned processor thread preclude it from handling the interrupt or notification escalation, if there is no processor thread that is currently capable of handling the interrupt.
 * The P3PC has an exception bus towards the cores to notify the individual processor threads. Three signals are created for each thread, one to generate hypervisor interrupts, another to generate operating-system interrupts, and a third to generate an event-based branch. Associated with each of the exception-notification signals in the P3PC is prioritization and exception-queuing logic that prevents less favored events from preempting more favored ones or from loss due to dropping an event. Associated with each of the exception notification wires is one or more logical server numbers stored in CAM-like lines. This structure is also referred to as the thread interrupt management area (TIMA). These logical server numbers identify which software entities are currently dispatched on the specific physical processor thread. When the P3VC issues fabric bus operations to route an event notification, these CAM-like lines are searched to identify candidate processor threads. In addition to the CAM-like lines, priority and exception-queuing logic mentioned previously, each interrupt-generating exception has logic to track how much interrupt work has been handled by the associated processor thread. This information is used to evenly distribute interrupt processing load among the candidates.
 * The P3CQ serves as the Power10 Fabric bus interface controller between the interrupt logic and the rest of the Power10 chip. This unit is responsible for sequencing the appropriate fabric bus protocol when the interrupt controller drives or receives commands. It performs compares to determine if the interrupt controller is the destination of a command (for example, a store operation used for an interrupt trigger). It is also responsible for driving the fabric bus histogram, poll, and assign commands to find the correct presentation controller for an interrupt trigger. Another key P3CQ function is sending and receiving the AIB interface to the virtualization and presentation controllers.
-![Pasted image 20230911102017.png](/assets/images/power/Pasted image 20230911102017.png)
+
 
 # 13. 参考文献
 1. Power ISA (Version 3.1B), 2021.
