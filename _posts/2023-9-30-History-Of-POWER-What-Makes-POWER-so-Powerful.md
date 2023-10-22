@@ -302,7 +302,8 @@ Power指令集架构提供了中断机制，允许线程能够处理外部信号
 
 下表总结了各代POWER处理器的各方面数据，可以从中看到POWER系列的发展路径。
 
-
+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ||POWER1|POWER2|POWER3|POWER4|POWER5|POWER6|POWER7|   |POWER8|   |POWER9|   |   |POWER10|
 |Date|1990|1993|1997|2001|2004|2007|2010|2012|2014|2016|2017|2018|2020|2021|
 |Technology|1.0um|0.35um|0.22um|180nm SOI|130nm SOI, 90nm|65nm SOI|45nm SOI|32nm SOI|22nm|22nm|GF 14nm HP|GF 14nm HP|GF 14nm HP|Samsung 7nm|
