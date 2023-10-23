@@ -10,6 +10,7 @@ gems:
 # highlighter:rouge
 # use github flavored markdown
 #markdown: redcarpet2
+markdown: kramdown
 #redcarpet:
   #extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "strikethrough", "superscript"]
 
