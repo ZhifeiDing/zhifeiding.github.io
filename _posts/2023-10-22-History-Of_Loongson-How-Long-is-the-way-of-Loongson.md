@@ -37,7 +37,7 @@ tags:
 * 2017年**龙芯**发布**龙芯3A3000**。**龙芯3A3000** 采用四核 64 位设计，主频为 1.5 GHz，功耗仅为 30 W
 * 2019 年底，发布了 **龙芯3A 4000** 和 **龙芯3B 4000** 系列。使用了升级后的 *GS464EV* 微架构。处理器设计有四个内核，8MB 的 L3 缓存和 1.8 GHz 至 2 GHz 之间的工作时钟
 * 2021年7月，**龙芯3 5000**系列发布。该系列处理器是龙芯首款自主研发的**LoongArch**指令集架构，包括 **龙芯3A5000**，一个四核台式机 CPU 和 **3C5000L**，一个十六核服务器 CPU，基于单个封装中的四个 3A5000。使用*LA464*处理器核
-* 2023年8月，**龙芯**官方有报道**龙芯3A6000**相关性能数据，但暂未发布，据传使用是6发射的*LA664*处理器核
+* 2023年11月，**龙芯**官方发布**龙芯3A6000**使用是6发射双线程的*LA664*处理器核
 
 本文主要关注**龙芯三号**，其微架构主要为四发射64位，即*GS464*系列。关于**龙芯**指令集架构历史渊源请参考第一章**龙芯**指令集架构的介绍。本文通过系统性回顾整个**龙芯**系列处理器，试图通过**龙芯**系列处理器发展的历史脉络，来展现国内处理器技术发展历程，以及和国际主流处理器厂商的差异。下表总结了各代处理器之间的关键指标和规格：
 
@@ -53,17 +53,17 @@ tags:
 |Frequency(GHz)|0.266|0.25|0.45|1|0.8|1|0.8-1|1.5|0.8-1|1.2-1.5|1.8|2.3-2.5|2.5|
 |No. Inst Decode|1|4|4|4|4|4|4|4|4|4|4|4|4|
 |No. Inst Issue|1|4|4|4|4|4|4|4|4|4|4|4|6|
-|COREs|1|1|1|1|1|1|4|8|4|4|4|4|8|
+|COREs|1|1|1|1|1|1|4|8|4|4|4|4|4|
 |Threads|ST|ST|ST|ST|ST|ST|ST|ST|ST|ST|ST|ST|SMT2|
 |L1 Cache|I$: 8K 2 way  <br>D$: 8K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|I$: 64K 4 way  <br>D$: 64K 4 way|
 |L2 Cache|NA|8MB offchip|8MB offchip|512K 4 way|512K 4 way|1M 4 way|4M 8 way|128K/Core|256K/Core 16 way|256K/Core|256K/Core|256K/Core 16 way|256K/Core|
-|L3 Cache|NA|NA|NA|NA|NA|NA|NA|8M|4M 16 way|8M 16 way|8M 16 way|16M 16 way|16M|
-|IO|PCI|PCI|PCI|PCI|PCI|PCI|HT 1.0 2x8@800MHz|HT 2.0 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|
-|Memory|8-256M|128bit 64M-2G|DDR|DDR2|DDR2-333|DDR2/3|DDR2/3|DDR2-800/3-1200 2x72|DDR2-800/3-1333 2x72|DDR2-800/3-1600 2x72|DDR4-2400 2x72|DDR4-3200 2x72|DDR4-3200 2x72|
+|L3 Cache|NA|NA|NA|NA|NA|NA|NA|8M|4M 16 way|8M 16 way|8M 16 way|16M 16 way|16M 16 way|
+|IO|PCI|PCI|PCI|PCI|PCI|PCI|HT 1.0 2x8@800MHz|HT 2.0 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 2x16@3.2GHz|HT 3.0 x16@6.4GHz|
+|Memory|8-256M|128bit 64M-2G|DDR|DDR2|DDR2-333|DDR2/3|DDR2/3|DDR2-800/3-1200 2x72|DDR2-800/3-1333 2x72|DDR2-800/3-1600 2x72|DDR4-2400 2x72|DDR4-3200 2x72|DDR4-3200 2x72@42GB/s|
 |Comments|MIPS-III 32|MIPS-III 64|MIPS-III 64|MIPS-III 64|MIPS-III 64|MIPS64|MIPS64|LoongISA 1.0|LoongISA 1.0|LoongISA 1.0|LoongISA 2.0|LoongISA 2.0||
 
 
-可以发现，**龙芯**处理器很多精力都花在指令集上了，而本身处理器核的微架构更新比较缓慢。另外，根据网络上公开信息，从 **龙芯2F** 到 **龙芯3A1000** ，包括**龙芯3B1500**，访存性能严重低于理论值，导致性能问题。
+可以发现，**龙芯**处理器很多精力都花在指令集上了，而本身处理器核的微架构更新比较缓慢。
 
 本文组织形式如下:
 * 第一章简单介绍**龙芯**指令集架构**LoongArch v1.02**
@@ -372,7 +372,13 @@ Scache模块是**龙芯3A5000**内部所有处理器核共享的L3缓存，采�
 通过HT进行互联可以组成2路，4路，8路或16路SMP系统，整个系统物理地址宽度为48位，地址高4位用来识别单个节点，每个节点实际可用地址空间是44位。当系统节点数目不足16时，需要配置路由设置寄存器，保证没有对应节点的地址能够返回响应。
 
 # 9 Loongson 3A6000
-**龙芯3A6000**处理器是**龙芯**第四代微架构的首款产品，集成4个最新研发的高性能6发射64位*LA664*处理器核。主频达到2.5GHz，支持128位向量处理扩展指令（LSX）和256位高级向量处理扩展指令（LASX），支持同时多线程技术（SMT2），全芯片共8个逻辑核。**龙芯3A6000**片内集成双通道DDR4-3200控制器，集成安全可信模块，可提供安全启动方案和国密（SM2、SM3、SM4等）应用支持。较上一代**龙芯3A5000**桌面CPU，**龙芯3A6000**在相同工艺下单线程性能提升60%以上，全芯片多线程性能成倍提升。
+**龙芯3A6000**处理器是**龙芯**第四代微架构的首款产品，集成4个最新研发的高性能6发射64位*LA664*处理器核。主频达到2.5GHz，支持128位向量处理扩展指令（LSX）和256位高级向量处理扩展指令（LASX），支持同时多线程技术（SMT2），全芯片共8个逻辑核。**龙芯3A6000**片内集成双通道DDR4-3200控制器，集成安全可信模块，可提供安全启动方案和国密（SM2、SM3、SM4等）应用支持。和**3A5000**相比，主要是更新了处理器内核，芯片整体架构如下图所示：
+![Pasted image 20231128195637.png](/assets/images/godson/Pasted image 20231128195637.png)
+第一级互连采用 5x5 的交叉开关，用于连接四个处理器核、四个共享 Cache 模块、以及一个 IO 端口连接 IO-RING。 第二级互连采用 5x3 的交叉开关，连接 4 个共享 Cache 模块，两个 DDR4 内存控制器、 以及一个 IO 端口连接 IO-RING。 IO-RING 包含多个端口，连接包括 HT 控制器，MISC 模块，SE 模块与两级交叉开关。HT 控制器内集成一个 DMA 控制器，DMA 控制器负责 IO 的 DMA 控制并负责片间一致性的维护。 上述互连结构都采用读写分离的数据通道，数据通道宽度为 128 位，工作在与处理器 核相同的频率，用以提供高速的片上数据传输。此外，一级交叉开关连接 4 个处理器核与 scache 的读数据通道为 256 位，以提高片内处理器核访问 scache 的读带宽。
+
+SCache 模块是**龙芯 3A6000** 处理器内部所有处理器核所共享的三级缓存。SCache 模块支持16 项缓存访问队列，采用 16 路组相联结构，支持 ECC 校验。 共 享缓存模 块包括共享 缓存管理模块scachemanage 及共享缓存访问模块scacheaccess。Scachemanage 模块负责处理器来自处理器和 DMA 的访问请求，而共享缓存的标签、目录和数据等信息存放在 scacheaccess 模块中。为降低功耗，共享缓存的标签、 目录和数据可以分开访问，共享 缓存状态位、w 位与标签一起存储，标签存放在 TAG RAM 中，目录存放在 DIR RAM 中，数据存放在 DATA RAM 中。失效请求访问共享缓存，同时读出所有路的标签、目录，并根据 标签来选出目录，并根据命中情况读取数据。替换请求、重 填请求和写回请求只操作一路的 标签、目录和数据。
+
+*LA664* 是六发射 64 位的处理器核。在**龙芯 3A6000** 中的多个 *LA664* 核以及共享缓存模块通过 AXI 互连网络形成一个分布式共享片上末级缓存的多核结构。LA664 支持同时多线程技术(SMT2)；有四个定点、四个向量、四个访存单元；每个向量单元宽度为 256 位，最多支持 8 个单精度或 4 个双精度乘加运算； 访存单元支持 256 位存储访问，虚地址为 64 位，物理地址为 48 位；一级指令缓存和数据缓存大小各为 64KB，4 路组相联； Victim Cache 作为私有二级缓存，大小为 256KB，16 路组相连； 一级缓存实现奇偶校验，二级、片上末级缓存实现 ECC 校验，均支持一位纠正。
 
 # 参考文献
 1. LoongArch-Vol1-v1.02
@@ -384,3 +390,4 @@ Scache模块是**龙芯3A5000**内部所有处理器核共享的L3缓存，采�
 7. Gao, X., Chen, Y.-J., Wang, H.-D., Tang, D., Hu, W.-W., 2010. System Architecture of Godson-3 Multi-Core Processors. J. Comput. Sci. Technol. 25, 181–191. [https://doi.org/10.1007/s11390-010-9315-3](https://doi.org/10.1007/s11390-010-9315-3)
 8. Hu W W, Tang Z M. Microarchitecture design of the Godson1 Processor. Chinese Journal of Computers, April 2003, 26(4): 385-396.
 9. Hu W W, Zhang F X, Li Z S. Microarchitecture of the Godson-2 processor. Journal of Computer Science and Technology, March 2005, 20(2): 243-249.
+10. Loongson 3A6000 Processor Reference Manual - Multicore Processor Architecture, Register Descriptions and System Software Programming Guide, n.d.
