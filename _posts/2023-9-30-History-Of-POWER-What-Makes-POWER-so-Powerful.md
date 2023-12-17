@@ -1120,3 +1120,4 @@ __Coherent Accelerator Interface Architecture (CAIA)__ 定义了加速设备和*
 26. Power10 Processor Chip User’s Manual, 2021.
 27. IBM Power E1050: Technical Overview and Introduction, n.d.
 28. IBM Power S1014, S1022s, S1022, and S1024 Technical Overview and Introduction, n.d.
+29. W. Starke and B. Thompto, "IBM’s POWER10 Processor," 2020 IEEE Hot Chips 32 Symposium (HCS), Palo Alto, CA, USA, 2020, pp. 1-43, doi: 10.1109/HCS49909.2020.9220618.
