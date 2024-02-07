@@ -9,15 +9,15 @@ tags:
   - AI
 ---
 # 前言
-从2012年AlexNet引发的AI热潮，到今天已经过去10多年了，AI仍然是当前最火热的话题。寒武纪的前身是**DianNao**学术项目，起源于2012年的神经网络加速器，可以说是随着AI技术一起发展。因此，了解**DianNao**项目从如何最开始的**DianNao**专用架构，演进到通用的Cambricon指令集和加速器。这一演进历史也可以看着是AI加速器的进化之路，不仅是了解AI这10多年发展的一个窗口，更有助我们自己设计AI加速器和指令集。
+从2012年AlexNet引发的AI热潮，到今天已经过去10多年了，AI仍然是当前最火热的话题。寒武纪的前身是**DianNao**学术项目，起源于2012年的神经网络加速器，可以说是随着AI技术一起发展。因此，了解**DianNao**项目如何从最开始的**DianNao**专用架构，演进到通用的Cambricon指令集和加速器。这一演进历史也可以看着是AI加速器的进化之路，不仅是了解AI这10多年发展的一个窗口，更有助我们自己设计AI加速器和指令集。
 # 概述
-**DianNao**项目的目标是面向机器学习研究加速器架构。本项目是中科院计算所的陈云霁教授和法国Inria的Olivier Temam间的一个学术合作项目，双方为此设立了联合实验室。Temam教授和陈教授的合作始于**DianNao**, **DianNao**在ISCA-2012加速器的基础上增加了局部存储，使其可以捕捉深度神经网路的数据局部性并由此克服内存带宽的限制。DianNao加速器的设计发表于ASPLOS-2014，获得了该会议的最佳论文奖。  
-  
-**DaDianNao**是**DianNao**家族的第二个加速器，是**DianNao**的多片版本，有两个主要的设计目标：一是揭示神经网络层的可分特性使得加速器可具备极好的可扩展性，二是聚集足够多的片上存储来将整个机器学习模型都放在片上，从而克服内存带宽的限制。这个被称为**DaDianNao**的设计发表在MICRO-2014上，获得了该会议的最佳论文奖。  
-  
-**ShiDianNao**是**DianNao**家族的第三个加速器，为了克服嵌入式应用中内存带宽限制，通过加速器和传感器的直连来绕过内存，发表于2015年的ISCA上。 
-  
-**PuDianNao**是**DianNao**家族的第四个加速器，拓展至多种机器学习算法，因为这些算法多具有类似的运算操作，发表于ASPLOS-2015。  
+**DianNao**项目的目标是面向机器学习研究加速器架构。本项目是中科院计算所的陈云霁教授和法国Inria的Olivier Temam间的一个学术合作项目，双方为此设立了联合实验室。Temam教授和陈教授的合作始于**DianNao**, **DianNao**在ISCA-2012加速器的基础上增加了局部存储，使其可以捕捉深度神经网路的数据局部性并由此克服内存带宽的限制。DianNao加速器的设计发表于ASPLOS-2014，获得了该会议的最佳论文奖。
+
+**DaDianNao**是**DianNao**家族的第二个加速器，是**DianNao**的多片版本，有两个主要的设计目标：一是揭示神经网络层的可分特性使得加速器可具备极好的可扩展性，二是聚集足够多的片上存储来将整个机器学习模型都放在片上，从而克服内存带宽的限制。这个被称为**DaDianNao**的设计发表在MICRO-2014上，获得了该会议的最佳论文奖。
+
+**ShiDianNao**是**DianNao**家族的第三个加速器，为了克服嵌入式应用中内存带宽限制，通过加速器和传感器的直连来绕过内存，发表于2015年的ISCA上。
+
+**PuDianNao**是**DianNao**家族的第四个加速器，拓展至多种机器学习算法，因为这些算法多具有类似的运算操作，发表于ASPLOS-2015。
 
 陈云霁教授和中科院计算所团队为一大类神经网络加速器设计了一套名为**Cambricon**的指令集。该指令集发表于ISCA-2016，在该会议的同行评议中获得了最高分。
 
@@ -55,7 +55,7 @@ NFU流水线由3部分组成，分别是NFU-1,NFU-2和NFU-3；其中
 * **NFU-1** 主要对应分类层和卷积层，由256个16位截位乘法器组成；
 * **NFU-2** 由16个加法树组成，每个加法树包含15个加法器，也对应分类层和卷积层，如果池化层使用平均池化也会使用；另外还有一个主要用于池化层的16输入的移位器和最大比较器；
 * **NFU-3** 则有16个16位截位乘法器和16个加法器，主要用于分类层和卷积层，池化层也可能会用到
- 
+
  对于分类层和卷积层，NFU-1和NFU-2每个周期都会激活，每周期可以完成256 + 16 × 15 = 496个定点操作；而在每层操作最后，NFU-3可能会激活，同时NFU-1和NFU-2继续处理剩下的数据，所以短时间内可以实现每周期496 + 2 × 16 = 528个操作。
 
 NFU主要核心是将一个层分解到16x16的计算模块上，主要需要用到tiling，具体可以参考编程模型里的伪代码。
@@ -73,33 +73,33 @@ NFU-3里sigmoid函数使用插值算法，同时使用一块RAM存储16段系数
 由于**DianNao**里存储结构和计算单元的限制，对原始的计算必须采用切片(tiling)才能适配到加速器上，下面分别展示了卷积层，池化层和分类层采用切片之后的伪代码。
 卷积层伪代码，包括对空间局部性的优化：
 ```c
-for (int yy = 0; yy ¡ Nyin; yy += Ty) { 
-	for (int xx = 0; xx ¡ Nxin; xx += Tx) { 
-		for (int nnn = 0; nnn ¡ Nn; nnn += Tnn) { 
-			// — Original code — (excluding nn, ii loops) 
-			int yout = 0; 
-			for (int y = yy; y < yy + Ty; y += sy) { // tiling for y; 
-				int xout = 0; 
-				for (int x = xx; x < xx + Tx; x += sx) { // tiling for x; 
-					for (int nn = nnn; nn < nnn + Tnn; nn += Tn) { 
-						for (int n = nn; n < nn + Tn; n++) 
-							sum[n] = 0; 
-						// sliding window; 
-						for (int ky = 0; ky < Ky; ky++) 
-							for (int kx = 0; kx < Kx; kx++) 
-								for (int ii = 0; ii < Ni; ii += Ti) 
-									for (int n = nn; n < nn + Tn; n++) 
-										for (int i = ii; i < ii + Ti; i++) 
-											// version with shared kernels 
-											sum[n] += synapse[ky][kx][n][i] * neuron[ky + y][kx + x][i]; 
-											// version with private kernels 
-											sum[n] += synapse[yout][xout][ky][kx][n][i]} * neuron[ky + y][kx + x][i]; 
-						for (int n = nn; n < nn + Tn; n++) 
-							neuron[yout][xout][n] = non linear transform(sum[n]); 
-					} 
-					xout++; 
-				} 
-				yout++; 
+for (int yy = 0; yy ¡ Nyin; yy += Ty) {
+	for (int xx = 0; xx ¡ Nxin; xx += Tx) {
+		for (int nnn = 0; nnn ¡ Nn; nnn += Tnn) {
+			// — Original code — (excluding nn, ii loops)
+			int yout = 0;
+			for (int y = yy; y < yy + Ty; y += sy) { // tiling for y;
+				int xout = 0;
+				for (int x = xx; x < xx + Tx; x += sx) { // tiling for x;
+					for (int nn = nnn; nn < nnn + Tnn; nn += Tn) {
+						for (int n = nn; n < nn + Tn; n++)
+							sum[n] = 0;
+						// sliding window;
+						for (int ky = 0; ky < Ky; ky++)
+							for (int kx = 0; kx < Kx; kx++)
+								for (int ii = 0; ii < Ni; ii += Ti)
+									for (int n = nn; n < nn + Tn; n++)
+										for (int i = ii; i < ii + Ti; i++)
+											// version with shared kernels
+											sum[n] += synapse[ky][kx][n][i] * neuron[ky + y][kx + x][i];
+											// version with private kernels
+											sum[n] += synapse[yout][xout][ky][kx][n][i]} * neuron[ky + y][kx + x][i];
+						for (int n = nn; n < nn + Tn; n++)
+							neuron[yout][xout][n] = non linear transform(sum[n]);
+					}
+					xout++;
+				}
+				yout++;
 			}
 		}
 	}
@@ -107,33 +107,33 @@ for (int yy = 0; yy ¡ Nyin; yy += Ty) {
 ```
 池化层伪代码，包括对空间局部性的优化：
 ```c
-for (int yy = 0; yy ¡ Nyin; yy += Ty) { 
-	for (int xx = 0; xx ¡ Nxin; xx += Tx) { 
+for (int yy = 0; yy ¡ Nyin; yy += Ty) {
+	for (int xx = 0; xx ¡ Nxin; xx += Tx) {
 		for (int iii = 0; iii ¡ Ni; iii += Tii) {
-			// — Original code — (excluding ii loop) 
-			int yout = 0; 
-			for (int y = yy; y < yy + Ty; y += sy) { 
-				int xout = 0; 
-				for (int x = xx; x < xx + Tx; x += sx) { 
+			// — Original code — (excluding ii loop)
+			int yout = 0;
+			for (int y = yy; y < yy + Ty; y += sy) {
+				int xout = 0;
+				for (int x = xx; x < xx + Tx; x += sx) {
 					for (int ii = iii; ii < iii + Tii; ii += Ti) {
-						for (int i = ii; i < ii + Ti; i++) 
-							value[i] = 0; 
+						for (int i = ii; i < ii + Ti; i++)
+							value[i] = 0;
 						for (int ky = 0; ky < Ky; ky++) {
 							for (int kx = 0; kx < Kx; kx++) {
-								for (int i = ii; i < ii + Ti; i++) 
-									// version with average pooling; 
-									value[i] += neuron[ky + y][kx + x][i]; 
-									// version with max pooling; 
-									value[i] = max(value[i], neuron[ky + y][kx + x][i]); 
+								for (int i = ii; i < ii + Ti; i++)
+									// version with average pooling;
+									value[i] += neuron[ky + y][kx + x][i];
+									// version with max pooling;
+									value[i] = max(value[i], neuron[ky + y][kx + x][i]);
 							}
 						}
 					}
-				} 
-				// for average pooling; 
-				neuron[xout][yout][i] = value[i] / (Kx * Ky); 
-				xout++; 
-			} 
-			yout++; 
+				}
+				// for average pooling;
+				neuron[xout][yout][i] = value[i] / (Kx * Ky);
+				xout++;
+			}
+			yout++;
 		}
 	}
 }
@@ -141,18 +141,18 @@ for (int yy = 0; yy ¡ Nyin; yy += Ty) {
 
 分类层伪代码，包括对空间局部性的优化：
 ```c
-for (int nnn = 0; nnn ¡ Nn; nnn += Tnn) { // tiling for output neurons; 
-	for (int iii = 0; iii ¡ Ni; iii += Tii) { // tiling for input neurons; 
-		for (int nn = nnn; nn ¡ nnn + Tnn; nn += Tn) { 
-			for (int n = nn; n ¡ nn + Tn; n++) 
-				sum[n] = 0; 
-			for (int ii = iii; ii ¡ iii + Tii; ii += Ti) 
-				// — Original code 
-				for (int n = nn; n < nn + Tn; n++) 
-					for (int i = ii; i < ii + Ti; i++) 
-						sum[n] += synapse[n][i] * neuron[i]; 
-			for (int n = nn; n < nn + Tn; n++) 
-				neuron[n] = sigmoid(sum[n]); 
+for (int nnn = 0; nnn ¡ Nn; nnn += Tnn) { // tiling for output neurons;
+	for (int iii = 0; iii ¡ Ni; iii += Tii) { // tiling for input neurons;
+		for (int nn = nnn; nn ¡ nnn + Tnn; nn += Tn) {
+			for (int n = nn; n ¡ nn + Tn; n++)
+				sum[n] = 0;
+			for (int ii = iii; ii ¡ iii + Tii; ii += Ti)
+				// — Original code
+				for (int n = nn; n < nn + Tn; n++)
+					for (int i = ii; i < ii + Ti; i++)
+						sum[n] += synapse[n][i] * neuron[i];
+			for (int n = nn; n < nn + Tn; n++)
+				neuron[n] = sigmoid(sum[n]);
 		}
 	}
 }
@@ -208,7 +208,7 @@ NFU流水线针对推理和训练，以及不同的神经网络层，需要不�
 ![Pasted image 20240129163810.png](/assets/images/cambricon/11.png)
 数据被分割成多个256位的数据块，每个数据块包含256/16 = 16个神经元；每个节点分配4096/16/4 = 64个数据块，每个tile分配64/16 = 4个数据块，所以每个节点需要4个指令； 前面三个指令会从中间eDRAM给所有tile分发数据，同时从tile内部eDRAM里读取权重，然后将计算部分和写入到NBout；最后一个指令时，每个tile内部NFU会计算出最终的和，并进行变换计算，最后将结果写回到中间eDRAM。
 这些节点指令会将相应的控制发送到每个tile，一个节点或tile指令对一套连续的输入数据完成同一层的计算；因为同一个指令的输入数据是连续的，因此指令里只需要使用开始地址，步长和迭代次数。
-另外，不同节点以同样速度处理几乎相同的数据量，**DaDianNao**采用了computing-and forwarding的通信模式，即一个节点一旦完成计算，就可以马上处理新输入的数据；所以不需要全局同步或屏障指令。 
+另外，不同节点以同样速度处理几乎相同的数据量，**DaDianNao**采用了computing-and forwarding的通信模式，即一个节点一旦完成计算，就可以马上处理新输入的数据；所以不需要全局同步或屏障指令。
 # **ShiDianNao**
 **ShiDianNao**是一个CNN加速器，放置在CMOS或CCD传感器旁边。在许多应用中，例如智能手机、安全、自动驾驶汽车，图像直接来自CMOS或CCD传感器。图像由CMOS/CCD传感器采集，发送到DRAM，然后由CPU/GPU获取以进行识别处理。CNN加速器的小尺寸使其可以将其提升到传感器旁边，并且仅将识别过程的几个输出字节（通常是图像类别）发送到DRAM或主机处理器，从而几乎完全消除了对存储器的访问。下图展示了**ShiDianNao**的应用场景：
 ![Pasted image 20240129165759.png](/assets/images/cambricon/12.png)
@@ -259,7 +259,7 @@ NB控制器的写模式比较直接，在CNN神经网络模型里，一旦一个
 
 
 ## 存储结构
-**ShiDianNao**片上存储一共288 KB SRAM，可以同时存储一个CNN网络的所有数据和相关的指令，不需要片外存储。片上存储分为3个缓冲：NBin,NBout和SB，不同缓冲可以使用不同的位宽，减少时间和功耗。NBin用来存储输入数据，NBout存储输出数据，当所有输出数据计算完成之后，NBin和NBout功能交换，之前输出作为下一层的输入，每一个有 2 × Py 个banks；SB存储权重，一共Py个bank。 
+**ShiDianNao**片上存储一共288 KB SRAM，可以同时存储一个CNN网络的所有数据和相关的指令，不需要片外存储。片上存储分为3个缓冲：NBin,NBout和SB，不同缓冲可以使用不同的位宽，减少时间和功耗。NBin用来存储输入数据，NBout存储输出数据，当所有输出数据计算完成之后，NBin和NBout功能交换，之前输出作为下一层的输入，每一个有 2 × Py 个banks；SB存储权重，一共Py个bank。
 
 ## 编程模型
 为了较少配置硬件的指令需要的SRAM空间，**ShiDianNao**采用了2层的HFSM(Hierarchical Finite State Machine)来控制加速器的执行流。第一层状态机的状态描述加速器处理的任务，比如神经网络层类型，ALU执行操作等；每一个第一层状态相关联的有几个第二层状态，用来描述具体操作；比如和卷积层状态相关联的包括加载输入输出数据。HFSM状态机如下所示：
@@ -310,7 +310,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 * 简单和短的指令可以减少设计和验证的风险，以及译码逻辑的功耗和面积
 
 为了设计出针对神经网络的简洁，灵活，高效的指令集，分析了不同神经网络的计算和存储访问模式，得出了几条设计原则：
-* **数据级并行** 在大多数神经网络技术中，神经元和突触数据被组织为层，然后以统一/对称的方式进行操作。使用向量或矩阵来挖掘数据并行比使用传统的标量指令来挖掘指令级并行更高效 
+* **数据级并行** 在大多数神经网络技术中，神经元和突触数据被组织为层，然后以统一/对称的方式进行操作。使用向量或矩阵来挖掘数据并行比使用传统的标量指令来挖掘指令级并行更高效
 * **向量和矩阵指令** 尽管有许多线性代数库（例如，BLAS库）成功地涵盖了广泛的科学计算应用，但对于神经网络，这些代数库中定义的基本运算不一定是有效和高效的选择（有些甚至是多余的）。更重要的是，神经网络有许多常见的操作，而这些操作是传统线性代数库所未涵盖的。例如，BLAS库不支持向量的元素指数计算，也不支持突触初始化、dropout和受限玻尔兹曼机 （RBM）中的随机向量生成。因此，我们必须定制一组小而具有代表性的向量/矩阵指令，而不是简单地从现有的线性代数库中重新实现向量/矩阵运算。神经网络可以自然地分解为标量、向量和矩阵运算，ISA设计必须有效地利用潜在的数据级并行性和数据局部性。
 * **使用片上Scratchpad Memory** 神经网络通常需要对矢量/矩阵数据进行密集、连续和可变长度的访问，因此使用固定宽度，且高功耗的向量寄存器文件不是最优选择。使用片上scratchpad memory代替向量寄存器文件，为每次数据访问提供了灵活的数据宽度。因为神经网络中的突触数据通常很大且很少重用，片上scratchpad memory是神经网络中数据级并行性的高效选择
 
@@ -350,59 +350,59 @@ Cambricon原型加速器一共7级流水线，取指(fetch), 译码decoding, 发
 
 为了说明**Cambricon**指令集的用法，下面使用**Cambricon** 指令实现了三个简单但具有代表性的神经网络组件，即 MLP 前馈层、池化层和玻尔兹曼机 （BM） 层。为了简洁起见，省略了所有三个层的标量加载/存储指令，只列出了池化层的单个池化窗口（具有多个输入和输出特征图）的程序片段。
 ```c
-// $0: input size, $1: output size, $2: matrix size 
-// $3: input address, $4: weight address 
-// $5: bias address, $6: output address 
-// $7-$10: temp variable address 
-VLOAD $3, $0, #100 // load input vector from address (100) 
-MLOAD $4, $2, #300 // load weight matrix from address (300) 
-MMV $7, $1, $4, $3, $0 // Wx 
-VAV $8, $1, $7, $5 // tmp=Wx+b 
-VEXP $9, $1, $8 // exp(tmp) 
-VAS $10, $1, $9, #1 // 1+exp(tmp) 
-VDV $6, $1, $9, $10 // y=exp(tmp)/(1+exp(tmp)) 
-VSTORE $6, $1, #200 // store output vector to address (200) 
+// $0: input size, $1: output size, $2: matrix size
+// $3: input address, $4: weight address
+// $5: bias address, $6: output address
+// $7-$10: temp variable address
+VLOAD $3, $0, #100 // load input vector from address (100)
+MLOAD $4, $2, #300 // load weight matrix from address (300)
+MMV $7, $1, $4, $3, $0 // Wx
+VAV $8, $1, $7, $5 // tmp=Wx+b
+VEXP $9, $1, $8 // exp(tmp)
+VAS $10, $1, $9, #1 // 1+exp(tmp)
+VDV $6, $1, $9, $10 // y=exp(tmp)/(1+exp(tmp))
+VSTORE $6, $1, #200 // store output vector to address (200)
 ```
 
 ```c
-// $0: feature map size, $1: input data size, 
-// $2: output data size, $3: pooling window size ̢ 1 
-// $4: x-axis loop num, $5: y-axis loop num 
-// $6: input addr, $7: output addr 
+// $0: feature map size, $1: input data size,
+// $2: output data size, $3: pooling window size ̢ 1
+// $4: x-axis loop num, $5: y-axis loop num
+// $6: input addr, $7: output addr
 // $8: y-axis stride of input
-VLOAD $6, $1, #100 // load input neurons from address (100) 
-SMOVE $5, $3 // init y 
-L0: SMOVE $4, $3 // init x 
-L1: VGTM $7, $0, $6, $7 
-// feature map m, output[m]=(input[x][y][m]>output[m])? 
-//                           input[x][y][m]:output[m] 
-SADD $6, $6, $0 // update input address 
+VLOAD $6, $1, #100 // load input neurons from address (100)
+SMOVE $5, $3 // init y
+L0: SMOVE $4, $3 // init x
+L1: VGTM $7, $0, $6, $7
+// feature map m, output[m]=(input[x][y][m]>output[m])?
+//                           input[x][y][m]:output[m]
+SADD $6, $6, $0 // update input address
 SADD $4, $4, #-1 // x-
-CB #L1, $4 // if(x>0) goto L1 
-SADD $6, $6, $8 // update input address 
+CB #L1, $4 // if(x>0) goto L1
+SADD $6, $6, $8 // update input address
 SADD $5, $5, #-1 // y-
-CB #L0, $5 // if(y>0) goto L0 
-VSTORE $7, $2, #200 // stroe output neurons to address (200) 
+CB #L0, $5 // if(y>0) goto L0
+VSTORE $7, $2, #200 // stroe output neurons to address (200)
 ```
 
 ```c
-// $0: visible vector size, $1: hidden vector size, $2: v-h matrix (W) size 
-// $3: h-h matrix (L) size, $4: visible vector address, $5: W address 
-// $6: L address, $7: bias address, $8: hidden vector address 
-// $9-$17: temp variable address 
-VLOAD $4, $0, #100 // load visible vector from address (100) 
-VLOAD $9, $1, #200 // load hidden vector from address (200) 
-MLOAD $5, $2, #300 // load W matrix from address (300) 
-MLOAD $6, $3, #400 // load L matrix from address (400) 
-MMV $10, $1, $5, $4, $0 // Wv 
-MMV $11, $1, $6, $9, $1 // Lh 
-VAV $12, $1, $10, $11 // Wv+Lh 
-VAV $13, $1, $12, $7 // tmp=Wv+Lh+b 
-VEXP $14, $1, $13 // exp(tmp) 
-VAS $15, $1, $14, #1 // 1+exp(tmp) 
-VDV $16, $1, $14, $15 // y=exp(tmp)/(1+exp(tmp)) 
-RV $17, $1 // i, r[i] = random(0,1) 
-VGT $8, $1, $17, $16 // i, h[i] = (r[i]>y[i])?1:0 
+// $0: visible vector size, $1: hidden vector size, $2: v-h matrix (W) size
+// $3: h-h matrix (L) size, $4: visible vector address, $5: W address
+// $6: L address, $7: bias address, $8: hidden vector address
+// $9-$17: temp variable address
+VLOAD $4, $0, #100 // load visible vector from address (100)
+VLOAD $9, $1, #200 // load hidden vector from address (200)
+MLOAD $5, $2, #300 // load W matrix from address (300)
+MLOAD $6, $3, #400 // load L matrix from address (400)
+MMV $10, $1, $5, $4, $0 // Wv
+MMV $11, $1, $6, $9, $1 // Lh
+VAV $12, $1, $10, $11 // Wv+Lh
+VAV $13, $1, $12, $7 // tmp=Wv+Lh+b
+VEXP $14, $1, $13 // exp(tmp)
+VAS $15, $1, $14, #1 // 1+exp(tmp)
+VDV $16, $1, $14, $15 // y=exp(tmp)/(1+exp(tmp))
+RV $17, $1 // i, r[i] = random(0,1)
+VGT $8, $1, $17, $16 // i, h[i] = (r[i]>y[i])?1:0
 VSTORE $8, $1, #500 // store hidden vector to address (500)
 ```
 
