@@ -10,7 +10,8 @@ tags:
   - Interconnect
 ---
 # 前言
-随着AI对内存容量和计算性能的飞速增长，系统的扩展性越来越重要，而其中关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群。AI计算对片间互联，系统网络的需求，也是NVIDIA对这些技术的演进；通过分析NVLink，NVSwitch和DGX的历史和现状，可以一步步的认识和理解变化背后隐藏的意义，提供AI加速器系统未来发展方向。
+随着AI对内存容量和计算性能的飞速增长，系统的扩展性越来越重要，而其中关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群。这些变化曾经也在CPU作为主角时出现过。AI计算对片间互联，系统网络的需求，也是NVIDIA对这些技术的演进；通过分析NVLink，NVSwitch和DGX的历史和现状，可以一步步的认识和理解变化背后隐藏的意义，提供AI加速器系统未来发展方向。
+
 # 概述
 NVLink是NVIDIA在2016年推出的Tesla P100和Pascal GP100 GPU上使用的高速互联技术，称为NVLink1；2017年的Tesla V100则使用了NVLink2；2020年的A100搭配NVLink3，提高了单个lane的速率，在保持同样带宽下减少了lane数量；2022年的H100推出了NVLink4，继续提供单个lane的速率，同时减少lane数量。NVLink整体发展情况如下所示：
 ![0.png](/assets/images/nvlink/0.png)
@@ -80,11 +81,11 @@ PL 与 PHY 连接，并将接收到的数据传送到数据链路层，主要负
 
 NVLink 数据包的长度从单个 128 位 flit 到最多 18 个 128 位 flit 不等，以支持 256 字节传输。NVLink传输至少包括一个请求和一个响应（post操作没有响应数据包）以及可选的地址扩展 （AE） flit、字节使能（BE） flit和 0 到 16 个数据有效负载flit。
 
-请求头 flit 包括 
+请求头 flit 包括
 * 25 位 CRC
 * 83 位传输层字段，包含请求类型、地址、流量控制信用和标签标识符
 * 20 位数据链路 （DL） 层字段，包括确认标识符、数据包长度信息和应用程序编号标记。
- 
+
 地址扩展 AE flit 包含请求之间相对静态的信息（sticky bits）、特定于命令的信息或更改命令类型默认值的信息。静态信息在更改时传输，并存储在接收端，以便用于非 AE 数据包。
 
 字节使能BE flit 用于写命令或原子命令，128 个使能位表示要写入的数据字节，最多 128 个字节。BE 不能用于 256 字节传输。
@@ -377,16 +378,16 @@ NVIDIA DGX GH200则采用NVSwitch交换网络， 每个 Hopper GPU 能够以 900
 ![45.png](/assets/images/nvlink/45.png)
 
 ### 编程模型
-NVIDIA 为 CUDA 平台提供下列语言支持： 
-• ISO C++ 
+NVIDIA 为 CUDA 平台提供下列语言支持：
+• ISO C++
 • ISO Fortran
 • Python
 
-以及基于指示的编程模型，例如： 
+以及基于指示的编程模型，例如：
 • OpenACC
-• OpenMP 
-• CUDA C++ 
-• CUDA Fortran  
+• OpenMP
+• CUDA C++
+• CUDA Fortran
 ![46.png](/assets/images/nvlink/46.png)
 ## DGX GH200
 NVIDIA Grace Hopper 超级芯片和 NVLink 交换机系统是 NVIDIA DGX GH200 架构的构建块。NVIDIA Grace Hopper 超级芯片使用 NVIDIA NVLink-C2C 结合了 Grace 和 Hopper 架构，以提供 CPU + GPU 一致性内存模型。NVLink 交换机系统采用 NVLink 4技术，将 NVLink 连接扩展到超级芯片之间，以创建无缝、高带宽、多 GPU 系统。
@@ -399,11 +400,11 @@ NVLink 交换机系统形成一个两级、无阻塞、fat-tree拓扑的NVLink�
 
 可以通过ConnectX-7 互连多个 DGX GH200 系统扩展到 256 个以上GPU。而BlueField-3 DPU 则可支持虚拟私有云，使组织能够在安全的多租户环境中运行应用程序。
 # 参考文献
-1. NVIDIA DGX-1: The Fastest Deep Learning System [WWW Document], 2017. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/](https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/) 
-2. Announcing NVIDIA DGX GH200: The First 100 Terabyte GPU Memory System [WWW Document], 2023. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/](https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/) 
-3. NVIDIA Grace Hopper Superchip Architecture In-Depth | NVIDIA Technical Blog [WWW Document], n.d. URL [https://developer.nvidia.com/blog/nvidia-grace-hopper-superchip-architecture-in-depth/](https://developer.nvidia.com/blog/nvidia-grace-hopper-superchip-architecture-in-depth/) 
+1. NVIDIA DGX-1: The Fastest Deep Learning System [WWW Document], 2017. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/](https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/)
+2. Announcing NVIDIA DGX GH200: The First 100 Terabyte GPU Memory System [WWW Document], 2023. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/](https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/)
+3. NVIDIA Grace Hopper Superchip Architecture In-Depth | NVIDIA Technical Blog [WWW Document], n.d. URL [https://developer.nvidia.com/blog/nvidia-grace-hopper-superchip-architecture-in-depth/](https://developer.nvidia.com/blog/nvidia-grace-hopper-superchip-architecture-in-depth/)
 4. NVIDIA Ampere Architecture In-Depth [WWW Document], 2020. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/nvidia-ampere-architecture-in-depth/](https://developer.nvidia.com/blog/nvidia-ampere-architecture-in-depth/)
-5. Defining AI Innovation with NVIDIA DGX A100 [WWW Document], 2020. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/defining-ai-innovation-with-dgx-a100/](https://developer.nvidia.com/blog/defining-ai-innovation-with-dgx-a100/) 
+5. Defining AI Innovation with NVIDIA DGX A100 [WWW Document], 2020. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/defining-ai-innovation-with-dgx-a100/](https://developer.nvidia.com/blog/defining-ai-innovation-with-dgx-a100/)
 6. NVSwitch Accelerates NVIDIA DGX-2 | NVIDIA Technical Blog [WWW Document], n.d. URL [https://developer.nvidia.com/blog/nvswitch-accelerates-nvidia-dgx2/](https://developer.nvidia.com/blog/nvswitch-accelerates-nvidia-dgx2/)
 7. dgx1-v100-system-architecture-whitepaper
 8. NVIDIA GH200 Grace Hopper Superchip Architecture
