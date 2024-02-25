@@ -1,5 +1,5 @@
 ---
-title: NVLink, NVSwitch, DGX | The interconnection of AI Era
+title: NVLink-NVSwitch-DGX | The interconnection of AI Era
 categories:
   - history
 tags:
@@ -10,7 +10,7 @@ tags:
   - Interconnect
 ---
 # 前言
-随着AI对内存容量和计算性能的飞速增长，系统的扩展性越来越重要，而其中关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群。这些变化曾经也在CPU作为主角时出现过。AI计算对片间互联，系统网络的需求，也是NVIDIA对这些技术的演进；通过分析NVLink，NVSwitch和DGX的历史和现状，可以一步步的认识和理解变化背后隐藏的意义，提供AI加速器系统未来发展方向。
+随着AI发展，其对内存容量和计算性能的飞速增长，计算的主角从CPU转移到AI加速器，同时AI加速器系统的扩展性也越来越重要，而其中的关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群；而收购Mellanox，则揭示了传统数据中心网络和高性能计算网络(HPC)之间的融合趋势。NVIDIA对片间互联以及计算网络这些技术上的演进伴随着AI计算对片间互联，系统网络的需求；同时，这些技术曾经也是CPU组建大型SMP和高性能计算网络使用过的技术。通过分析NVLink，NVSwitch和DGX的历史和现状，可以看出计算和网络发展趋势，提供AI加速器系统未来可能发展方向。
 
 # 概述
 NVLink是NVIDIA在2016年推出的Tesla P100和Pascal GP100 GPU上使用的高速互联技术，称为NVLink1；2017年的Tesla V100则使用了NVLink2；2020年的A100搭配NVLink3，提高了单个lane的速率，在保持同样带宽下减少了lane数量；2022年的H100推出了NVLink4，继续提供单个lane的速率，同时减少lane数量。NVLink整体发展情况如下所示：
