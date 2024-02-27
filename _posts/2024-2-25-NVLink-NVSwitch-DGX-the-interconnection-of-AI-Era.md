@@ -23,6 +23,12 @@ NVSwitch 是一种 GPU 桥接设备，可提供DGX系统所需的 NVLink 交叉�
 DGX系统则是采用NVLink和NVSwitch进行互连和扩展的计算系统，下图展示了DGX系统的内存容量变化：
 ![2.png](/assets/images/nvlink/2.png)
 
+本文组织形式如下:
+* 第一节介绍NVLink，从NVLink 1到NVLink 4，以及NVLink-C2C
+* 第二节介绍NVSwitch，从NVSwitch 1.0到NVSwitch 3.0
+* 第三节介绍DGX系统
+* 文章最后列出了主要参考文献
+
 # NVLINK
 
 ## NVLINK1
