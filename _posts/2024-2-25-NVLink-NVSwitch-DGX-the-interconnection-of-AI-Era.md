@@ -1,5 +1,5 @@
 ---
-title: NVLink, NVSwitch, DGX | The interconnection of AI Era
+title: NVLink-NVSwitch-DGX | The interconnection of AI Era
 categories:
   - history
 tags:
@@ -10,7 +10,7 @@ tags:
   - Interconnect
 ---
 # 前言
-随着AI对内存容量和计算性能的飞速增长，系统的扩展性越来越重要，而其中关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群。这些变化曾经也在CPU作为主角时出现过。AI计算对片间互联，系统网络的需求，也是NVIDIA对这些技术的演进；通过分析NVLink，NVSwitch和DGX的历史和现状，可以一步步的认识和理解变化背后隐藏的意义，提供AI加速器系统未来发展方向。
+随着AI发展，其对内存容量和计算性能的飞速增长，计算的主角从CPU转移到AI加速器，同时AI加速器系统的扩展性也越来越重要，而其中的关键就是片间互联以及网络拓扑的选择。NVIDIA的芯片互联设计始于2016年随Pascal一起推出的NVLink互联接口；2018年在DGX-2中使用的NVSwitch芯片则显示了NVIDIA对系统扩展能力的进一步加强；而DGX系统则是对NVLink和NVSwitch进行扩展的大规模集群；而收购Mellanox，则揭示了传统数据中心网络和高性能计算网络(HPC)之间的融合趋势。NVIDIA对片间互联以及计算网络这些技术上的演进伴随着AI计算对片间互联，系统网络的需求；同时，这些技术曾经也是CPU组建大型SMP和高性能计算网络使用过的技术。通过分析NVLink，NVSwitch和DGX的历史和现状，可以看出计算和网络发展趋势，提供AI加速器系统未来可能发展方向。
 
 # 概述
 NVLink是NVIDIA在2016年推出的Tesla P100和Pascal GP100 GPU上使用的高速互联技术，称为NVLink1；2017年的Tesla V100则使用了NVLink2；2020年的A100搭配NVLink3，提高了单个lane的速率，在保持同样带宽下减少了lane数量；2022年的H100推出了NVLink4，继续提供单个lane的速率，同时减少lane数量。NVLink整体发展情况如下所示：
@@ -22,23 +22,34 @@ NVSwitch 是一种 GPU 桥接设备，可提供DGX系统所需的 NVLink 交叉�
 ![1.png](/assets/images/nvlink/1.png)
 DGX系统则是采用NVLink和NVSwitch进行互连和扩展的计算系统，下图展示了DGX系统的内存容量变化：
 ![2.png](/assets/images/nvlink/2.png)
+
+本文组织形式如下:
+* 第一节介绍NVLink，从NVLink 1到NVLink 4，以及NVLink-C2C
+* 第二节介绍NVSwitch，从NVSwitch 1.0到NVSwitch 3.0
+* 第三节介绍DGX系统
+* 文章最后列出了主要参考文献
+
 # NVLINK
 
 ## NVLINK1
 NVLink 是 NVIDIA 用于 GPU 加速计算的新型高速互连技术。它显著提高了 GPU 到 GPU 通信以及 GPU 对系统内存的访问的性能。高性能计算集群的节点中通常使用多个GPU，比较常见的配置是每个节点通常最多有 8 个 GPU，因此，在多处理系统中，强大的互连非常重要。NVLink 旨在为 GPU 创建一个片间互连，该互连将提供比 PCI Express Gen 3 （PCIe） 高得多的带宽，并与 GPU ISA 兼容以支持共享内存多线程任务。使用带 NVLink 的 GPU，应用程序既可以在本地内存上运行，也可以在相连的另一个 GPU 的内存上执行，并且保持内存操作的正确（例如，为 Pascal 的原子操作提供完全支持）。
+
 ### NVLINK拓扑
 NVLink支持多种拓扑结构，不同的拓扑可以针对不同的应用进行优化。下面主要讨论以下 NVLink 配置：
 * GPU-to-GPU NVLink连接
 * CPU-to-GPU NVLink连接
+
 #### GPU-to-GPU NVLink连接
 下图显示了8个 GPU 组成的混合立方体网格(Hybrid Cube Mesh)，其中包括两个使用NVLink完全连接的四边形 GPU网络，四边形之间由NVLink 进行连接，每个四边形中的 GPU 直接通过 PCIe 连接到各自的 CPU。通过使用单独的 NVLink 来连接两个四边形，减轻了到每个 CPU 的 PCIe 上行链路的带宽压力，同样避免了通过系统内存和 CPU 间链路的数据传输。
 ![3.png](/assets/images/nvlink/3.png)
+
 #### GPU-to-GPU NVLink连接
 虽然 NVLink 主要用于将多个 NVIDIA Tesla P100 加速器连接在一起，但它也可以用作 CPU 到 GPU 的互连。例如，Tesla P100 加速器可以通过 NVIDIA NVLink 技术连接到 IBM 的 POWER8。POWER8 支持四个 NVLink。
 * 下图显示了单个 GPU连接到支持 NVLink 的 CPU 。在这种情况下，GPU 可以以高达 160 GB/秒的双向带宽访问系统内存，比 PCIe 的可用带宽高 5 倍。
 ![4.png](/assets/images/nvlink/4.png)
 * 下图显示了CPU使用NVLink 连接两个GPU 。每个 GPU 上的其余两个链路用于点对点通信。
 ![5.png](/assets/images/nvlink/5.png)
+
 ### NVLINK接口
 NVLink接口由三层组成：
 * 物理层Physical Layer (PL)
@@ -47,6 +58,7 @@ NVLink接口由三层组成：
 
 协议使用可变长度的数据包，其数据包大小范围从 1（例如简单的读请求命令）到 18（带有地址扩展的 256B 数据的写请求）不等。下图显示了 NVLink 物理层 （PHY）、数据链路层 （DL）、传输层 （TL）和层和链路：
 ![6.png](/assets/images/nvlink/6.png)
+
 #### NVHS
 NVLink 使用 NVIDIA 的高速信号技术 （NVHS）
 * 每个信号对以 20 Gbit/s 的速度差分发送数据
@@ -56,6 +68,7 @@ NVLink 使用 NVIDIA 的高速信号技术 （NVHS）
 	* 链路可以容忍极性反转和通道反转，以支持有效的 PCB 布线
 * 在芯片上，数据使用 128 位 Flit（流量控制单位）以 1.25GHz 数据速率从 PHY（physical level circuit）发送到 NVLink 控制器
 * NVHS使用嵌入式时钟。在接收器上，恢复的时钟用于接收传入数据
+
 #### NVLINK物理层
 PL 与 PHY 连接，并将接收到的数据传送到数据链路层，主要负责：
 * **deskew** 八个通道
@@ -63,6 +76,7 @@ PL 与 PHY 连接，并将接收到的数据传送到数据链路层，主要负
 * **scrambling/descrambling** 确保足够的位转换密度以支持时钟恢复
 * **极性反转**
 * **通道反转**
+
 #### NVLINK数据链路层
 数据链路层主要负责数据包在链路上的可靠传输，并将数据发送到事务层 （TL）：
 * 传输的数据包使用 25 位 循环冗余校验CRC（Cyclic Redundancy Check）进行保护
@@ -72,6 +86,7 @@ PL 与 PHY 连接，并将接收到的数据传送到数据链路层，主要负
 	* 仅当数据包被确认时，数据包才会从重放缓冲区中移除
 	* 25 位 CRC 允许在任何通道上检测多达 5 个随机位错误或多达 25 位突发错误。CRC 是根据当前包头和上一个有效负载（如果有）计算的
 * DL 还负责链路启动和维护
+
 #### NVLINK传输层
 传输层主要处理：
 * 同步
@@ -97,25 +112,31 @@ NVLink 数据包的长度从单个 128 位 flit 到最多 18 个 128 位 flit �
 
 数据包长度是可变的，长度信息作为 DL 字段的一部分进行传递。由于包头包含数据包长度信息，而协议不包含帧符号，因此在解析数据包的其余部分之前，必须检查覆盖包头的CRC。不需要针对包头和数据的单独的CRC字段，而是根据包头和前一个数据进行计算。如下图所示，序列 ID 为 1：4 的 flit 与前一个包头相关联，即 flit 0 中的 64 字节读响应。flit 5 中读请求的 CRC 是按 flits 1：5 计算的，而 64 字节写请求 （flit 6） 的 CRC 是仅根据 flit 6 计算的，因为之前没有有效数据。flit 7：10 将被flit 11 中的 CRC 覆盖（未显示）。如果在 flit 11 中没有准备好的请求或响应，则会传达与空传输关联的 CRC。
 ![8.png](/assets/images/nvlink/8.png)
+
 ### GPGPU里NVLINK
 在 GPU 架构里，NVLink 控制器通过另一个称为高速集线器 （HSHUB） 的模块与 GPU 内部进行通信。HSHUB 可以直接访问 GPU 内部crossbar和其他系统模块，例如以 NVLink 峰值速率将数据移入和移出 GPU的高速复制引擎 （HSCE）。下图显示了 NVLink 与 HSHUB 和 GP100 GPU 中一些模块的关系。
 ![9.png](/assets/images/nvlink/9.png)
+
 ## NVLINK 2
 与 Pascal 上的 NVLink 相比，V100 上的 NVLink 将信号速率从 20 Gb/s提高到 25 Gb/s。每个链路在每个方向提供 25 GB/秒的带宽。并且链路数从 4 个增加到 6 个，将支持的 GPU NVLink 总带宽提升到 300 GB/s。NVLink 2 允许CPU 直接对GPU 的 HBM2 内存进行加载/存储/原子访问。新增加功能包括：
 * 结合新的 CPU 主控功能，NVLink 支持缓存一致性操作，允许从图形内存读取的数据存储在 CPU 的缓存中
 * NVLink 2 增加了对由 GPU 或 CPU 发起的原子访问的支持。虽然 P100 支持对等的 GPU 原子访问，但不支持通过 NVLink 发送 GPU 原子访问并在目标 CPU 上完成
 * 通过支持地址转换服务 （ATS），GPU 可以直接访问 CPU 的页表
 * 增加链路层低功耗模式，可在链路未大量使用时节省功耗
+
 ## NVLINK 3.0
 在 A100 GPU 中实现的NVLink 3和NVSwitch 显著增强了多 GPU 的可扩展性、性能和可靠性。由于每个 GPU 和交换机的支持的链路更多，NVLink 3 提供了更高的 GPU-GPU 通信带宽，并改进了错误检测和恢复功能。NVLink 3在每个方向上使用四个差分对（通道）来创建单个链路，在每个方向上提供 25 GB/s的有效带宽，NVLink 3的数据速率为每对 50 Gbit/s，几乎是 V100 中 25.78 Gbits/s 速率的两倍。单个 A100 NVLink 在每个方向上提供 25 GB/秒的带宽，与 V100 类似，但与 V100 相比，每个链路仅使用一半的信号对数。A100 中的链路总数增加到 12 个，而 V100 中为 6 个，总带宽为 600GB/s，而 V100 为 300 GB/s。
+
 ## NVLINK 4.0
 NVLink 是 NVIDIA 高带宽、高能效、低延迟、无损的 GPU 到 GPU 互连，包括弹性功能，例如链路级错误检测和数据包重传机制，以确保数据的成功传输。NVLink 4 在 H100 GPU 中实现，与 NVIDIA A100 中使用的之前的NVLink 3相比，可提供 1.5 倍的通信带宽。H100 GPU中一共18个NVLink 4链路，总带宽900 GB/s，用于多 GPU I/O 和共享内存访问。NVLink 4在每个方向上仅使用两个高速差分对来形成单个链路，在每个方向上提供 25 GB/秒的有效带宽。
+
 ## NVLink-C2C
 NVIDIA NVLink-C2C 是 NVIDIA 的用于Grace Hopper 超级芯片的内存一致性、高带宽和低延迟的互连，提供高达 900GB/s的总带宽。
 
 NVLink-C2C 内存一致性可提高开发人员的工作效率、性能和 GPU 可访问的内存容量。CPU 和 GPU 线程现在可以并发和透明地访问 CPU 和 GPU的内存，让开发人员能够集中精力在算法上，而不是显式内存管理。内存一致性允许开发人员只传输他们需要的数据，而不是将整个页面进行迁移。通过支持CPU 和 GPU 原子操作可以实现CPU和GPU 的线程间的轻量级原语。
 
 具有地址转换服务 （ATS） 的 NVLink-C2C 可以允许NVIDIA Hopper DMA 引擎加速跨主机和设备批量分页内存的传输。 NVLink-C2C 允许应用程序能够超额订阅 GPU 的内存，并以高带宽直接利用 NVIDIA Grace CPU 的内存。每个 Grace Hopper 超级芯片具有高达 480GB 的 LPDDR5X CPU 内存，GPU 可以直接访问。结合 NVIDIA NVLink Switch，在 最多 256 个 NVLink 连接的 GPU组成的DGX GH200 上运行的所有 GPU 线程可以访问高达 144TB 的内存。
+
 # NVSwitch
 
 ## NVSwitch 1.0
@@ -127,9 +148,11 @@ NVSwitch 是一款 NVLink 交换机芯片，采用TSMC 12FFN工艺，一共20亿
 下图展示了16 个 GPU 都以相同的方式连接到 NVSwitch 芯片的拓扑示意图：
 ![12.png](/assets/images/nvlink/12.png)
 一个基板上的所有 8 个 GPU 都通过单个 NVLink 连接到所有 6 个 NVSwitche。每个 NVSwitch 上的八个端口用于与另一个基板通信。同一个基板上的 8 个 GPU 中的每一个都能以 300 GB/s 的全带宽与同一基板上的任何其他 GPU 进行通信，而只经过一个NVSwitch的延迟。每个 GPU 还可以以全带宽与另一个基板上的任何 GPU 进行通信，而只需要经过两个NVSwitch延迟。基板之间的双向带宽为 2.4 TB/s（48 个链路，每个方向 25 GB/s）。但是NVIDIA DGX-2 平台仅使用每个交换机的 16 个可用端口。
+
 ## NVSwitch 2.0
 NVSwitch 2.0比之前的版本快两倍，应用在NVIDIA DGX-2 系统。六个 NVSwitch 和NVLink 3 的组合使单个 GPU 到 GPU 的通信达到 600 GB/s 的峰值，能提供双向4.8 TB/s的总带宽。
 ![13.png](/assets/images/nvlink/13.png)
+
 ## NVSwitch 3.0
  NVSwitch 3.0采用TSMC 4N工艺，251亿晶体管，面积294mm2，提供 64 个NVLink 4链路端口，支持3.2TB/s 全双工带宽。总交换机吞吐量从上一代的 7.2 Tbits/s 增加到 13.6 Tbits/s。下图展示了NVSwitch 3.0的物理规划版图：
 ![14.png](/assets/images/nvlink/14.png)
@@ -152,9 +175,11 @@ NVSwitch 3.0增加的NVLink 相关模块包括：
 
 下图展示了NVSwitch 3.0的逻辑框图:
 ![15.png](/assets/images/nvlink/15.png)
+
 # DGX
 ## DGX-1 P100
 DGX-1 有 8 个 Tesla P100 GPU 加速器，通过 NVLink组成hybrid cube-mesh网络拓扑。DGX-1 与双路 Intel Xeon CPU 和四个 100 Gb InfiniBand 网络接口卡共同组成深度学习训练系统。
+
 ### DGX-1系统架构
 DGX-1 是专为高吞吐量和高互连带宽而设计的深度学习系统，可最大限度地提高神经网络训练性能。系统的核心是：
 * 由 8 个 Tesla P100 GPU 通过NVLink 组成的hybrid cube-mesh网络拓扑
@@ -163,11 +188,13 @@ DGX-1 是专为高吞吐量和高互连带宽而设计的深度学习系统，�
 DGX-1 内置于3U（three-rack-unit） 机箱中，可提供电源、冷却、网络、多系统互连和 SSD 文件系统缓存。下图显示了 DGX-1 系统组件：
 ![16.png](/assets/images/nvlink/16.png)
 Tesla P100 的页面迁移引擎(Page Migration Engine)允许在 GPU 和主机大容量内存之间高带宽、低开销的共享数据。为了扩展到多节点高性能集群，DGX-1 通过 InfiniBand （IB） 网络提供系统到系统高带宽连接。
+
 ### DGX-1网络拓扑
 DGX-1 的 NVLink 网络拓扑设计旨在优化许多因素，包括各种点对点和集合通信可实现的带宽，拓扑结构的灵活性，以及GPU 的性能。hybrid cube-mesh网络拓扑可以认为是：
 * 一个立方体，立方体的角是 GPU，所有 12 条边都通过 NVLink 连接，六个面中的两个也通过对角线连接
 * 也可以被认为是单个 NVLink 连接的两个交织环
 ![17.png](/assets/images/nvlink/17.png)
+
 ### DGX-1网络
 最新使用多系统扩展的计算工作负载，尤其是深度学习，为了发挥 GPU 性能，需要提供系统内部和系统之间的 GPU 的通信。除了用于 GPU 内部高速通信的 NVLink 外，DGX-1 还使用 Mellanox ConnectX-4 EDR InfiniBand 端口提供系统间通信。 在 DGX-1 中配置的InfiniBand 标准 EDR IB 提供：
 - 对于每个端口，8 个数据通道提供 25 Gb/s 或 200 Gb/s 的带宽（4 个输入通道 （100 Gb/s） 和 4 个输出通道 （100 Gb/s））
@@ -187,16 +214,20 @@ DGX-1 配置了四个 EDR IB 端口，可提供 800 Gb/s带宽（400 Gb/s输入�
 这张图说明：
 1. 在深度学习训练方面，DGX-1 比上一代 NVIDIA Tesla M40 GPU 吞吐量高得多
 2. DGX-1 的性能明显高于使用 PCIe 互连的 8 个 Tesla P100 GPU 的系统
+
 ## DGX-1 V100
 NVIDIA DGX-1 是专为深度学习设计的高吞吐量和高互连带宽的系统，可最大限度地提高神经网络训练性能。该系统的核心是由 8 个 Tesla V100 GPU 通过NVLink组成的hybrid cube-mesh网络拓扑。除了 8 个 GPU 之外，DGX-1 还包括两个 CPU，用于启动、存储管理和深度学习框架协调。DGX-1 内置于3U机箱中，可提供电源、冷却、网络、多系统互连和 SSD 文件系统缓存。
+
 ### DGX-1 系统架构
 DGX-1 配置了以太网和 InfiniBand （IB） 网络接口。两个 10 Gb 以太网接口提供系统的远程访问能力。为了连接多个 DGX-1 系统，每个系统都有四个高带宽、低延迟的 EDR IB（Extended Data Rate InfiniBand）端口，提供 800 Gb/s 的双向通信。DGX-1 系统里每两个 GPU 共享一个 IB 端口。此外，DGX-1 EDR IB 与 NVIDIA GPUDirect RDMA兼容，能够将数据直接从一个系统中的 GPU 内存传输到另一个系统中的 GPU 内存，而无需涉及 CPU 或系统内存。
 ![20.png](/assets/images/nvlink/20.png)
+
 ### DGX-1网络拓扑
 8 个GPU 组成的hybrid cube-mesh网络可以看作是使用NVLink 连接的三个交织的双向环。以这种方式处理拓扑可确保除all-to-all之外的集合通信的性能在很大程度上是等效的。
 ![21.png](/assets/images/nvlink/21.png)
 ![22.png](/assets/images/nvlink/22.png)
 深度学习训练时 GPU 间传输使用这三个不同的双向环。每个 Volta GPU有6个NVLink，每个环连接所有八个 GPU。通过这种方法，reduction和broadcast可以以超过 130 GB/s 的速度执行，而在前几代硬件上使用 PCIe 的速度为 10 GB/s。这种性能对于实现深度学习训练的高扩展性至关重要。
+
 ### DGX-1网络
 除了用于 GPU 内部高速通信的 NVLink 外，DGX-1 还使用 Mellanox ConnectX-4 EDR 100Gb InfiniBand 端口提供系统间极低延迟和高带宽的通信，以减少瓶颈。在 DGX-1 中配置的最新 InfiniBand 标准 EDR IB 提供：
 * 四个 EDR IB 端口，为每个 DGX-1 系统提供 400 Gb/s 输入和 400 Gb/s 输出带宽
@@ -211,6 +242,7 @@ DGX-1 配置了四个 EDR IB 端口，提供 800 Gb/s 的双向总带宽，可�
 下图展示了 124 个DGX-1组成的系统，每个一级交换机支持 4 个 DGX-1 系统，最多可配置 32 个一级交换机和 16 个二级交换机，最多支持 128 个系统：
 ![24.png](/assets/images/nvlink/24.png)
 使用的fat-tree拓扑结构可扩展到具有更多交换机的更大配置，同时仍保持 InfiniBand 的高性能。为了扩大规模，将添加第三级交换机，或者将控制器级 IB 交换机用于 2 级交换机。
+
 ### DGX-1性能
 与 Tesla P100 GPU 相比，Tesla V100 GPU 提供了更高的性能。
 * V100 的 FP32 CUDA 核增加了 40%
@@ -221,6 +253,7 @@ DGX-1 配置了四个 EDR IB 端口，提供 800 Gb/s 的双向总带宽，可�
 ![25.png](/assets/images/nvlink/25.png)
 下表展示了DGX-1 P100和DGX-1 V00两者对比：
 ![26.png](/assets/images/nvlink/26.png)
+
 ### NCCL
 NVIDIA Collective Communication Library（NCCL，发音为“Nickel”）是一个拓扑感知的多 GPU 集合通信库，可以轻松集成到应用程序中。NCCL最初是作为一个开源研究项目开发的，它被设计为轻量级的，并且仅依赖于常见的C++和CUDA库。NCCL 可以部署在单进程或多进程应用程序中，透明地处理所需的进程间通信。任何具有使用 MPI 集合如broadcast, reduce, gather, scatter, all-gather, all-reduce, 或all-to-all经验的人都会熟悉NCCL API 。
 有许多方法可以有效地实现集合通信。但是，高效的实现必须考虑处理器之间互连的拓扑结构。为了说明这一点，请考虑从 GPU0 向下图中 PCIe 树拓扑中的所有其他 GPU 广播数据。
@@ -237,17 +270,21 @@ DGX-2 单个系统包含 16 个 NVIDIA Tesla V100 32 GB GPU ，两个 24 核 Xeo
 ## DGX A100
 DGX A100 具有 5 petaFLOPS 的 AI 性能，在所有 AI 工作负载上都表现出色。具体配置如下所示：
 ![31.png](/assets/images/nvlink/31.png)
+
 ### DGX系统架构
 下图显示了 NVIDIA DGX A100 系统中主要组件的分解图：
 ![32.png](/assets/images/nvlink/32.png)
+
 ### DGX网络拓扑
 下图展示了DGX A100 系统网络拓扑：
 ![33.png](/assets/images/nvlink/33.png)
 DGX A100 系统包含6个NVSwitch 2.0，每个 A100 GPU 使用 12 个 NVLink 与 6 个 NVSwitch 进行互联通信，因此每个 GPU 到每个交换机都有两条链路。
+
 ### DGX网络
 除了用于 GPU 内部高速通信的 NVLink 外，DGX A100 还有 8 个单端口 Mellanox ConnectX-6 200Gb/s HDR InfiniBand 端口（也可配置为 200Gb/s 以太网端口），提供 3.2 Tb/s 的峰值带宽，可用于构建 基于DGX A100 系统（如 NVIDIA DGX SuperPOD）的高速集群。可以使用 Mellanox ConnectX-6 ，通过RDMA来进行GPU间数据传输。DGX A100 在 IO 卡和 GPU 之间建立了一对一的连接，每个 GPU 都可以直接与外部通信，而不会阻止其他 GPU 的网络访问。Mellanox ConnectX-6 I/O 卡可配置为 HDR InfiniBand 或 200Gb/s 以太网，因此 NVIDIA DGX A100 可以使用低延迟、高带宽 InfiniBand 或RDMA over Converged Ethernet（RoCE）与其他节点集群一起运行 HPC 和 AI 任务。DGX A100 包括一个额外的双端口 ConnectX-6 卡，可用于高速连接到外部存储器。
 
 DGX A100 多系统集群使用基于fat tree拓扑的网络，利用先进的 Mellanox 自适应路由和Sharp集合，提供从系统间良好路由、可预测、无争用的通信。
+
 ### DGX性能
 DGX A100 在深度学习训练和推理方面相比DGX-1 V100或CPU提供更高性能，如下图所示：
 ![34.png](/assets/images/nvlink/34.png)
@@ -262,10 +299,12 @@ NVIDIA DGX SuperPOD是由DGX A100 组成的集群系统，包括：
 
 具体硬件参数如下：
 ![35.png](/assets/images/nvlink/35.png)
+
 ### DGX SuperPod架构
 DGX SuperPOD 的基本单元是 SU，单个 SU由 20 个 DGX A100 系统组成，算力 48 PFLOPS。DGX A100 系统具有 8 个用于计算流量的 HDR （200 Gbps） InfiniBand 主机通道适配器HCA（host channel adapters）。每对 GPU 都有一对关联的 HCA。为了实现最高效的网络，有八个网络平面，每个平面一个叶交换机和 一个HCA，一共使用 8 个叶交换机进行连接。这些平面通过主干交换机在网络的第二层互连。每个SU都具有完整的bisection bandwidth，以确保最大的应用灵活性。每个 SU 都有一个专用的管理机架，叶交换机集中放置在管理机架中。
 
 DGX SuperPOD 的其他设备（例如二级主干交换机或管理服务器）可能位于 SU 管理机架的空白空间或单独的机架中，具体取决于数据中心布局。
+
 ### DGX SuperPod网络架构
 DGX SuperPOD 有四个网络：
 * **计算网络** 每个 DGX A100 系统通过单独的网络平面连接8 个 NVIDIA HDR 200 Gb/s ConnectX-6 HCA
@@ -275,6 +314,7 @@ DGX SuperPOD 有四个网络：
 
 下图展示了DGX A100系统的各类网络接口：
 ![36.png](/assets/images/nvlink/36.png)
+
 #### DGX SuperPod计算网络
 计算网络设计最大限度地提高 AI 任务的典型通信流量的性能，并在发生硬件故障时提供冗余，最大限度地降低成本。
 
@@ -291,9 +331,11 @@ DGX SuperPod计算网络里使用到的InfiniBand 交换机分为以下几类：
 ![37.png](/assets/images/nvlink/37.png)
 下图展示了80 节点 DGX SuperPOD 的计算拓扑结构：
 ![38.png](/assets/images/nvlink/38.png)
+
 #### DGX SuperPod存储网络
 存储网络采用 InfiniBand 网络以提供高带宽支持。因为DGX SuperPOD 的每个节点的 I/O 必须超过 40 GBps，而InfiniBand为存储网络提供了高带宽和高级网络管理功能（如拥塞控制和自适应路由）。
 ![39.png](/assets/images/nvlink/39.png)
+
 #### 带内管理网络InBand Management Network
 带内以太网网络具有以下几个重要功能：
 * 连接管理集群的所有服务
@@ -305,6 +347,7 @@ DGX SuperPod计算网络里使用到的InfiniBand 交换机分为以下几类：
 带外以太网网络用于通过 BMC 进行系统管理，并提供连接以管理所有网络设备。带外管理对于群集的运行至关重要，它提供了低使用率路径，可确保管理流量不会与其他群集服务冲突。
 
 带外以太网交换机的上行链路可以连接到带内叶交换机，也可以连接到客户的带外网络。所有以太网交换机都通过串行连接连接到数据中心的现有控制台服务器。发生网络故障时这些连接提供了与交换机连接的最后手段。
+
 ## DGX H100
 NVIDIA DGX H100 是基于最新 NVIDIA H100 Tensor Core GPU 的 DGX 系统，包含：
 
@@ -319,6 +362,7 @@ NVIDIA DGX H100 是基于最新 NVIDIA H100 Tensor Core GPU 的 DGX 系统，包
 
 在 DGX H100 中，每个 H100 Tensor Core GPU 连接到所有NVSwitch 3.0，流量通过四个不同的交换机平面发送，从而实现链路的聚合，以实现系统中 GPU 之间的all-to-all带宽。
 ![41.png](/assets/images/nvlink/41.png)
+
 ### DGX H100 SuperPod
 DGX H100 SuperPOD由DGX H100作为基本单元组成：
 - 有8个计算机架，每个机架有四台 DGX H100
@@ -332,6 +376,7 @@ NVLink 网络提供了256 个 GPU间 57.6 TB/s 的bisection带宽 。此外，32
 下图显示了基于 A100 和 H100 的 32 个节点、256 个 GPU DGX SuperPOD 的比较。基于 H100 的 SuperPOD 内DGX 节点使用新的 NVLink 交换机来互连。
 ![42.png](/assets/images/nvlink/42.png)
 NVLink 网络互连采用 2：1 锥形fat tree拓扑结构，可将bisection带宽惊人地增加 9 倍（例如，用于all-to-all交换），并且与上一代 InfiniBand 系统相比，all-reduce吞吐量增加了 4.5 倍。DGX H100 SuperPOD的 NVLINK 交换机系统作为可选项。
+
 ## Grace Hopper Superchip
 NVIDIA Grace Hopper Superchip架构通过内存一致性的NVLink-C2C将 NVIDIA Hopper GPU与 NVIDIA Grace CPU 的结合在一起，组合成单个超级芯片，并支持新的 NVIDIA NVLink 交换机系统。下图展示了NVIDIA Grace Hopper 超级芯片逻辑框图：
 ![43.png](/assets/images/nvlink/43.png)
@@ -389,6 +434,7 @@ NVIDIA 为 CUDA 平台提供下列语言支持：
 • CUDA C++
 • CUDA Fortran
 ![46.png](/assets/images/nvlink/46.png)
+
 ## DGX GH200
 NVIDIA Grace Hopper 超级芯片和 NVLink 交换机系统是 NVIDIA DGX GH200 架构的构建块。NVIDIA Grace Hopper 超级芯片使用 NVIDIA NVLink-C2C 结合了 Grace 和 Hopper 架构，以提供 CPU + GPU 一致性内存模型。NVLink 交换机系统采用 NVLink 4技术，将 NVLink 连接扩展到超级芯片之间，以创建无缝、高带宽、多 GPU 系统。
 
@@ -399,6 +445,7 @@ NVLink 交换机系统形成一个两级、无阻塞、fat-tree拓扑的NVLink�
 在 DGX GH200 系统中，GPU 线程可以通过NVLink page table来访问等NVLink 网络中其他 Grace Hopper 超级芯片的HBM3和LPDDR5X。NVIDIA Magnum IO加速库则针对256 个 GPU的系统优化了 GPU 通信。DGX GH200 中的每个 Grace Hopper 超级芯片适配一个 NVIDIA ConnectX-7网络适配器和一个 NVIDIA BlueField-3 NIC；DGX GH200提供128 TBps 的bisection带宽和 230.4 TFLOPS 的 NVIDIA SHARP 网内计算性能，可加速 AI 中常用的集合操作；通过减少集合操作的通信开销，使 NVLink 网络系统的有效带宽翻倍。
 
 可以通过ConnectX-7 互连多个 DGX GH200 系统扩展到 256 个以上GPU。而BlueField-3 DPU 则可支持虚拟私有云，使组织能够在安全的多租户环境中运行应用程序。
+
 # 参考文献
 1. NVIDIA DGX-1: The Fastest Deep Learning System [WWW Document], 2017. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/](https://developer.nvidia.com/blog/dgx-1-fastest-deep-learning-system/)
 2. Announcing NVIDIA DGX GH200: The First 100 Terabyte GPU Memory System [WWW Document], 2023. . NVIDIA Technical Blog. URL [https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/](https://developer.nvidia.com/blog/announcing-nvidia-dgx-gh200-first-100-terabyte-gpu-memory-system/)
