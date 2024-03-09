@@ -46,7 +46,7 @@ tags:
 * 第七节则介绍Intel的AI加速解决方案，包括Xeon Phi，Nervana的NNP和Habana的Gaudi
 * 文章最后列出了相应参考文献
 
-# Alibaba 
+# Alibaba
 Alibaba在2020年推出了专门针对CNN推理的加速器含光800，其ResNet-50推理性能远超当时各类AI加速器，如下图所示：
 ![1.png](/assets/images/ai/1.png)
 ## HanGuang800
@@ -120,7 +120,7 @@ Kunlun 2支持多核并行计算，类似CUDA，使用前缀来标识代码执�
 ```cpp
 int main()(
 	///...
-	float* data_xpu = nullptr; 
+	float* data_xpu = nullptr;
 	// 在设备上分配空间
 	xpu_malloc(&data_xpu, len * sizeof(float));
 	// 输入拷贝到设备端
@@ -154,7 +154,7 @@ __global__ void relu_xpu(float* data, int n) {
 }
 ```
 
-# Huawei 
+# Huawei
 
 昇腾910(Ascend 910) 是华为2019年发布产品，计算部分采用达芬奇架构。
 ## Ascend 910
@@ -184,8 +184,8 @@ DaVinci核包括多个缓冲区，分成不同层次。L0 缓冲区专用于张�
 缓冲区 C L0 中的输出结果可以由向量单元处理（例如归一化或激活）。向量单元的输出结果被分配到统一缓冲区Unified Buffer中，该缓冲区与标量单元共享。数据存储在 L1 缓冲区中，指令存储在指令缓存中。指令执行流程如下：
 * 指令首先由PSQ （Program Sequence Queue） 排序
 * 根据指令类型，分别分发到三个队列，即多维数据集队列(cube queue)、向量队列和 MTE 队列
-* 指令分别由相应的计算单元处理 
- 
+* 指令分别由相应的计算单元处理
+
 由于三个计算单元和 MTE 并行工作，因此需要显式同步来确保不同执行单元之间的数据依赖关系。下图展示了相应流程，PSQ 不断向不同的单元发送指令，这些指令可以并行处理，直到遇到显式同步信号（屏障）；屏障由编译器或程序员生成。
 ![29.png](/assets/images/ai/29.png)
 ### 系统扩展
@@ -195,7 +195,7 @@ DaVinci核包括多个缓冲区，分成不同层次。L0 缓冲区专用于张�
 PyTorch、TensorFlow、MindSpore等DNN模型开发框架位于顶端，输出“Graph”，表示算法中的粗粒度关系。然后，在图引擎的帮助下，“Graph”被转换为“Stream”，由几个按顺序排列的“Task”组成。“Streams”/“Tasks”可以直接从Operator Lib调用，也可以由程序员借助Operator Engine用不同级别的语言描述。TBE（Tensor Boost Engine）DSL（Domain Specific Language）是用Level-3编程模型开发的，称为数学编程级别，针对不了解硬件知识的用户。借助编译器，可以从 TBE DSL 描述中自动生成实例“Tasks”。程序员还可以在并行/内核级别（2 级）编程模型中开发实例“Task”，类似于 GPU 的 CUDA 或 OpenCL，并引入了张量迭代器核 TIK（Tensor Iterator Kernel）接口，可以使用 Python 进行并行编程。专用的编译器技术“Auto Tiling”，用于将大任务切割以适应 Ascend 架构。在强化学习算法的帮助下，该技术通过智能搜索合法的映射空间，为程序提供最佳的tiling和调度。编程模型的最低级别（级别 1）是 C 编程，也称为 CCE-C（Cube-based Compute En­gine）。在此级别中，每个体系结构的所有设计细节都暴露给程序员。程序员可以嵌入类似汇编的代码。整体结构如下所示：
 ![31.png](/assets/images/ai/31.png)
 
-# Groq 
+# Groq
 2016 年，Google TPU 架构师 Jonathan Ross 和 TPU 团队的其他成员创立了 Groq，Groq 采用了一种全新的架构来加速神经网络，称为软件定义的横向扩展张量流式多处理器(Software-Defined Scale-out Tensor Streaming Multi-Processor)。传统GPGPU使用一个轻量的可编程核并复制数十次或数百次，而Groq设计的TSP（Tensor Streaming Processor）是一个有数百个功能单元的单一的巨大的处理器，这种方法大大降低了指令解码开销。TSP（Tensor Streaming Processor）硬件是确定性的，但实际的吞吐量取决于编译器能否完成最佳调度。尽管TSP架构在某些方面简化了编译器调度任务的难度，但软件仍然必须协调 144 宽的VLIW执行单元，而每个VLIW有 320B的 SIMD 单元。因此，充分利用TSP庞大的MAC阵列来计算各种大小的张量是非常有挑战的。下图展示了TSP和many-core架构的区别：
 ![32.png](/assets/images/ai/32.png)
 ## TSP
@@ -261,7 +261,7 @@ GropRack 由9个节点组成，每个节点有8个 TSP，通过每个 TSP 的4�
 
 少于 16 个 TSP 的小型系统可以利用节点内丰富的链路提供高带宽通信，而多达数百个 TSP 的大型系统全局（bisection）带宽约 50 GB/s；随着系统规模增长到 264 TSP 以上，每个 TSP 端点的可用全局带宽约为 14 GB/秒。如下图所示，
 ![52.png](/assets/images/ai/52.png)
-# SambaNova 
+# SambaNova
 
 SambaNova Systems 成立于 2017 年，产品主要特点是可重构数据流单元RDU（Reconfigurable Dataflow Unit）。主要产品包括：
 * 2019年发布的SN10，使用台积电7nm工艺制造，一共400亿晶体管
@@ -367,7 +367,7 @@ IPU-Machine M2000系统包括一个Graphcore GC4000 IPU网关芯片，提供2.8 
 
 处理器固定顺序逐条执行线程指令，每个线程以round-robin方式轮流。大多数指令需要一个计算周期才能执行完成，处理器指令集是专为机器学习和人工智能设计，包含：
 - **控制流指令**, 包括跳转、条件等。每个处理器上的控制流独立于其他处理器上的控制流
-- **内存访问指令** 
+- **内存访问指令**
 - **整数和浮点算术运算指令** 浮点指令包括单精度（32 位）和半精度（16 位）浮点运算。浮点运算可以支持大小为 2、4 和 8 的小向量。此外，每个tile上都有一个累积矩阵乘积单元（AMP 单元），每个周期最多可以执行 64 次乘法累加运算
 - **超越函数指令** 例如指数函数
 - **随机数生成指令** 随机数生成器还连接到浮点单元，以便在执行浮点运算时在硬件中启用随机舍入
@@ -392,7 +392,7 @@ BOW IPU第一个使用台积电Wafer-on-Wafer 3D 技术芯片，Wafer-on-Wafer�
 Bow-2000 IPU类似IPU-M2000，有四个Bow IPU和260 GB的内存，可提供1.4 PetaFLOPS的AI计算性能；并可以作为Bow Pod系统的基本单元，从四个 Bow-2000 和一个主机组成的 Bow Pod16，到8 个 Bow-2000 和一个主机组成的 Bow Pod32，再到 Bow Pod64，Bow Pod256 和 Bow Pod1024。Bow-2000与现有的IPU-POD系统完全向后兼容，其高速、低延迟的IPU-Fabric和灵活的1U外形尺寸都保持不变；IPU-Fabric由用于直接连接IPU的IPU-Link和用于通过IPU网关连接IPU机器机架的GW-Link组成。Bow-2000 IPU和Bow Pod如下所示：
 ![77.png](/assets/images/ai/77.png)
 ![78.png](/assets/images/ai/78.png)
-# Intel 
+# Intel
 Intel在并行计算和AI领域大致发展历史如下：
 - 从2007年开始，Intel就计划开发独立显卡项目Larrabe, 试图打破软硬件的隔阂，使用同样架构来做图形和并行计算。但是随后项目就被取消。后续的Xeon Phi系列加速器（天河-2超算中心使用）是在Larrabe上长出来的，但是随着美国的禁令，Intel在2017年就停止了相关产品的开发
 - 2016年，英特尔宣布以 3.5 亿美元收购收购Nervana，并推出了NNP-T(Nervana Neural Network Processor for Training)和NNP-I(Nervana Neural Network Processor for Inference)加速器芯片，但是在2020年宣布停止相关产品的开发，采用Habana加速方案
@@ -453,7 +453,7 @@ Knights Landing是一个标准的独立处理器，可以启动现成的操作�
 KNL 有两种类型的存储器：多通道 DRAM （MCDRAM） 和DDR存储器。
 * MCDRAM 是 16 GB 高带宽存储器，包括 8 个器件（每个器件 2 GB），集成在封装上，并通过专有的I/O 连接到 KNL 芯片。8 个 MCDRAM 提供450 GB/s 带宽。
 * KNL 有两个内存控制器，一共 6 个 DDR4 通道，运行频率2,400 MHz，提供90 GBps 的总带宽。每个通道最多可以支持一个内存 DIMM，一共384 GB的总 DDR 内存容量。
- 
+
 两种类型的内存以三种内存模式呈现给用户：
 * 缓存模式，其中 MCDRAM 作为DDR 的缓存
 * 扁平模式，其中 MCDRAM 被视为与 DDR 相同的地址空间中的标准内存
@@ -563,9 +563,9 @@ TPC 处理器有四个内存空间：
 - 向量本地内存：每个 TPC 处理器都有自己的本地内存实例。每个 TPC 只能访问自己的本地副本。也就是说，TPC A 无法访问 TPC B 本地内存。
 
 本地内存与程序执行一致，分为两个库：
-- 标量本地存储：大小为 1 KB。   允许在对齐的 4 字节块中读取/写入此内存。  
-- 向量本地存储：大小为 80 KB。如果程序使用 tanh、sin 或 cos 等特殊功能，则只有 16 KB 可用。允许以对齐的 128/256 字节块读取/写入此内存。  
-    
+- 标量本地存储：大小为 1 KB。   允许在对齐的 4 字节块中读取/写入此内存。
+- 向量本地存储：大小为 80 KB。如果程序使用 tanh、sin 或 cos 等特殊功能，则只有 16 KB 可用。允许以对齐的 128/256 字节块读取/写入此内存。
+
 本地存储器可以在每个周期中读取或写入，没有带宽限制。本地内存在编译时通过定义带有 ___local___ 地址空间限定符的全局变量进行静态分配。
 - 全局内存 全局内存使用名为 _tensors_ 的专用访问器进行访问。全局内存与程序执行不一致。这意味着程序在执行先写后读操作时必须发出原子信号量操作，以保证在读回之前读取操作结果是可见的。平均每四个周期可以从全局内存加载或写入 2,048 位向量。 `__global__`地址空间限定符将指针追加到全局内存。
 - 配置空间 TPC 配置空间包含成功执行程序所需的一组定义，例如张量描述符、程序二进制位置等。
@@ -627,7 +627,7 @@ Greco是第二代推理加速器，为了提高推理速度和效率，Greco 在
 18. A. Yang, "Deep Learning Training At Scale Spring Crest Deep Learning Accelerator (Intel® Nervana™ NNP-T)," 2019 IEEE Hot Chips 31 Symposium (HCS), Cupertino, CA, USA, 2019, pp. 1-20, doi: 10.1109/HOTCHIPS.2019.8875643.
 19. O. Wechsler, M. Behar and B. Daga, "Spring Hill (NNP-I 1000) Intel’s Data Center Inference Chip," 2019 IEEE Hot Chips 31 Symposium (HCS), Cupertino, CA, USA, 2019, pp. 1-12, doi: 10.1109/HOTCHIPS.2019.8875671.
 20. Intel Habana WhitePaper
-21. 13. E. Medina, "[Habana Labs presentation]," 2019 IEEE Hot Chips 31 Symposium (HCS), Cupertino, CA, USA, 2019, pp. 1-29, doi: 10.1109/HOTCHIPS.2019.8875670.
+21. E. Medina, "[Habana Labs presentation]," 2019 IEEE Hot Chips 31 Symposium (HCS), Cupertino, CA, USA, 2019, pp. 1-29, doi: 10.1109/HOTCHIPS.2019.8875670.
 22. M. Emani et al., "Accelerating Scientific Applications With SambaNova Reconfigurable Dataflow Architecture," in Computing in Science & Engineering, vol. 23, no. 2, pp. 114-119, 1 March-April 2021, doi: 10.1109/MCSE.2021.3057203.
 23. R. Prabhakar, S. Jairath and J. L. Shin, "SambaNova SN10 RDU: A 7nm Dataflow Architecture to Accelerate Software 2.0," 2022 IEEE International Solid-State Circuits Conference (ISSCC), San Francisco, CA, USA, 2022, pp. 350-352, doi: 10.1109/ISSCC42614.2022.9731612.
 24. S. Knowles, "Graphcore," 2021 IEEE Hot Chips 33 Symposium (HCS), Palo Alto, CA, USA, 2021, pp. 1-25, doi: 10.1109/HCS52781.2021.9567075.
