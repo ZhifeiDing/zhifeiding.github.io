@@ -143,7 +143,7 @@ z10有4个处理器核，每个处理器核有3MB的L1.5缓存，一共两个加
 ![Pasted image 20231112203106.png](/assets/images/z/Pasted image 20231112203106.png)
 ### 4.1.1 z10处理器核
 z10处理器核由八部分组成：
-* 取值单元(IFU) 包括64KB的指令缓存，分支预测逻辑，指令缓冲和相关控制逻辑。指令缓冲提供指令给指令译码单元(IDU)
+* 取指单元(IFU) 包括64KB的指令缓存，分支预测逻辑，指令缓冲和相关控制逻辑。指令缓冲提供指令给指令译码单元(IDU)
 * 指令译码单元(IDU) 负责解析和译码z/Architecture 里定义的900多条指令，识别指令间依赖关系，形成指令对以便超标量执行，并指令发射到操作数访问和执行单元
 * 存储加载单元(LSU) 包含128KB的数据缓存，每周期支持2个4字读取
 * 翻译单元(XU) 包含一个2级TLB和硬件地址翻译逻辑
@@ -180,7 +180,7 @@ z196处理器芯片有4个5.2GHz的处理器核，一共14亿晶体管。每个�
 ![Pasted image 20230926093221.png](/assets/images/z/Pasted image 20230926093221.png)
 主要有下面这些功能单元：
 * **Instruction sequence unit (ISU)**: ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetch and branch (IFB)** 和 **Instruction cache & merge (ICM)**: IFB和ICM负责取值以及进行分支预测
+* **Instruction fetch and branch (IFB)** 和 **Instruction cache & merge (ICM)**: IFB和ICM负责取指以及进行分支预测
 * **译码单元Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **存储加载单元Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **转换单元Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 
@@ -279,7 +279,7 @@ CPC系统的控制使用flexible service processors (FSPs)，FSP基于IBM Power 
 ![Pasted image 20230925175655.png](/assets/images/z/Pasted image 20230925175655.png)
 每个处理器核主要有下列功能单元组成：
 * **Instruction sequence unit (ISU)** : ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetching unit (IFU)** : 负责取值以及进行分支预测, 包含指令缓存
+* **Instruction fetching unit (IFU)** : 负责取指以及进行分支预测, 包含指令缓存
 * **Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 
@@ -392,7 +392,7 @@ z13处理器有8个处理器核，一共39.9亿晶体管,运行在5GHz；每个�
 ![Pasted image 20230925161046.png](/assets/images/z/Pasted image 20230925161046.png)
 每个处理器核主要有下列功能单元组成：
 * **Instruction sequence unit (ISU)** : ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取值以及进行分支预测, 包含指令缓存
+* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取指以及进行分支预测, 包含指令缓存
 * **Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 
@@ -517,7 +517,7 @@ z14处理器有10个处理器核，一共61亿晶体管，运行在5.2 GHz； �
 ![Pasted image 20230925112944.png](/assets/images/z/Pasted image 20230925112944.png)
 每个处理器核主要有下列功能单元组成：
 * **Instruction sequence unit (ISU)** : ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取值以及进行分支预测, 包含指令缓存
+* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取指以及进行分支预测, 包含指令缓存
 * **Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 
@@ -616,7 +616,7 @@ z15处理器是超标量乱序处理器，有十二个执行单元：
 ![Pasted image 20230923181917.png](/assets/images/z/Pasted image 20230923181917.png)
 每个处理器核主要有下列功能单元组成：
 * **Instruction sequence unit (ISU)** : ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取值以及进行分支预测, 包含指令缓存
+* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取指以及进行分支预测, 包含指令缓存
 * **Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 
@@ -720,7 +720,7 @@ z16处理器是超标量处理器，每周期可以译码6条指令，并执行1
 ![Pasted image 20230921173038.png](/assets/images/z/Pasted image 20230921173038.png)
 每个处理器核主要有下列功能单元组成：
 * **Instruction sequence unit (ISU)** : ISU实现了乱序功能，包括记录寄存器名字和指令间依赖关系，并且分发指令
-* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取值以及进行分支预测, 包含指令缓存
+* **Instruction fetch and branch (IFB)** 和 **instruction cache and merge (ICM)** : 负责取指以及进行分支预测, 包含指令缓存
 * **Instruction decode unit (IDU)** : 译码单元从IFU缓冲里获取指令并进行译码
 * **Load-store unit (LSU)** : LSU处理所有的操作数访问，包含数据缓存
 * **Translation unit (XU)** : XU 处理逻辑地址到物理地址的转换，包含*translation look-aside buffer (TLB)* 和 *Dynamic Address Translation (DAT)* 

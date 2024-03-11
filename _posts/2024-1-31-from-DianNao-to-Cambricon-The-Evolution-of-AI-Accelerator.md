@@ -297,7 +297,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 
 之所以拆分成三个片上存储，除了考虑数据局部性之外，还有加载不同数据时位宽不一样。三个片上存储都使用同一个DMA。
 ## 编程模型
-加速器内部控制模块负责从InstBuf里取值，译码，并将指令分发到所有FUs；所有FUs同步执行一样的操作。指令格式如下所示：
+加速器内部控制模块负责从InstBuf里取指，译码，并将指令分发到所有FUs；所有FUs同步执行一样的操作。指令格式如下所示：
 ![Pasted image 20240131110613.png](/assets/images/cambricon/24.png)
 每个指令分成5个槽，CM, HotBuf, ColdBuf, OutputBuf, 和FU；不同的机器学习算法通过代码生成器来生成对应的指令。
 
