@@ -10,6 +10,7 @@ tags:
 ---
 # 前言
 从2012年AlexNet引发的AI热潮，到今天已经过去10多年了，AI仍然是当前最火热的话题。寒武纪的前身是**DianNao**学术项目，起源于2012年的神经网络加速器，可以说是随着AI技术一起发展。因此，了解**DianNao**项目如何从最开始的**DianNao**神经网络专用架构，演进到通用的Cambricon指令集和加速器。这一演进历史也可以看着是AI加速器的进化之路，不仅是了解AI这10多年发展的一个窗口，更有助我们自己设计AI加速器和指令集。
+
 # 概述
 **DianNao**项目的目标是面向机器学习研究加速器架构。本项目是中科院计算所的陈云霁教授和法国Inria的Olivier Temam间的一个学术合作项目，双方为此设立了联合实验室。Temam教授和陈教授的合作始于**DianNao**, **DianNao**在ISCA-2012加速器的基础上增加了局部存储，使其可以捕捉深度神经网路的数据局部性并由此克服内存带宽的限制。DianNao加速器的设计发表于ASPLOS-2014，获得了该会议的最佳论文奖。
 
@@ -30,6 +31,7 @@ tags:
 * 第四章介绍**PuDianNao**面向的问题，硬件架构，存储结构以及编程模型
 * 第五章介绍**Cambricon**指令集，加速器原型硬件架构，存储结构以及编程模型
 * 文章最后列出了主要的参考文献
+
 # DianNao
 ## 神经网络结构
 **DianNao**是面向机器学习的加速器架构，所以，在介绍具体硬件架构之前，需要先了解要解决的问题；对于**DianNao**，解决问题局限在采用神经网络的机器学习算法。通常，这些神经网络算法由很多层组成，这些层按顺序独立执行；每层包括几个特征映射子层，分别称为输入特征映射和输出特征映射。总体而言，主要有三种层，卷积层，池化层和分类层。如下图所示：
@@ -61,6 +63,7 @@ NFU流水线由3部分组成，分别是NFU-1,NFU-2和NFU-3；其中
 NFU主要核心是将一个层分解到16x16的计算模块上，主要需要用到tiling，具体可以参考编程模型里的伪代码。
 
 NFU-3里sigmoid函数使用插值算法，同时使用一块RAM存储16段系数；因此，可以通过更新RAM里的系数来调整实现的函数。
+
 ## 存储
 加速器采用scratchpad来作为存储结构，而不是通常的缓存，因为scratchpad可以通过软件实现局部性复用，而免去缓存带来的复杂性。DianNao将存储分成三块：NBin, NBout和SB；分开存储的目的主要是降低功耗和减少数据存储的冲突；存储结构上有如下这些特性：
 * **DMA** 为了利用空间局部性，每个缓冲都实现了一个DMA；DMA请求通过指令方式发射到NBin，这些请求会被对应缓冲里的FIFO接收，当DMA完成上一个存储请求之后会按顺序处理FIFO里剩下的请求；这种方式允许提前加载缓冲来避免长时间的延迟。NBin和SB同时充当了预加载缓冲和复用缓冲，所以使用了双口SRAM。
@@ -165,8 +168,10 @@ for (int nnn = 0; nnn ¡ Nn; nnn += Tnn) { // tiling for output neurons;
 NBin一共2KB，分成64行，每行可以存储16个16位数据；而一共有8192个16位数据，即16KB，所以需要对数据按照2KB来分片。第一个指令里NBin是LOAD (从内存加载数据), 并且标记为复用；接下来一个指令里NBin是READ，因为数据保存在环形缓冲里，并且也标记为复用，因为数据切片成8份； 同时，这两条指令的NFU-2输出是NBout，所以NBout里是WRITE；而NFU-2的操作是RESET；最后，当最后一个分片数据加载完之后，NBout被设置为STORE，将256个输出通过DMA写回到内存。
 
 加速器支持单个图像或批处理，生成代码里只有CP值会变化。
+
 # **DaDianNao**
 为了支持日益扩大的神经网络模型，**DaDianNao**是一个支持扩展到64个节点的加速器架构，相比GPU，可以实现450.65倍提速，而减少150.31倍功耗。
+
 ## 神经网络结构
 和**DianNao**一样，**DaDianNao**也是针对神经网络的加速器；不过相比DianNao，除了卷积层，池化层和分类层，**DaDianNao**增加了一个局部响应归一化层。**DaDianNao**针对的神经网络结构如下所示：
 ![Pasted image 20240129140721.png](/assets/images/cambricon/5.png)
@@ -209,9 +214,11 @@ NFU流水线针对推理和训练，以及不同的神经网络层，需要不�
 数据被分割成多个256位的数据块，每个数据块包含256/16 = 16个神经元；每个节点分配4096/16/4 = 64个数据块，每个tile分配64/16 = 4个数据块，所以每个节点需要4个指令； 前面三个指令会从中间eDRAM给所有tile分发数据，同时从tile内部eDRAM里读取权重，然后将计算部分和写入到NBout；最后一个指令时，每个tile内部NFU会计算出最终的和，并进行变换计算，最后将结果写回到中间eDRAM。
 这些节点指令会将相应的控制发送到每个tile，一个节点或tile指令对一套连续的输入数据完成同一层的计算；因为同一个指令的输入数据是连续的，因此指令里只需要使用开始地址，步长和迭代次数。
 另外，不同节点以同样速度处理几乎相同的数据量，**DaDianNao**采用了computing-and forwarding的通信模式，即一个节点一旦完成计算，就可以马上处理新输入的数据；所以不需要全局同步或屏障指令。
+
 # **ShiDianNao**
 **ShiDianNao**是一个CNN加速器，放置在CMOS或CCD传感器旁边。在许多应用中，例如智能手机、安全、自动驾驶汽车，图像直接来自CMOS或CCD传感器。图像由CMOS/CCD传感器采集，发送到DRAM，然后由CPU/GPU获取以进行识别处理。CNN加速器的小尺寸使其可以将其提升到传感器旁边，并且仅将识别过程的几个输出字节（通常是图像类别）发送到DRAM或主机处理器，从而几乎完全消除了对存储器的访问。下图展示了**ShiDianNao**的应用场景：
 ![Pasted image 20240129165759.png](/assets/images/cambricon/12.png)
+
 ## 硬件架构
 **ShiDianNao**在硬件上一共有8 × 8 (64)个PEs，64 KB的NBin, 64 KB的NBout, 128 KB的SB, 和32 KB的IB； 工艺65nm，面积4.86mm^2，功耗320mw，运行在1GHz，提供194GOP/s算力；下图展示了**ShiDianNao**的物理规划版图：
 ![Pasted image 20240129170118.png](/assets/images/cambricon/13.png)
@@ -226,15 +233,19 @@ NFU流水线针对推理和训练，以及不同的神经网络层，需要不�
 
 计算单元采用16位定点，可以有效减少硬件开销，同时不会对神经网络精度产生影响。在65nm工艺下，16位定点乘法器相比32位浮点乘法器，面积小6.1倍，同时功耗少7.33倍。NFU可以从NBin/NBout和SB里同时读取权重和输入数据，并分发到不同PE；PE内部包含存储单元，可以完成PE之间的数据传输；当PE完成计算之后，NFU从PE收集数据并发送到NBin/NBout或ALU。**ShiDianNao**整体架构框图如下所示：
 ![Pasted image 20240129171434.png](/assets/images/cambricon/14.png)
+
 ### NFU
 **ShiDianNao**主要处理图像数据，所以NFU和**DianNao**上相比，为2D数据处理进行了优化。NFU由8x8个PE(Processing Element)组成2D mesh拓扑，可以高效处理2D数据。直接映射Kx × Ky个PEs (Kx × Ky核函数)来计算一个输出，受限于和函数大小不能有效的利用PE，并且会导致共享数据逻辑变得复杂；因此，**ShiDianNao**将一个输出神经元映射到一个PE，采用时分复用PE来对输入数据进行计算并输出神经元。下图展示了NFU的微架构框图：
 ![Pasted image 20240129171629.png](/assets/images/cambricon/15.png)
+
 #### PE
 对于卷积层，分类层，归一化层等，每个PE每周期可以完成一个乘加运算；PE有3个输入：一个接收控制信息，一个从SB读取权重，一个从NBin/NBout，右边PE或下边的PE读取输入数据；2个输出，一个将计算结果写入NBout/NBin; 一个用来将输入数据传输到相邻的PE。对于CNN神经网络层，每个PE会持续的累积计算输出，直到当前计算完之后才会计算下一个输出。下图展示了一个PE内部的微架构框图：
 ![Pasted image 20240129171649.png](/assets/images/cambricon/16.png)
 对于CNN网络，不同的PE计算的输出需要的输入数据有一部分时重叠的，如果每个PE都从NBin/NBout里读取数据，需要的带宽会比较大；因此为了支持数据复用，每个PE可以将自己保存的输入数据发送到左边和下边的PE；每个PE有两个FIFO，分别是FIFO-H和FIFO-V，可以临时存储输入数据；FIFO-H可以存储来自NBin/NBout和右边PE的数据，并发送到左边的PE；FIFO-V可以存储来自NBin/NBout和上面PE的数据，并发送给下面的PE。
+
 ### ALU
 NFU并不能完成CNN网络里所有计算，因此NFU之外有一个ALU，可以完成平均池化和归一化层需要除法，和tanh()，sigmoid()等卷积和池化需要的非线性激活函数。非线性激活函数采用分段线性插值实现，插值需要的线段系数提前保存在寄存器。
+
 ### NB控制器
 NB控制器可以支持NFU里数据复用和计算，对于NBin/NBout，控制器支持6个读模式和一个写模式。下图展示了NB控制器的微架构框图：
 ![Pasted image 20240130134518.png](/assets/images/cambricon/17.png)
@@ -268,6 +279,7 @@ NB控制器的写模式比较直接，在CNN神经网络模型里，一旦一个
 
 # **PuDianNao**
 **PuDianNao**, 可以对包括k-means, k-nearest neighbors, 朴素贝叶斯(naive bayes), 支持向量机(support vector machine), 线性回归(linear regression), 分类树(classification tree), 和深度神经网络(deep neural network)在内的7种机器学习进行加速。机器学习算法一般通过使用的数学模型(线性或非线性)，学习方式(监督学习或无监督学习)，训练算法(最大后验估计或梯度下降)等进行区分。但是从计算机体系结构上看，机器学习算法可以根据分解的计算原语和数据临近性来分类。通过对上述7种机器学习算法从计算原语和数据临近性上分析，**PuDianNao**在架构上，采用一个通用的ALU来执行一般操作，而对最耗时的操作卸载到专用硬件执行，实现了对多种机器学习算法的加速。
+
 ## 硬件架构
 **PuDianNao**采用65nm工艺，面积3.51mm^2，功耗596 mW，运行在1GHz，算力1056 GOP/s；相比NVIDIA K20M GPU (28nm工艺), **PuDianNao**速度上快了1.20倍，功耗降低128.41倍。下图展示了**PuDianNao**的物理版图：
 ![Pasted image 20240131104942.png](/assets/images/cambricon/21.png)
@@ -289,6 +301,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 为了减小面积和功耗，Adder, Multiplier, 和Adder tree阶段都是16位浮点运算；对于Counter, Acc, 和Misc阶段，为了避免溢出，采用32位浮点。
 
 对于机器学习里一些计算类型，比如除，条件赋值等MLU不支持的操作，会在FU里的ALU里执行。ALU里包括加法器，乘法器和除法器，以及32位和16位浮点之间转换逻辑。另外，为了支持分类树需要的对数运算，ALU可以采用泰勒展开进行近似计算。
+
 ## 存储结构
 对机器学习算法里数据局部性的分析，切片可以提高数据的局部性；另外，根据数据复用的距离，可以分成2到3类。因此，**PuDianNao**设计了三种片上存储：
 * **HotBuf** 8KB的单口SRAM，存储复用距离最近的数据
@@ -296,6 +309,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 * **OutputBuf** 8KB的双口SRAM，存储输出数据或临时数据
 
 之所以拆分成三个片上存储，除了考虑数据局部性之外，还有加载不同数据时位宽不一样。三个片上存储都使用同一个DMA。
+
 ## 编程模型
 加速器内部控制模块负责从InstBuf里取指，译码，并将指令分发到所有FUs；所有FUs同步执行一样的操作。指令格式如下所示：
 ![Pasted image 20240131110613.png](/assets/images/cambricon/24.png)
@@ -304,6 +318,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 下面表格提供了生成的 k-Means 代码的示例：
 ![Pasted image 20240131110649.png](/assets/images/cambricon/25.png)
 每个实例中的特征数为 f = 16，质心数为 k = 1024，测试实例数为 N = 65536。质心将存储在 HotBuf （8KB） 中，测试实例将存储在 ColdBuf （16KB） 中。为了隐藏DMA 内存访问，我们以乒乓球方式利用 HotBuf 和 ColdBuf。具体来说，在第一个指令中，加速器通过 DMA 从内存中加载 128 个质心 （4KB） 和 256 个测试实例 （8KB），它们分别占据了 HofBuf 和 ColdBuf 的一半。然后，加速器计算加载的质心和测试实例之间的距离。同时，另外 256 个测试实例被加载到 ColdBuf 的另一半，这些实例将由第二条指令使用。在第二条指令中，第一条指令中加载的 128 个质心将被复用，这些质心是从 HotBuf 读取的。当处理完 128 个质心和所有 65536 个测试实例之间的距离计算时（在第 256 条指令之后），将加载一个由 128 个质心组成的新块（在第 257 条指令中）。重复该过程，直到完成所有质心和测试实例之间的距离计算。
+
 # Cambricon
 由于AI模型的飞速发展，专用硬件很难适配新出现的算法；因此，通过借鉴RISC的指令集的设计原则：
 * 通过将描述神经网络的复杂指令分解成更短，更简单的指令，可以扩大加速器的应用范围；当有新的模型出现时，用户可以使用这些底层的，简单的指令来组装出新模型需要的计算
@@ -317,6 +332,7 @@ MLU分成6个流水线阶段，分别是Counter, Adder, Multiplier, Adder tree, 
 为此，开发了一个新的神经网络加速器的指令集，叫做Cambricon。Cambricon 是一种存储加载架构，其指令均为 64 位，并包含 64 个用于标量的 32 位通用寄存器 （GPR），主要用于控制和寻址目的。为了支持对向量/矩阵数据的密集、连续、可变长度的访问，并且减少面积/功耗开销，Cambricon 不使用向量寄存器文件，而是将数据保存在片上scratchpad memory。与性能受寄存器文件宽度限制的SIMD不同，Cambricon有效地支持更大和可变的数据宽度，因为片上scratchpad memory可以很容易做的比寄存器文件更宽。
 
 针对十种具有代表性的模型（MLP、CNN、RNN、LSTM、Autoencoder 、Sparse Autoencoder、BM、RBM、SOM、HNN），**Cambricon** 的代码密度比MIPS高13.38 倍、x86（9.86 倍）和 GPGPU（6.41 倍）。与**DaDianNao**（只能支持3种NN技术）相比，基于Cambricon的加速器原型带来的延迟、功耗和面积开销（分别为4.5%/4.4%/1.6%）很小。
+
 ## 硬件架构
 **Cambricon**原型加速器采用65nm工艺，面积 56.24mm^2，功耗1.695 W，运行在1GHz。下图是Cambricon原型加速器的物理版图：
 ![Pasted image 20240131161228.png](/assets/images/cambricon/26.png)
@@ -327,11 +343,13 @@ Cambricon原型加速器一共7级流水线，取指(fetch), 译码decoding, 发
 * **数据传输指令，向量/矩阵计算指令和向量逻辑指令** 这些指令可能会访问L1缓存或scratchpad memories, 因此会被发射到地址生成单元AGU(Address Generation Unit)；并且需要在顺序内存队列(in-order memory queue)里解决和前面指令可能的内存依赖关系。之后标量数据存储加载指令会发送到L1缓存；向量的数据传输，计算和逻辑运算指令会被发送到向量功能单元； 而矩阵的数据传输，计算指令会被发送到矩阵功能单元。执行完成之后，指令可以从内存队列里退休，并按序从reorder buffer里完成。
 
 向量功能单元有32个16位的加法器，32个16位的乘法器和64KB的scratchpad memory。 矩阵单元则包括1024个乘法器和1024个加法器，为了避免物理上的布线困难和搬运数据导致功耗，乘法器和加法器被分成32个单独的计算模块。每个计算模块有24KB的scratchpad。32个计算模块通过H-tree连接，可以广播数据到所有计算模块并收集输出数据。
+
 ## 存储结构
 在Cambricon原型加速器里，存在发射队列，内存队列，reorder buffer，L1缓存，以及scratchpad memory。发射队列和scratchpad memory大小如下所示：
 ![Pasted image 20240131160737.png](/assets/images/cambricon/28.png)
 为了高效访问scratchpad memories, 向量和矩阵功能单元都集成了3个DMA，每一个分别对应向量和矩阵指令里的输入和输出。另外，scratchpad memory还带有一个IO DMA。为了解决4个DMA并发的读写请求，使用地址的低两位将scratchpad memory分成4个bank，并将4个bank通过crossbar和4个DMA相连。这样避免了使用昂贵的多端口向量寄存器文件，并可以使用scratchpad memory支持灵活的数据位宽。下图展示了矩阵功能单元里的scratchpad memory的结构框图：
 ![Pasted image 20240131160635.png](/assets/images/cambricon/29.png)
+
 ## 编程模型
 **Cambricon**包含四种类型的指令：计算指令、逻辑指令、控制指令和数据传输指令。尽管不同的指令的有效位数可能不同，但指令长度固定为 64 位，以便内存对齐和简化加载/存储/解码逻辑的设计。Cambricon支持的指令集如下所示：
 ![Pasted image 20240131153032.png](/assets/images/cambricon/30.png)
