@@ -17,13 +17,12 @@ tags:
 # 概述
 
 ![0.png](/assets/images/gpgpu/0.png)
-**Transform & Lighting Engine**
-'Transforming' is the very FP-calculation intensive task to 'transform' the 3D-scene with all its objects, called 'world-space' into the 'screen-space' that we are looking at. 'Lighting' is pretty self-explanatory, it represents on optional stage in the 3D-pipeline that calculates the lighting of objects in relation to one or several light sources. Lighting is just as transforming a pretty FP-calculation intensive task. Both tasks used to be executed by the CPU, putting rather heavy strain on it. The effect was that the 3D-chip was often in the situation that it had to wait for the CPU to deliver data (e.g. CPU-limited 3D-benchmarks) and that game developers had to restrict themselves to less detailed 3D-worlds, because heavy polygon usage would have stalled the CPU.
+**变换与光照引擎（Transform & Lighting Engine）** 变换是计算密集型的任务，用于将包含所有物体的3D场景，称为'世界空间'，转换为我们正在查看的'屏幕空间'。光照是3D流水线中的一个可选阶段，该阶段根据一个或多个光源计算物体的光照。光照和变换一样，也是计算密集型的任务。这两个任务过去都由CPU执行，给CPU带来了相当大的压力。其结果是，3D芯片常常需要等待CPU提供数据（例如，CPU限制的3D基准测试），而且游戏开发者不得不将自己限制在简单的3D世界中，因为过多的多边形使用会使CPU停顿。
 ![1.png](/assets/images/gpgpu/1.png)
 
 SGI InfiniteReality InfiniteReality (1997)
 ![2.png](/assets/images/gpgpu/2.png)
-开发人员总是希望获得更大的灵活性，因此，固定功能着色器单元正在变得可编程 需要常规编程模型 更多着色器类型 顶点、几何体、像素、GPU 计算 更多指令和指令类型 分支、整数、双精度浮点 更多寄存器 更多常量 更多输入/输出 加载/存储支持 导致 GPU 计算
+开发人员总是希望获得更大的灵活性，因此，固定功能着色器单元变成可编程的； 需要常规编程模型 更多着色器类型 顶点、几何体、像素、GPU 计算 更多指令和指令类型 分支、整数、双精度浮点 更多寄存器 更多常量 更多输入/输出 加载/存储支持 导致 GPU 计算
 Developers always want more flexibility As a result, fixed-function shader units are becoming programmable Requires general programming model More shader types vertex, geometry, pixel, GPU compute More instructions and instruction types branching, integer, double precision floating point More registers More constants More inputs/outputs Load/store support Leads to GPU compute
 ![3.png](/assets/images/gpgpu/3.png)
 
@@ -35,9 +34,6 @@ Developers always want more flexibility As a result, fixed-function shader units
 	* 在固定功能的全流水线架构中，着色器阶段瓶颈会使整个流水线停滞
 	* 统一设计，实现着色器级负载均衡
 ![5.png](/assets/images/gpgpu/5.png)
-
-In 2017, we introduced the Volta GPU architecture, targeted at high-performance computing and deep-learning training in the V100 solution
-Turing builds aggressively on the foundation of Volta, bringing those advancements into the consumer GPU space. Compared to the previous consumer generation, Pascal, Turing SM has twice the instruction schedulers, simplified issue logic, and leverages a large, fast, low-latency L1 data cache
 
 # GPGPU架构和编程模型
 CUDA 提供了三个关键抽象 - 线程组的层次结构、共享内存和屏障同步 - 为层次结构中的一个线程提供了与传统 C 代码的清晰并行结构。
@@ -896,120 +892,85 @@ AMD CDNA 2 架构在采用第 3 代 AMD Infinity 架构的功能方面取得了�
 ![124.png](/assets/images/gpgpu/124.png)
 
 # Intel Ponte Vecchio
-高内存带宽和 FP64 吞吐量将其与客户端架构区分开来，后者强调 FP32 吞吐量并使用缓存来降低内存带宽需求。与 Nvidia 的 H100 和 AMD 的 MI210 相比，PVC 脱颖而出，因为它缺乏固定功能的图形硬件。H100 和 MI210 仍然具有某种形式的纹理单元，但 PVC 根本没有。再加上它缺乏显示输出，将 PVC 称为 GPU 非常有趣。它实际上是一个巨大的并行处理器，其编程方式恰好与为计算编程 GPU 的方式相同。
-High memory bandwidth and FP64 throughput differentiate it from client architectures, which emphasize FP32 throughput and use caching to reduce memory bandwidth demands. Compared to Nvidia’s H100 and AMD’s MI210, PVC stands out because it lacks fixed function graphics hardware. H100 and MI210 still have some form of texture units, but PVC doesn’t have any at all. Combine that with its lack of display outputs, and calling PVC a GPU is pretty funny. It’s really a giant, parallel processor that happens to be programmed in the same way you’d program a GPU for compute.
+与 Nvidia 的 H100 和 AMD 的 MI210 相比，PVC 没有固定功能的图形硬件，并且缺少显示输出。而H100 和 MI210 仍然具有某种形式的纹理单元。因此，将 PVC 称为 GPU 非常有趣。它实际上是一个巨大的并行处理器，其编程方式与为计算编程的 GPU 的方式相同。
 ![125.png](/assets/images/gpgpu/125.png)
-PVC 的物理设计使其更加独特，因为它是一场小芯片盛会。采用台积电 5 纳米工艺制造的计算块包含 PVC 的基本构建块，称为 Xe 内核。它们位于 640 mm2 基础块的顶部，该块包含一个巨大的 144 MB L2 缓存并使用英特尔的 7 工艺。然后，基础块充当 IO 芯片，连接到 HBM2e、PCIe 和对等 GPU。PVC 将五个不同的工艺节点组合在同一个封装中，并使用嵌入式桥接或 3D 堆叠将它们连接起来。英特尔在先进封装方面竭尽全力，使 PVC 成为一款迷人的产品。我们正在研究英特尔 GPU Max 1100，它实现了 56 个 Xe 内核，时钟频率高达 1.55 GHz。它的基本图块启用了 108 MB 的 L2 缓存，并连接到 48 GB 的 HBM2e 内存，理论带宽为 1.2 TB/s。Max 1100 是具有 300W TDP 的 PCIe 卡，使其类似于 AMD 的 MI210 和 Nvidia 的 H100 PCIe。
-PVC’s physical design makes it even more unique, because it’s a chiplet extravaganza. Compute tiles fabricated on TSMC’s 5 nm process contain PVC’s basic building blocks, called Xe Cores. They sit on top of a 640 mm2 base tile, which contains a giant 144 MB L2 cache and uses Intel’s 7 process. The base tile then acts as an IO die, connecting to HBM2e, PCIe, and peer GPUs. PVC combines five different process nodes in the same package, and connects them using embedded bridges or 3D stacking. Intel has pulled all the stops on advanced packaging, making PVC a fascinating product.
-we’re looking at the Intel GPU Max 1100, which implements 56 Xe Cores and clocks up to 1.55 GHz. Its base tile has 108 MB of L2 cache enabled, and connects to 48 GB of HBM2e memory with a theoretical 1.2 TB/s of bandwidth. The Max 1100 comes as a PCIe card with a 300W TDP, making it similar to AMD’s MI210 and Nvidia’s H100 PCIe.
+PVC 的物理设计使其更加独特，因为它是一场小芯片盛会。 PVC 的计算芯粒采用台积电 5 纳米工艺制造，基本计算单元称为 Xe 内核(Xe Core)。计算芯粒位于 640 mm^2 基础芯粒的顶部，基础芯粒包括 144 MB L2 缓存并使用英特尔的 7 工艺。然后，基础芯粒充当 IO 芯粒，连接到 HBM2e、PCIe 和对等 GPU。PVC 将五个不同的工艺节点组合在同一个封装中，并使用嵌入式桥接或 3D 堆叠将它们连接起来。英特尔在先进封装方面竭尽全力，使 PVC 成为一款迷人的产品。英特尔 GPU Max 1100实现了 56 个 Xe 内核，时钟频率高达 1.55 GHz。基本芯粒启用了 108 MB 的 L2 缓存，并连接到 48 GB 的 HBM2e 内存，理论带宽为 1.2 TB/s。Max 1100 是300W TDP 的 PCIe 卡，类似于 AMD 的 MI210 和 Nvidia 的 H100 PCIe。
 ![126.png](/assets/images/gpgpu/126.png)
-如果访问错过了 L1，他们将继续访问基本图块上的 L2。Intel 的 L2 缓存（有时称为 L3）非常庞大，标称容量为 144 MB。我们在可以访问的 SKU 上启用了 108 MB，这仍然不是开玩笑的。来自 Nvidia 的 Ada Lovelace 架构的完全启用的 AD102 芯片具有 96 MB 的 L2 缓存，而 AMD 的 RDNA 2 具有高达 128 MB 的 Infinity 缓存。这两种架构都代表了最近的趋势，即消费类 GPU 使用巨型缓存来避免异国情调的 VRAM 设置，而 PVC 的缓存牢牢地位于“巨型缓存”区域。
-If accesses miss the L1, they proceed to access L2 on the base tile. Intel’s L2 cache (sometimes called a L3) is massive, with 144 MB of nominal capacity. We have 108 MB enabled on the SKU we had access to, which is still no joke. A fully enabled AD102 die from Nvidia’s Ada Lovelace architecture has 96 MB of L2 cache, while AMD’s RDNA 2 has up to 128 MB of Infinity Cache. Both architectures represent a recent trend where consumer GPUs are using giant caches to avoid exotic VRAM setups, and PVC’s cache is firmly in the “giant cache” area.
 ![127.png](/assets/images/gpgpu/127.png)
-不幸的是，Intel 的 L2 延迟相当高，超过 286 ns。一些消费类 GPU 甚至享有较低的 VRAM 延迟。我不认为小芯片是罪魁祸首，因为 AMD CPU 上的垂直堆叠只会增加几纳秒的额外延迟。相反，我怀疑 Intel 之所以挣扎，是因为他们不习惯制造具有大缓存的大型 GPU。他们的 Arc A750 的 L2 延迟比 A380 高出近 40%，L2 容量增加了 4 倍。相比之下，从 RX 7600 的 32 MB 无限缓存到 RX 6900 XT 的 128 MB 运行时，延迟增加了 23%。具有更大缓存的更大 GPU 往往会出现更高的延迟，但 Intel 比 AMD 或 Nvidia 更难解决这个问题。
-Intel’s L2 latency unfortunately is quite high at over 286 ns. Some consumer GPUs even enjoy lower VRAM latency. I don’t think chiplets are a major culprit, since vertical stacking on AMD’s CPUs only adds a couple extra nanoseconds of latency. Rather, I suspect Intel struggled because they were not used to making big GPUs with big caches. Their Arc A750 has nearly 40% higher L2 latency than the A380 for a 4x L2 capacity increase. Contrast that with a 23% latency increase when going from the RX 7600’s 32 MB Infinity Cache to the RX 6900 XT’s 128 MB one. Larger GPUs with bigger caches tend to see higher latency, but Intel struggles with this more than AMD or Nvidia.
+如果 L1未命中，将继续访问基础芯粒上的 L2。Intel 的 L2 缓存（有时称为 L3）非常庞大，标称容量为 144 MB，一些 SKU 上启用了 108 MB。Nvidia 的 Ada Lovelace 架构的完整体 AD102 芯片有 96 MB 的 L2 缓存，而 AMD 的 RDNA 2 有高达 128 MB 的 Infinity 缓存。这两种架构都代表了最近的趋势，即消费类 GPU 使用巨型缓存来避免昂贵的 VRAM 。
+
+不幸的是，Intel 的 L2 延迟相当高，超过 286 ns。一些消费类 GPU 甚至享有较低的 VRAM 延迟。小芯片不是罪魁祸首，因为 AMD CPU 上的垂直堆叠只会增加几纳秒的额外延迟。一般具有更大缓存的更大 GPU 往往会出现更高的延迟，但 Intel 比 AMD 或 Nvidia 更难解决这个问题。
 ![128.png](/assets/images/gpgpu/128.png)
 
-最后，英特尔在 ISSCC 上的演示显示了在基本图块上实现的 TLB 以及 L2 缓存。这表明 L1 缓存实际上是寻址的，命中 L2 可能会导致地址转换延迟。我敢肯定很多 GPU 都这样做，但如果 Intel 的 TLB 查找速度很慢，它们会增加缓存延迟。高 L2 延迟乍一看似乎很糟糕，但存在应对机制。PVC 的 512 KB 大型 L1 与旧 GPU（如 Nvidia 的 GTX 680 或 AMD 的 Radeon HD 6950）上的 L2 容量一样大。它也比 AMD 的 RDNA 2 和 3 架构上的 L1 中级缓存大。Intel 的 L1 实际上既是一级缓存，又是中级缓存。与 AMD 和 Nvidia 相比，Intel 的 L2 缓存的访问量应该要少得多，因为 L1 的未命中率会更低。Finally, Intel’s presentation at ISSCC shows the TLB implemented on the base tile, alongside the L2 cache. That suggests the L1 cache is virtually addressed, and hitting the L2 may incur an address translation delay. I’m sure a lot of GPUs do this, but if Intel’s TLB lookups are slow, they would add to cache latency.
+TLB 以及 L2 缓存是在基础芯粒上实现的，因此 L1 缓存实际上是VIVT寻址的，命中 L2 可能会导致地址转换延迟。很多 GPU 都这样做，但如果 TLB 查找速度很慢，会增加缓存延迟。高 L2 延迟乍一看似乎很糟糕，但存在应对机制。PVC 的 上512 KB 的 L1 和较早之前的 GPU（如 Nvidia 的 GTX 680 或 AMD 的 Radeon HD 6950）上的 L2 容量一样大，也比 AMD 的 RDNA 2 和 3 架构上的 L1 缓存大。与 AMD 和 Nvidia 相比，Intel 的 L2 缓存的访问量应该要少得多，因为 L1 的未命中率会更低。
 
-High L2 latency may seem pretty bad at first glance, but coping mechanisms exist. PVC’s large 512 KB L1 is as large as L2 capacity on older GPUs, like Nvidia’s GTX 680 or AMD’s Radeon HD 6950. It’s also larger than the L1 mid-level caches on AMD’s RDNA 2 and 3 architectures. Intel’s L1 is really serving as both a first level cache and a mid-level cache. Compared to AMD and Nvidia, Intel’s L2 cache should see far fewer accesses because the L1 will have fewer misses.
-### Local Memory Latency
-除了对应于我们在 CPU 上所知的内存的全局内存外，GPU 还具有充当软件管理暂存器的本地内存。英特尔称之为共享本地内存 （SLM）。Nvidia 称同为共享内存，AMD 称之为本地数据共享 （LDS）。多年来，英特尔的 SLM 策略一直在变化。他们的集成图形架构首先从 iGPU 范围的缓存中分配 SLM。这导致本应是高性能内存块的延迟和低带宽，因此英特尔将 SLM 移动到子切片（Xe Core 的前身）中。PVC 通过将 SLM 与 L1 缓存合并来再次切换。PVC 中的每个 Xe Core 都由八个 512 位矢量引擎组成，每个周期可用于 16 个 32 位作。Nvidia 和 AMD 的设计已经确定在其基本构建块中使用四个分区。H100 的 SM 有四个 32 位宽的 SMSP，或者当我们考虑 32 位作时，则为 1024 位宽。MI210 的 CU 有四个 16 宽的 SIMD，它们也是 1024 位宽的，因为每个通道本身都处理 64 位作。
-Besides global memory, which corresponds to memory as we know it on a CPU, GPUs have local memory that acts as a software managed scratchpad. Intel calls Shared Local Memory (SLM). Nvidia calls the same thing Shared Memory, and AMD calls it the Local Data Share (LDS). Intel’s SLM strategy has varied throughout the years. Their integrated graphics architectures started by allocating SLM out of an iGPU-wide cache. That resulted in poor latency and low bandwidth for what should have been a high performance block of memory, so Intel moved SLM into the subslices (the predecessor to Xe Cores). PVC switches things up again by merging the SLM with the L1 cache.
+除了全局内存外，GPU 还有充当软件管理暂存器的本地内存，英特尔称之为共享本地内存 （SLM）。Nvidia 称同为共享内存(Shared Memory)，AMD 称之为本地数据共享 （LDS）。多年来，英特尔的 SLM 策略一直在变化。他们的集成图形架构首先从 iGPU 范围的缓存中分配 SLM。这导致本应是高性能内存块的大延迟和低带宽，因此英特尔将 SLM 移动到子切片（Xe Core 的前身）中。PVC 则将 SLM 与 L1 缓存合并。
 
-Each Xe Core in PVC consists of eight 512-bit vector engines, which would be good for 16 32-bit operations per cycle. Nvidia and AMD’s designs have settled on using four partitions in their basic building blocks. H100’s SMs have four 32-wide SMSPs, or 1024-bit wide when we consider 32-bit operations. MI210’s CUs have four 16-wide SIMDs, which are also 1024-bits wide because each lane natively handles 64-bit operations.
+PVC 中的每个 Xe Core 有8个 512 位向量引擎，每个周期可进行 16 个 32 位操作。Nvidia 和 AMD 的设计则使用4个分区。H100 的 SM 有4个 32 位宽的 SMSP，或者32 位操作时为 1024 位宽。MI210 的 CU 有4个 16 宽的 SIMD，也是 1024 位宽的，因为每个通道本身都处理 64 位操作。
 ![129.png](/assets/images/gpgpu/129.png)
 ![130.png](/assets/images/gpgpu/130.png)
-PVC 有很多弱点，如果英特尔想要提升性能阶梯，就必须解决这些弱点。L2 缓存和 VRAM 延迟太高了。FP64 FMA 吞吐量出奇地低，即使在微基准测试中也是如此。对于大量的芯片面积投资，PVC 无法带来足够的计算能力，即使使用 AMD 的 MI210 也是如此。考虑到这一点，Ponte Vecchio 最好被视为一种学习体验。英特尔工程师在开发 PVC 时可能获得了不同工艺节点和封装技术的大量经验。像 [TACC 的 Stampede3]（https://www.tacc.utexas.edu/news/latest-news/2023/07/24/taccs-new-stampede3-advances-nsf-supercomputing-ecosystem/） 和 [ANL 的 Aurora]（https://www.alcf.anl.gov/sites/default/files/2022-06/ALCF-Aurora_0.pdf） 超级计算机这样的 PVC 部署将为 Intel 提供真实世界的性能数据，用于调整未来的架构。最后，巨大的可扩展 L2 缓存等创新为 Xe 架构提供了独特的灵活性。
-PVC has plenty of weaknesses that Intel has to solve if they want to move up the performance ladder. L2 cache and VRAM latency are way too high. FP64 FMA throughput is curiously low, even in a microbenchmark. For the massive die area investment, PVC doesn’t bring enough compute power to draw even with AMD’s MI210.
-
-With that in mind, Ponte Vecchio is better seen as a learning experience. Intel engineers likely gained a lot of experience with different process nodes and packaging technologies while developing PVC.PVC deployments like [TACC’s Stampede3](https://www.tacc.utexas.edu/news/latest-news/2023/07/24/taccs-new-stampede3-advances-nsf-supercomputing-ecosystem/) and [ANL’s Aurora](https://www.alcf.anl.gov/sites/default/files/2022-06/ALCF-Aurora_0.pdf) supercomputers will give Intel real world performance data for tuning future architectures. Finally, innovations like a giant, expandable L2 cache give the Xe architecture unique flexibility.
+PVC 有很多弱点，L2 缓存和 VRAM 延迟太高了。FP64 FMA 吞吐量出奇地低，即使在微基准测试中也是如此。对于PVC，大量的芯片面积却没有带来足够的计算能力，即使和 AMD 的 MI210 相比。开发 PVC 时可能获得了不同工艺节点和封装技术的大量经验。
 ![131.png](/assets/images/gpgpu/131.png)
 
 
 # BR100 
-BR100 是具有两个图块的多晶粒 GPU。每个图块都有两个 HBM2E 堆栈，为 GPU 提供总共四个 HBM2E 堆栈和 64 GB 的 DRAM。tiles 和 HBM 使用 TSMC 的 CoWoS（Chip on Wafer on Substrate）封装安装在一个巨大的中介层顶部。这种先进的封装技术使 Biren 能够在两个芯片之间建立 896 GB/s 的链接。Biren 表示，GPU 采用台积电的 7nm 工艺，功耗为 1074 mm2，两个tile上都有 770 亿个晶体管，这意味着每个tile的面积为 537 mm2，有 385 亿个晶体管。BR100 以 1 GHz 运行，拉力为 550W。
-BR100 is a multi-die GPU with two tiles. Each tile has two HBM2E stacks, giving the GPU a total of four HBM2E stacks and 64 GB of DRAM. The tiles and HBM are mounted on top of a gigantic interposer using TSMC’s CoWoS (Chip on Wafer on Substrate) packaging. This advanced packaging technology lets Biren put a 896 GB/s link between the two dies. Biren says the GPU consumes 1074 mm2 on TSMC’s 7nm process and features 77 billion transistors across both tiles, meaning that each tile is 537 mm2 and has 38.5 billion transistors. BR100 runs at 1 GHz, and pulls 550W.
+BR100 是有两个芯粒的多芯粒 GPU，采用台积电的 7nm 工艺，频率1 GHz，功耗为 1074 mm2；每个芯粒的面积为 537 mm2，有 385 亿个晶体管，芯片一共有 770 亿个晶体管。每个芯粒都有两个 HBM2E ，为 GPU 提供总共四个 HBM2E 堆栈和 64 GB 的 DRAM，1.6TB/s的存储带宽。计算芯粒和 HBM 使用 TSMC 的 CoWoS（Chip on Wafer on Substrate）封装。这种先进的封装技术使 Biren 能够在两个芯片之间建立 896 GB/s 的互联。整体结构如下所示：
 ![132.png](/assets/images/gpgpu/132.png)
-Biren 还实现了大量的外部连接。GPU 通过 16 个 PCIe Gen 5 通道连接到主机系统，这些通道还支持 CXL。对等 GPU 可以通过八个“BLink”连接，每个连接提供 64 GB/s 的双向带宽。如果我们专注于片上网络，BR100 与 Sapphire Rapids （SPR） 等英特尔的服务器 CPU 有很多共同点。两者都将处理元件放在网格互连上。两者都在每个处理元件旁边实现一个缓存切片，并且可以将这些缓存切片组合成一个大型的统一缓存。此外，两种架构都通过跨芯片链接运行网格，使用先进的封装技术在芯片之间提供足够的带宽，从而实现这一目标。
-Biren has implemented plenty of external connectivity as well. The GPU connects to a host system via 16 PCIe Gen 5 lanes, which also feature CXL support. Peer GPUs can be connected via eight “BLink” connections, each of which provide 64 GB/s of bidirectional bandwidth.
-
-If we focus on the on-chip network, BR100 has a lot in common with Intel’s server CPUs like Sapphire Rapids (SPR). Both place processing elements on a mesh interconnect. Both implement a cache slice alongside each processing element, and can combine those cache slices to form a large unified cache. Also, both architectures run the mesh through cross-die links, using advanced packaging technology to provide enough bandwidth between dies to make that possible.
+GPU 通过PCIe Gen 5 x16连接到主机, 并且支持 CXL。GPU 可以通过8个“BLink”连接，每个提供 64 GB/s 的双向带宽。对于片上网络，BR100 与 Sapphire Rapids （SPR） 等英特尔的服务器 CPU 有很多共同点, 每个处理单元旁边实现一个缓存切片，并且可以将这些缓存切片组合成一个大型的统一缓存。BR100整体架构如下所示：
 ![133.png](/assets/images/gpgpu/133.png)
-R100 的网状网络连接 SPC 而不是 CPU 内核，而 SPC 更像是内核集群。SPC 的 L2 块可以配置为私有暂存器或私有缓存。BR100 的网状停止器为两个 SPC 提供服务。这个决定非常有趣，因为工程师通常将多个处理元件放在单个互连停止点上，因为他们不希望每个处理元件都需要大量的互连带宽。示例包括 Alder Lake，它将四核 Gracemont 集群放置在单个环形挡块上，以及 Ampere Altra，它将两个 Neoverse N1 内核放置在单个网状挡块上。N1 和 Gracemont 具有适中的矢量吞吐量和相对较大的 L2 缓存，这意味着它们不应该从片上网络中提取大量带宽。
-R100’s mesh connects SPCs rather than CPU cores, and SPCs are more like clusters of cores. A SPC’s block of L2 can be configured as a private scratchpad or private cache.
-BR100’s mesh stops serve two SPCs. This decision is quite interesting because engineers typically place multiple processing elements on a single interconnect stop when they don’t expect each processing element to demand a lot of interconnect bandwidth. Examples include Alder Lake, which places quad core Gracemont clusters on a single ring stop, and Ampere Altra, which places two Neoverse N1 cores on a single mesh stop. N1 and Gracemont have moderate vector throughput and relatively large L2 caches, meaning that they shouldn’t be pulling a lot of bandwidth from the on-chip network.
-但众所周知，GPU 需要大量带宽，每个 SPC 都装满了巨大的矩阵单元。Biren 可能正在使用非常宽的网状链路来处理互连流量。他们也可能使用 SPC 的大型 8 MB L2 来减少非 SPC 带宽需求。从长远来看，AMD 的 MI250X 使用 8 MB L2 为整个 GCD 提供服务，因此 BR100 在其所有 SPC 中都享有更高的缓存容量。BR100 还缺少 AMD 和 Nvidia GPU 上的几个执行单元。最明显的一个是缺乏 FP64 支持。Biren 表示，他们的目标目标是机器学习以外的 GPGPU 应用程序，但缺乏 FP64 支持肯定会将 BR100 排除在一些 HPC 应用程序之外。Biren 的演示文稿也没有提到纹理单元。NVIDIA 的 Hopper 仍然在每个 SM 中打包四个 TMU。AMD 的 CDNA2 仍然支持一些“内存图像”（纹理）指令，尽管 CDNA2 确实缺乏消费类 GPU 中的大部分纹理功能。
-But GPUs are known for being bandwidth hungry, and each SPC is packed full of gigantic matrix units. Biren is probably using very wide mesh links to handle interconnect traffic. They may also be using the SPC’s large 8 MB L2 to reduce off-SPC bandwidth demands. For perspective, AMD’s MI250X uses an 8 MB L2 to serve an entire GCD, so the BR100 enjoys much higher cache capacity across all its SPCs.
-BR100 also lacks several execution units present on AMD and Nvidia GPUs. The most obvious one is lack of FP64 support. Biren says they’re targeting GPGPU applications beyond machine learning, but lack of FP64 support will certainly exclude BR100 from some HPC applications. Biren’s presentation also made no mention of texture units. Nvidia’s Hopper still packs four TMUs in each SM. AMD’s CDNA2 still supports some “memory image” (texture) instructions, though CDNA2 does lack most of the texturing capability found in consumer GPUs.
-与 Hot Chips 34 上显示的其他 GPU 相比，BR100 上的矢量 FP32 吞吐量也略弱。每个 EU 只有 16 个矢量 FP32 通道。将低时钟与比 MI250X 高不了多少的 EU 数量相结合，我们只能获得 16 TFLOPS 的理论 FP32 吞吐量。Radeon 6900XT 可以承载更多的矢量 FP32 TFLOP，同时消耗更少的功率。与其他最新的 GPGPU 一样，BR100 使用同时提供高带宽和高内存容量的 HBM 设置。每个芯片都有两个 HBM2E 堆栈。在整个 GPU 中，BR100 的 HBM 设置提供 64 GB 的容量和 1.6 TB/s 的带宽。相比之下，GH100 的 HBM3 设置为其提供了 80 GB 的内存容量和 3 TB/s 的带宽可扩展的 CU 架构 多个 EU 形成一个 CU（计算单元） 一个 CU 中的线程组是同步的 每个 CU 可以包含 4/8/16 个 EU
-Vector FP32 throughput on BR100 is also a tad weak compared to other GPUs shown at Hot Chips 34. Each EU only has 16 vector FP32 lanes. Combine low clocks with an EU count that’s not much higher than a MI250X’s, and we only get 16 TFLOPS of theoretical FP32 throughput. A Radeon 6900XT can bring more vector FP32 TFLOPs to bear, while drawing less power.
+BR100 由 SPC 组成，SPC 的 L2 可以配置为私有暂存器或私有缓存。
 
-Like other recent GPGPUs, BR100 uses a HBM setup that provides both high bandwidth and high memory capacity. Each die has two HBM2E stacks. Across the entire GPU, BR100’s HBM setup provides 64 GB of capacity and 1.6 TB/s of bandwidth. For comparison, GH100’s HBM3 setup gives it 80 GB of memory capacity, and 3 TB/s of bandwidth
+与其他 GPU 相比，BR100 上的向量 FP32 吞吐量也略弱。每个 EU 只有 16 个向量 FP32 通道，只有 16 TFLOPS 的理论 FP32 吞吐量。
 
-Scalable CU Architecture
- Multiple EUs form a CU (compute unit)
- Thread groups in a CU are synchronized
- Each CU can contain 4/8/16 EUs
+可扩展的 CU 架构
+* 多个 EU 形成一个 CU（计算单元）
+* 一个 CU 中的线程组是同步的
+* 每个 CU 可以包含 4/8/16 个 EU
 
-张量数据加速器 （TDA）  
+
+张量数据加速器Tensor Data Accelerator (TDA)
 T 核和 V 核中的 TDA 专用于使用张量描述符加速地址计算和 OOB，TDA 通过卸载寻址开销和支持不同的张量布局来提高张量数据获取效率。
-Tensor Data Accelerator (TDA)
-TDAs in T-core and V-core are dedicated to accelerate address calculation and OOB using tensor descriptor, TDA improves tensor data fetch efficiency by offloading addressing overhead and supporting different tensor layouts.
 ![134.png](/assets/images/gpgpu/134.png)
 TF32 张量数据类型  
- E8M15，共 24 位  
-＼ 在 AI 训练中比 TF32 精确 32 倍  
- 重用 BF16 乘法器（带 1 7 尾数）并简化 T 核设计  
- 使用张量加速库时自动启动并声明为 FP32
-TF32+ Tensor Data Type
- E8M15, with 24 bits in total
- 32x more precise compared to TF32 in AI training
- To reuse BF16 multiplier (with 1+7 mantissa) and simplify T-core design
- Automatically kicked in when using tensor acceleration libraries and declared as FP32
+* E8M15，共 24 位 
+* 在 AI 训练中比 TF32 精确 32 倍  
+* 重用 BF16 乘法器（带 1 7 尾数）并简化 T 核设计  
+* 使用张量加速库时自动启动并声明为 FP32
 ![135.png](/assets/images/gpgpu/135.png)
-BR100 SPC 架构BR100 SPC 的构建块： 16 x EU（执行单元），每个 EU 有：• 16 x 流处理核心（V 核），1 x 张量引擎（T 核）• 40KB TLR（线程本地寄存器）• 4 x 交换网• TDA（张量数据加速器） 4 x 64KB L1 缓存/LSC（加载和存储缓存） 高达 8MB 的分布式 L2 缓存• 保存所有 SPC 的共享数据• 可以配置到暂存器• 内置归约引擎T 核：高级概述用于通用计算的全套 ISA 16 个内核，支持 FP32、FP16、INT32、INT16 交换网 加载/存储 数据预处理 管理具有多个同步通道的 T 核 处理 DL OPs，如 Batch Norm、ReLu 等增强的 SIMT 模型 128K 线程在 32 个 SPC 上运行 协作扭曲 超级缩放器（静态和动态）
-BR100 SPC Architecture
-Building blocks of a BR100 SPC:
- 16 x EU (execution unit), each EU has:
-• 16 x streaming processing core (V-core), 1 x tensor engine (T-core)
-• 40KB TLR (Thread Local Register)
-• 4 x SFU
-• TDA (Tensor Data Accelerator)
- 4 x 64KB L1 Cache/LSC (Load & Store Cache)
- Up to 8MB Distributed L2 Cache
-• Holds shared data for all SPCs
-• Can be configured into scratchpad
-• Built-in reduction engine
+BR100 SPC 架构：
+* 16 x EU（执行单元），每个 EU 有：
+	* 16 x 流处理核心（V 核），1 x 张量引擎（T 核）
+	* 40KB TLR（线程本地寄存器）
+	* 4 x SFU
+	* TDA（张量数据加速器）
+* 4 x 64KB L1 缓存/LSC（加载和存储缓存）
+* 高达 8MB 的分布式 L2 缓存
+	* 保存所有 SPC 的共享数据
+	* 可以配置到暂存器
+	* 内置归约引擎（Reduction Engine)
 
+T 核：
+用于通用计算的全套 ISA
+* 16 个内核，支持 FP32、FP16、INT32、INT16
+* SFU
+* 加载/存储
+* 数据预处理
+* 管理具有多个同步通道的 T 核
+* 处理 DL OPs，如 Batch Norm、ReLu 等
 
-T-core: High Level Overview
-Full set ISA for general purpose computing
- 16x cores, supporting FP32, FP16, INT32, INT16
- SFU
- Load/Store
- Data preprocessing
- Manages T-core with multiple sync channels
- Handles DL OPs like Batch Norm, ReLu, etc
-Enhanced SIMT Model
- 128K threads run on 32 SPCs
- Cooperative Warps
- Super-scaler (static and dynamic)
+增强的 SIMT 模型
+* 128K 线程在 32 个 SPC 上运行
+* 协作Warps (Cooperative Warp)
+* 超标量（静态和动态）
 ![136.png](/assets/images/gpgpu/136.png)
- 16 个 T 核，2D 收缩阵列 每个 T 核 2 组 8 x 8 点积 （dp）作（BF16 为 8x 8 x dp8 3D MMA） 相当于 64 x 64 矩阵乘法• 支持 FP32、TF32、BF16、INT16、INT8、INT4 张量格式
- 16 T-cores in a 2D systolic array
- 2 groups of 8 x 8 dot product (dp) operations per T-core (8x 8 x dp8 3D MMA for BF16)
- Equivalent to 64 x 64 Matrix Multiplication
-• Supports FP32, TF32+, BF16, INT16, INT8, INT4 tensor formats
+ 16 个 T 核，2D 脉动阵列
+ 每个 T 核 2 组 8 x 8 点积 （dp）作（BF16 时为 8x 8 x dp8 3D MMA）
+ 相当于 64 x 64 矩阵乘法
+• 支持 FP32、TF32、BF16、INT16、INT8、INT4 张量格式
 ![137.png](/assets/images/gpgpu/137.png)
-Biren 还希望将 8 个逻辑 GPU 放置在一个节点中，但采用蛮力方法并保留多对多连接。每个 BR100 GPU 与其他每个 GPU 都有一个 64 GB/s 的链接。
-Biren also wants to place eight logical GPUs within one node, but takes a brute force approach and retains all-to-all connectivity. Every BR100 GPU gets a 64 GB/s link to every other GPU.
+采用8个GPU全互联进行扩展，每个 BR100 GPU 与其他每个 GPU 互联带宽是双向64 GB/s。
 ![138.png](/assets/images/gpgpu/138.png)
-BR100 使用 16x PCIe Gen5 连接到主机。此链路支持 CXL，允许硬件缓存一致性在 CPU 和 GPU 之间工作。最后，节点外连接由连接到 PCIe 交换机的 NIC 处理。NIC 不直接连接到 GPU，因此网络流量可能由 CPU 端内存提供支持。如此高带宽的 NIC 会给 CPU 端内存带宽带来很大压力。AMD 的 CDNA2 专注于 HPC 市场，具有高 FP64 吞吐量，并且口头上支持较低的精度矩阵乘法吞吐量。Nvidia 的 Hopper 和 Intel 的 Ponte Vecchio 试图在这两个方面都发挥作用。在 BR100 中，Biren 专注于创建他们所能创建的最强大的机器学习 GPU，同时对其他 GPGPU 应用程序表示口头支持。
-BR100 uses a 16x PCIe Gen5 to connect to the host. This link has CXL support, allowing hardware cache coherency to work across the CPU and GPUs. Finally, off-node connectivity is handled by NICs connected to a PCIe switch.The NICs are not directly connected to the GPUs, so network traffic is probably backed by CPU-side memory. Such high bandwidth NICs would put a lot of pressure on CPU-side memory bandwidth.
-AMD’s CDNA2 focuses on the HPC market, with high FP64 throughput and lip service paid to lower precision matrix multiplication throughput. Nvidia’s Hopper and Intel’s Ponte Vecchio try to hit both fronts. With BR100, Biren focused on creating the most powerful machine learning GPU they could, while paying lip service to other GPGPU applications.
-结果是 GPU 在矩阵乘法吞吐量方面与 Nvidia 的 H100 基本匹配，但在其他类别中落后。但理论数字只是故事的一部分。BR100 的突出特点是独特的、类似 CPU 的缓存设置，可以提供 256 MB 的统一 L2 缓存。即使是 AMD 在 RDNA2 中的 Infinity Cache 也只有 128 MB 的大小。考虑到 BR100 较低的内存带宽和较低的最大占用率，Biren 可能希望依靠 L2 缓存来保持性能。我仍然很好奇 Biren 的网状链路是否能跟上，但有趣的是，Biren 在计算场景中使用类似 Infinity Cache 的方法，而 AMD 和 Nvidia 则更喜欢使用更小的缓存和大量的 DRAM 带宽。
-The result is a GPU that largely matches Nvidia’s H100 in matrix multiplication throughput, but falls behind in other categories. But theoretical figures are only one part of the story. BR100’s standout feature is a unique, CPU-like caching setup that can present a 256 MB unified L2 cache. Even AMD’s Infinity Cache in RDNA2 is only 128 MB in size. Considering BR100’s lower memory bandwidth and lower max occupancy, Biren is probably hoping to lean on the L2 cache to keep performance up. I’m still curious about whether Biren’s mesh links can keep up, but it’s fascinating that Biren is using an Infinity Cache like approach in the compute scene, while AMD and Nvidia have preferred to use smaller caches and a ton of DRAM bandwidth.
+节点外连接由连接到 PCIe 交换机的 NIC 处理。NIC 不直接连接到 GPU，因此网络流量可能由 CPU 端内存提供支持。如此高带宽的 NIC 会给 CPU 端内存带宽带来很大压力。
 # Reference
 1. CUDA Programming Guide Version 1.0
 2. CUDA C++ Programming Guide, Release 12.3
