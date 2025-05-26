@@ -22,25 +22,19 @@ tags:
 
 SGI InfiniteReality InfiniteReality (1997)
 ![2.png](/assets/images/gpgpu/2.png)
-开发人员总是希望获得更大的灵活性，因此，固定功能着色器单元变成可编程的； 需要常规编程模型 更多着色器类型 顶点、几何体、像素、GPU 计算 更多指令和指令类型 分支、整数、双精度浮点 更多寄存器 更多常量 更多输入/输出 加载/存储支持 导致 GPU 计算
-Developers always want more flexibility As a result, fixed-function shader units are becoming programmable Requires general programming model More shader types vertex, geometry, pixel, GPU compute More instructions and instruction types branching, integer, double precision floating point More registers More constants More inputs/outputs Load/store support Leads to GPU compute
+开发人员总是希望获得更大的灵活性，因此，固定功能着色器单元变成可编程的； 而不同工作负载对顶点处理器和像素处理器的需求也存在较大差异，因此，顶点处理器和像素处理器也逐渐从不同的计算单元演进成相同的通用计算单元，包括计算，分支等指令，以及寄存器，加载和存储等功能单元。
 ![3.png](/assets/images/gpgpu/3.png)
 
 ![4.png](/assets/images/gpgpu/4.png)
-* 独立的处理器和内存流水线
-	* 更好的内存延迟隐藏
-	* 更适合 GPU 计算
-* 统一处理器
-	* 在固定功能的全流水线架构中，着色器阶段瓶颈会使整个流水线停滞
-	* 统一设计，实现着色器级负载均衡
+
+在固定功能的全流水线架构中，着色器阶段瓶颈会使整个流水线停滞；而这种架构被称为统一处理器，可以实现着色器级负载均衡。
 ![5.png](/assets/images/gpgpu/5.png)
 
 # GPGPU架构和编程模型
-CUDA 提供了三个关键抽象 - 线程组的层次结构、共享内存和屏障同步 - 为层次结构中的一个线程提供了与传统 C 代码的清晰并行结构。
-当主机 CPU 上的 CUDA 程序调用内核网格时，CWD（计算工作分配）单元枚举网格的块并开始将它们分发给具有可用执行能力的 SM。线程块的线程在一个 SM 上并发执行。当线程块终止时，CWD 单元会在空出的多处理器上启动新块。
-CUDA provides three key abstractions—a hierarchy of thread groups, shared memories, and barrier synchronization—that provide a clear parallel structure to conventional C code for one thread of the hierarchy.
-When a CUDA program on the host CPU invokes a kernel grid, the CWD (compute work distribution) unit enumerates the blocks of the grid and begins distributing them to SMs with available execution capacity. The threads of a thread block execute concurrently on one SM. As thread blocks terminate, the CWD unit launches new blocks on the vacated multiprocessors.
-SM 由 8 个标量 SP 内核、2 个用于超验的 SFU（特殊功能单元）、1 个 MT IU（多线程指令单元）和片上共享存储器组成。SM 在硬件中创建、管理和执行多达 768 个并发线程，调度开销为零。它可以同时执行多达 8 个 CUDA 线程块，受线程和内存资源的限制。SM 通过单个指令实现 CUDA __syncthreads（）__ 屏障同步。快速屏障同步与轻量级线程创建和零开销线程调度一起有效地支持非常细粒度的并行性，允许创建一个新线程来计算每个顶点、像素和数据点。
+CUDA 提供了三个关键抽象 - 线程组的层次结构、共享内存和屏障同步 - 为层次结构中的一个线程提供适用传统 C 代码的清晰并行结构。
+当主机 CPU 上的 CUDA 程序调用内核网格(kernel grid)时，CWD（计算工作分配单元compute work distribution unit）枚举网格块并将它们分发给可执行的 SM。线程块(thread block)的线程在一个 SM 上并发执行。当线程块结束时，CWD 单元会在空闲的SM上启动新的线程块。
+
+以Tesla为例，一个SM 由 8 个标量 SP 内核、2 个用于超越函数的 SFU（特殊功能单元）、1 个 MT IU（多线程指令单元）和片上共享存储器组成。SM 在硬件中创建、管理和执行多达 768 个并发线程，调度开销为零。它可以同时执行多达 8 个 CUDA 线程块，受线程和内存资源的限制。SM 通过单个指令实现 CUDA __syncthreads（）__ 屏障同步。快速屏障同步与轻量级线程创建和零开销线程调度一起有效地支持非常细粒度的并行性，允许创建一个新线程来计算每个顶点、像素和数据点。
 An SM consists of eight scalar SP cores, two SFUs (special function units) for transcendentals, an MT IU (multithreaded instruction unit), and on-chip shared memory. The SM creates, manages, and executes up to 768 concurrent threads in hardware with zero scheduling overhead. It can execute as many as eight CUDA thread blocks concurrently, limited by thread and memory resources. The SM implements the CUDA __syncthreads()__ barrier synchronization intrinsic with a single instruction. Fast barrier synchronization together with lightweight thread creation and zero-overhead thread scheduling efficiently support very fine-grained parallelism, allowing a new thread to be created to compute each vertex, pixel, and data point.
 SM 将每个线程映射到一个 SP 标量核心，每个标量线程使用自己的指令地址和寄存器状态独立执行。SM SIMT 单元以 32 个并行线程（称为经线）为一组创建、管理、调度和执行线程。组成 SIMT 翘曲的各个线程从同一程序地址一起开始，但除此之外可以自由地独立分支和执行。每个 SM 管理一个 24 个 warp 池，每个 warp 32 个线程，总共 768 个线程。
 The SM maps each thread to one SP scalar core, and each scalar thread executes independently with its own instruction address and register state. The SM SIMT unit creates, manages, sched-ules, and executes threads in groups of 32 parallel threads called warps.Individual threads composing a SIMT warp start together at the same program address but are otherwise free to branch and execute independently. Each SM manages a pool of 24 warps of 32 threads per warp, a total of 768 threads.
@@ -56,8 +50,8 @@ Tesla 加载/存储内存指令使用整数字节寻址来促进传统的编译�
 程序通过调用 CUDA 运行时（例如 cudaMalloc（） 和 cudaFree（））来管理内核可见的全局内存空间。内核可以在物理上独立的设备上执行，就像在 GPU 上运行内核时一样。因此，应用程序必须使用 cudaMemcpy（） 在分配的空间和主机系统内存之间复制数据。
 Tesla load/store memory instructions use integer byte addressing to facilitate conventional compiler code optimizations. The large thread count in each SM, together with support for many outstanding load requests, helps to cover load-to-use latency to the external DRAM. The latest Tesla-architecture GPUs also provide atomic read-modify-write memory instructions, facilitating parallel reductions and parallel-data structure management.
 A program manages the global memory space visible to kernels through calls to the CUDA runtime, such as cudaMalloc() and cudaFree(). Kernels may execute on a physically separate device, as is the case when running kernels on the GPU. Consequently, the application must use cudaMemcpy() to copy data between the allocated space and the host system memory.
-线程块的并发线程表示细粒度数据和线程并行性。网格的独立线程块表示粗粒度数据并行性。独立网格表示粗粒度任务并行性。内核只是层次结构中一个线程的 C 代码。
-The concurrent threads of a thread block express fine-grained data and thread parallelism. The independent thread blocks of a grid express coarsegrained data parallelism. Independent grids express coarse-grained task parallelism. A kernel is simply C code for one thread of the hierarchy.
+线程块(thread block)的并发线程表示细粒度数据和线程并行性。网格(grid)的独立线程块表示粗粒度数据并行性。独立网格表示粗粒度任务并行性。内核(kernel)只是层次结构中一个线程的 C 代码。
+
 # NVIDIA
 ## GeForce 256 ( NV10 )
 1999年，Nvidia推出GeForce 256，在此之前，基本上所有显卡都被称为“图形加速器”或简称为“显卡”。GeForce 256中加入了几项新功能，包括之前由CPU执行的Transform & Lighting（变换和照明）处理。为了和之前图形加速器做区别，NVIDIA将其称为“GPU”。GeForce 256采用220 nm工艺，工作频率为 120 MHz，支持32 - 64MB的SDRAM。下图展示了GeForce 256物理版图：
