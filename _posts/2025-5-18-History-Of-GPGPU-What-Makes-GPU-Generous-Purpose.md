@@ -923,60 +923,49 @@ PVC 有很多弱点，L2 缓存和 VRAM 延迟太高了。FP64 FMA 吞吐量出�
 
 
 # 5 BR100 
-BR100 是有两个芯粒的多芯粒 GPU，采用台积电的 7nm 工艺，频率1 GHz，功耗为 1074 mm2；每个芯粒的面积为 537 mm2，有 385 亿个晶体管，芯片一共有 770 亿个晶体管。每个芯粒都有两个 HBM2E ，为 GPU 提供总共四个 HBM2E 堆栈和 64 GB 的 DRAM，1.6TB/s的存储带宽。计算芯粒和 HBM 使用 TSMC 的 CoWoS（Chip on Wafer on Substrate）封装。这种先进的封装技术使 Biren 能够在两个芯片之间建立 896 GB/s 的互联。整体结构如下所示：
+BR100 是由两个芯粒组成的多芯粒 GPU，采用台积电的 7nm 工艺，频率1 GHz，功耗为550W；每个芯粒的面积为 537 mm2，有 385 亿个晶体管，芯片一共有 770 亿个晶体管。每个芯粒有两个 HBM2E ，为 GPU 提供总共四个 HBM2E 堆栈和 64 GB 的 DRAM，1.6TB/s的存储带宽。计算芯粒和 HBM 使用 TSMC 的 CoWoS（Chip on Wafer on Substrate）封装，芯粒间 896 GB/s 的互联带宽。整体结构如下所示：
 ![132.png](/assets/images/gpgpu/132.png)
 GPU 通过PCIe Gen 5 x16连接到主机, 并且支持 CXL。GPU 可以通过8个“BLink”连接，每个提供 64 GB/s 的双向带宽。对于片上网络，BR100 与 Sapphire Rapids （SPR） 等英特尔的服务器 CPU 有很多共同点, 每个处理单元旁边实现一个缓存切片，并且可以将这些缓存切片组合成一个大型的统一缓存。BR100整体架构如下所示：
 ![133.png](/assets/images/gpgpu/133.png)
-BR100 由 SPC 组成，SPC 的 L2 可以配置为私有暂存器或私有缓存。
-
-与其他 GPU 相比，BR100 上的向量 FP32 吞吐量也略弱。每个 EU 只有 16 个向量 FP32 通道，只有 16 TFLOPS 的理论 FP32 吞吐量。
-
-可扩展的 CU 架构
-* 多个 EU 形成一个 CU（计算单元）
-* 一个 CU 中的线程组是同步的
-* 每个 CU 可以包含 4/8/16 个 EU
-
-
-张量数据加速器Tensor Data Accelerator (TDA)
-T 核和 V 核中的 TDA 专用于使用张量描述符加速地址计算和 OOB，TDA 通过卸载寻址开销和支持不同的张量布局来提高张量数据获取效率。
-![134.png](/assets/images/gpgpu/134.png)
-TF32 张量数据类型  
-* E8M15，共 24 位 
-* 在 AI 训练中比 TF32 精确 32 倍  
-* 重用 BF16 乘法器（带 1 7 尾数）并简化 T 核设计  
-* 使用张量加速库时自动启动并声明为 FP32
-![135.png](/assets/images/gpgpu/135.png)
-BR100 SPC 架构：
-* 16 x EU（执行单元），每个 EU 有：
-	* 16 x 流处理核心（V 核），1 x 张量引擎（T 核）
-	* 40KB TLR（线程本地寄存器）
-	* 4 x SFU
-	* TDA（张量数据加速器）
-* 4 x 64KB L1 缓存/LSC（加载和存储缓存）
+BR100 计算单元由 SPC(Streaming Processing Cluster) 组成，SPC 的 L2 可以配置为私有暂存器(Scratchpad)或私有缓存。BR100 SPC 主要包括：
+* 16 个EU（执行单元），每个 EU 有：
+	* 16 个流处理核心（V 核）
+	* 1 个张量引擎（T 核）
+	* 40KB TLR（线程本地寄存器， Thread Local Register）
+	* 4 个SFU
+	* TDA（张量数据加速器， Tensor Data Accelerator）
+* 4 个64KB L1 缓存/LSC（加载和存储缓存）
 * 高达 8MB 的分布式 L2 缓存
 	* 保存所有 SPC 的共享数据
-	* 可以配置到暂存器
+	* 可以配置为暂存器(Scratchpad)
 	* 内置归约引擎（Reduction Engine)
 
-T 核：
-用于通用计算的全套 ISA
-* 16 个内核，支持 FP32、FP16、INT32、INT16
+TDA 专用于使用张量描述符加速地址计算和 OOB，TDA 通过卸载寻址开销和支持不同的张量布局来提高张量数据获取效率。
+![134.png](/assets/images/gpgpu/134.png)
+
+V核支持通用计算的全套 ISA，支持 FP32、FP16、INT32、INT16，包括下列功能单元：
 * SFU
 * 加载/存储
 * 数据预处理
 * 管理具有多个同步通道的 T 核
-* 处理 DL OPs，如 Batch Norm、ReLu 等
+* 处理如 Batch Norm、ReLu 等运算
 
-增强的 SIMT 模型
-* 128K 线程在 32 个 SPC 上运行
+BR100支持增强的 SIMT 模型
+* 128K 个线程在 32 个 SPC 上运行
 * 协作Warps (Cooperative Warp)
-* 超标量（静态和动态）
+![135.png](/assets/images/gpgpu/135.png)
+与其他 GPU 相比，BR100 上的向量 FP32 较弱。每个 EU 只有 16 个向量 FP32 通道，只有 16 TFLOPS 的理论 FP32 吞吐量。
+
+一个SPC有16 个 T 核，形成2D 脉动阵列；每个 T 核有 2 组 8 x 8 点积 （dp）阵列（BF16 时为 8x 8 x dp8 3D MMA），相当于 64 x 64 矩阵乘法；支持 FP32、TF32、BF16、INT16、INT8、INT4 张量格式。
 ![136.png](/assets/images/gpgpu/136.png)
- 16 个 T 核，2D 脉动阵列
- 每个 T 核 2 组 8 x 8 点积 （dp）作（BF16 时为 8x 8 x dp8 3D MMA）
- 相当于 64 x 64 矩阵乘法
-• 支持 FP32、TF32、BF16、INT16、INT8、INT4 张量格式
+
+Biren设计了TF32+ 张量数据类型 ，宣称在 AI 训练中比 TF32 精确 32 倍  ，
+* E8M15，共 24 位 
+* 重用 BF16 乘法器（带 1+7 尾数）并简化 T 核设计  
+* 使用张量加速库时自动启动并声明为 FP32
 ![137.png](/assets/images/gpgpu/137.png)
+
+
 采用8个GPU全互联进行扩展，每个 BR100 GPU 与其他每个 GPU 互联带宽是双向64 GB/s。
 ![138.png](/assets/images/gpgpu/138.png)
 节点外连接由连接到 PCIe 交换机的 NIC 处理。NIC 不直接连接到 GPU，因此网络流量可能由 CPU 端内存提供支持。如此高带宽的 NIC 会给 CPU 端内存带宽带来很大压力。
