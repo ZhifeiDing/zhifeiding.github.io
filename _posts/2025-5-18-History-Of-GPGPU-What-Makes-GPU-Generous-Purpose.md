@@ -204,7 +204,7 @@ cudaMemcpy2D()
 2010年, NVIDIA推出Ferimi架构GF100，采用台积电 40nm 工艺， 有 30 亿晶体管，支持384位的GDDR5内存接口。下图展示了GF100的物理规划图：
 ![24.png](/assets/images/gpgpu/24.png)
 
-Fermi实现了IEEE 754-2008，并显著提高了双精度性能，并且为了提高大规模 GPU 计算的可行性和可靠性，内存使用纠错码 （ECC） 保护、采用64 位统一寻址、缓存内存层次结构以及针对 C、Cpp、Fortran、OpenCL 和 DirectCompute 的指令。为了说明 GPU 计算架构，下图显示了配置了 16 个SM的第三代 Fermi 计算架构
+Fermi实现了IEEE 754-2008，并显著提高了双精度性能，并且为了提高大规模 GPU 计算的可行性和可靠性，内存使用纠错码 （ECC） 保护、采用64 位统一寻址、缓存内存层次结构以及针对 C、Cpp、Fortran、OpenCL 和 DirectCompute 的指令。为了说明 GPU 计算架构，下图显示了配置了 16 个SM的第三代 Fermi 计算架构：
 
 ![25.png](/assets/images/gpgpu/25.png)每个SM有 32 个 CUDA 核，总共 512 个。GigaThread 工作调度器将 CUDA 线程块分发给可用的SM，动态平衡 GPU 上的计算工作负载，并在适当的时候并行运行多个核函数。SM调度和执行 CUDA 线程块和单个线程。每个SM可执行多达 1,536 个并发线程，来掩藏DRAM 内存加载的长延迟。为了平衡了其并行计算能力，GPU使用专门的并行内存。Fermi GPU 有 6 个高速 GDDR5 DRAM 接口，每个接口 64 位。其 40 位地址可处理高达 1 TB 的地址空间。
 
@@ -219,9 +219,9 @@ CUDA线程块包括一个或多个warp。每个 Fermi SM都有两个 warp 调度
 CUDA 核每个时钟可以执行一个标量浮点或整数指令。SM有 32 个CUDA 核，每个时钟可以执行32 个算术线程指令。整数单元实现32位精度标量整数运算，包括32位乘法和乘加运算，并支持64位整数运算。Fermi整数单元增加了位域插入和提取、位反转和计数功能。Fermi CUDA 核浮点单元实现了 IEEE 754-2008 浮点运算标准，用于 32 位单精度和 64 位双精度结果，包括融合乘加 （FMA） 指令。FMA 通过在中间乘积和加法中保持完全精度，然后将最终总和四舍五入以形成结果，从而在不损失精度的情况下计算 D = A * B + C。
 
 ### 内存结构
-Fermi引入了一个用于加载、存储和原子访问的并行的缓存内存层次结构。SM的加载/存储单元执行加载、存储和原子内存访问指令。32 个活动线程的warp提供 32 个单独的字节地址，指令访问每个内存地址。加载/存储单元将 32 个单独的线程访问合并为最少数量的内存块访问。Fermi 引入了可配置容量的 L1 缓存，以帮助不可预测或不规则的内存访问，以及可配置容量共享内存。每个SM具有 64 KB 的片上存储，可配置为 48 KB 共享存储和 16 KB L1 缓存，或 16 KB 共享存储和 48 KB L1 缓存。
+Fermi引入了一个用于加载、存储和原子访问的并行的缓存内存层次结构。SM的加载/存储单元执行加载、存储和原子内存访问指令。32 个活动线程的warp提供 32 个单独的字节地址的指令访问内存。加载/存储单元将 32 个单独的线程访问合并为最少数量的内存块访问。Fermi 引入了可配置容量的 L1 缓存，以帮助不可预测或不规则的内存访问，以及可配置容量共享内存。每个SM有 64 KB 的片上存储，可配置为 48 KB 共享存储和 16 KB L1 缓存，或 16 KB 共享存储和 48 KB L1 缓存。
 
-所有SM共享768 KB 统一L2缓存。L2 缓存与 6 个 64 位 DRAM 接口和 PCIe 接口连接，PCIe 接口与主机 CPU、系统内存和 PCIe 设备连接。可以缓存通过PCIe接口访问的DRAM内存位置和系统内存页。统一的 L2 缓存负责来自SM的加载、存储、原子和纹理指令，以及来自 L1 缓存的请求，并填充SM指令缓存和统一数据缓存。
+所有SM共享768 KB 统一L2缓存。L2 缓存与 6 个 64 位 DRAM 接口和 PCIe 接口连接，PCIe 接口与主机 CPU、系统内存和 PCIe 设备连接。L2可以缓存通过PCIe接口访问的DRAM内存位置和系统内存页。统一的 L2 缓存负责来自SM的加载、存储、原子和纹理指令，以及来自 L1 缓存的请求，并填充SM指令缓存和统一数据缓存。
 ## 2.7 Kepler
 2012年，NVIDIA 发布Kepler 架构，GK110 GPU采用台积电的 28 纳米工艺制造，面积 561 mm²，晶体管数量为 70.8 亿个。GK110物理版图如下所示：
 ![27.png](/assets/images/gpgpu/27.png)
@@ -229,73 +229,74 @@ Fermi引入了一个用于加载、存储和原子访问的并行的缓存内存
 GK110 包括5个GPC，15 个 SMX 单元和 6 个 64 位内存控制器，
 ![28.png](/assets/images/gpgpu/28.png)
 Kepler相对上一代，主要增加下列功能：  
-* **动态并行性(Dynamic Parallelism)** 增加了 GPU 生成新任务、同步结果以及通过专用的硬件加速路径控制该任务调度的功能，所有这些都不涉及 CPU。通过在程序执行过程中提供灵活性，适应并行数量和形式，程序员可以利用更多的并行性，更有效地利用 GPU。此功能允许结构化程度较低、更复杂的任务轻松有效地运行，从而使应用程序的大部分内容能够完全在 GPU 上运行。Fermi在内核启动时要知道问题的规模和参数，所有工作都是从主机 CPU 启动的，将运行到完成，并将结果返回给 CPU。在 Kepler 中，任何kernel都可以启动另一个kernel，并且可以创建必要的流、事件并管理处理额外工作所需的依赖项，而无需主机 CPU 交互。
-	![[Pasted image 20230928103829.png]]
+* **动态并行性(Dynamic Parallelism)** 增加了 GPU 生成新任务、同步结果以及通过专用的硬件加速路径控制该任务调度的功能，所有这些都不涉及 CPU。通过在程序执行过程中提供灵活性，适应并行数量和形式，程序员可以利用更多的并行性，更有效地利用 GPU。此功能允许结构化程度较低、更复杂的任务轻松有效地运行，从而使应用程序的大部分内容能够完全在 GPU 上运行。Fermi在kernel启动时要知道问题的规模和参数，所有工作都是从主机 CPU 启动的，将运行到完成，并将结果返回给 CPU。在 Kepler 中，任何kernel都可以启动另一个kernel，并且可以创建必要的流、事件并管理处理额外工作所需的依赖项，而无需主机 CPU 交互。
+
+![29.png](/assets/images/gpgpu/29.png)
+	
 * **Hyper-Q** Fermi支持从不同流启动16 路并发，但最终这些流在同一个硬件工作队列中多路复用。这会导致错误的流内依赖关系，要求一个流中的依赖kernel完成，然后才能执行其他流中的其他kernel。虽然可以通过使用广度优先的启动顺序在一定程度上缓解，但随着项目复杂性的增加，越来越难以有效管理。Kepler 通过其 Hyper-Q 改进了此功能。Hyper-Q 允许 32 个硬件管理连接（ Fermi 提供的单个连接），增加主机和 GPU 中 CUDA 工作分发器 （CWD） 逻辑之间的连接总数（工作队列）。Hyper-Q 允许从多个 CUDA 流、多个消息传递接口 （MPI） 进程，甚至从进程中的多个线程进行连接。以前遇到跨任务错误串行化从而限制 GPU 利用率的应用程序可以在不更改任何现有代码的情况下将性能提高多达 32 倍。每个 CUDA 流都在自己的硬件工作队列中进行管理，优化了流间依赖关系，一个流中的操作将不再阻塞其他流，使流可以并发执行，而无需专门定制启动顺序以消除可能的错误依赖。在基于 MPI 的并行计算机系统中Hyper-Q 具有显著优势。传统的基于 MPI 的算法通常在多核 CPU 系统上运行，分配给每个 MPI 进程的工作量会相应地缩放。这可能会导致单个 MPI 进程的工作量不足，无法完全占用 GPU。虽然多个 MPI 进程可以共享一个 GPU，但这些进程可能会因错误的依赖关系而成为瓶颈。Hyper-Q 消除了这些错误的依赖关系，大大提高了 MPI 进程之间 GPU 共享的效率
-	![[Pasted image 20230928105454.png]]
-* **网格管理单元(Grid Management Unit)** Kepler 引入的新功能，例如 CUDA 内核能够通过动态并行直接在 GPU 上启动工作，这要求 Kepler 中的 CPU 到 GPU 工作流程提供比 Fermi 设计更多的功能。在 Fermi 上，一个线程块网格将由 CPU 启动，并始终运行到完成，通过 CUDA 工作分配器CWD （CUDA Work Distributor）创建从主机到 SM 的简单单向工作流。Kepler 允许 GPU 有效地管理 CPU 和 CUDA 创建的工作负载，从而改进了 CPU 到 GPU 的工作流程。Kepler可以像 Fermi 一样从 CPU 启动网格，但 CUDA 也可以在 Kepler SMX 单元中以编程方式创建新的网格。为了管理 CUDA 创建的网格和主机发起的网格，Kepler 中引入了一个新的网格管理单元GMU（Grid Management Unit）。该控制单元管理传递到 CWD 以发送到 SMX 单元执行的网格并确定其优先级。Kepler的CWD中保存已经准备好调度的网格，最多调度32个活动网格，这是Fermi CWD容量的两倍。Kepler CWD 通过双向链路与 GMU 通信，允许 GMU 暂停新网格的调度，并保留待处理和暂停的网格，直到需要。GMU 还与 Kepler SMX 单元直接连接，以允许通过动态并行在 GPU 上启动额外工作的网格并将新工作发送回 GMU，以便进行优先级排序和调度。如果调度额外工作负载的内核暂停，GMU 将使其保持非活动状态，直到相关工作完成
-	![[Pasted image 20230928103312.png]]
+![30.png](/assets/images/gpgpu/30.png)
+* **网格管理单元(Grid Management Unit)** Kepler 引入的新功能，例如 CUDA 内核能够通过动态并行直接在 GPU 上启动工作，这要求 Kepler 中的 CPU 到 GPU 工作流程提供比 Fermi 设计更多的功能。在 Fermi 上，一个线程块网格将由 CPU 启动，从运行到完成，通过 CUDA 工作分配器CWD （CUDA Work Distributor）创建从主机到 SM 的简单单向工作流。Kepler 允许 GPU 有效地管理 CPU 和 CUDA 创建的工作负载，从而改进了 CPU 到 GPU 的工作流程。Kepler可以像 Fermi 一样从 CPU 启动网格，但 CUDA 也可以在 Kepler SMX 单元中以编程方式创建新的网格。为了管理 CUDA 创建的网格和主机发起的网格，Kepler 中引入了一个新的网格管理单元GMU（Grid Management Unit）。该控制单元管理传递到 CWD 以发送到 SMX 单元执行的网格并确定其优先级。Kepler的CWD中保存已经准备好调度的网格，最多调度32个活动网格，这是Fermi CWD容量的两倍。Kepler CWD 通过双向链路与 GMU 通信，允许 GMU 暂停新网格的调度，并保留待处理和暂停的网格，直到需要。GMU 还与 Kepler SMX 单元直接连接，以允许通过动态并行在 GPU 上启动额外工作的网格并将新工作发送回 GMU，以便进行优先级排序和调度。如果调度额外工作负载的内核暂停，GMU 将使其保持非活动状态，直到相关工作完成
+![31.png](/assets/images/gpgpu/31.png)
 * **NVIDIA GPUDirect** GPUDirect使位于网络上的不同服务器中的 GPU 能够无需经过 CPU的内存直接交换数据。GPUDirect 中的 RDMA 功能允许第三方设备（如 SSD、NIC 和 IB 适配器）直接访问同一系统中多个 GPU 上的内存，从而显著降低到GPU 内存的MPI发送和接收消息的延迟，并且减少了对系统内存带宽的需求，释放了 GPU DMA 引擎供其他 CUDA 任务使用
-	![[Pasted image 20230928102821.png]]
+![32.png](/assets/images/gpgpu/32.png)
 
 下表列出了Fermi和Kepler GPU的计算能力的对比：
-![29.png](/assets/images/gpgpu/29.png)
+![33.png](/assets/images/gpgpu/33.png)
 ### Streaming Multiprocessor (SMX)
 SMX包含192 个单精度 CUDA 核、64 个双精度单元、32 个特殊功能单元 （SFU） 和 32 个加载/存储单元 （LD/ST）。
-![30.png](/assets/images/gpgpu/30.png)
-每个CUDA核有完全流水线的浮点和整数算术逻辑单元。SMX 单元中的计算核使用 GPU 主时钟，而不是 2x 着色器时钟。2x 着色器时钟是在 G80 Tesla 架构 GPU 中引入的，并用于所有后续的 Tesla 和 Fermi 架构 GPU。以更高的时钟速率运行执行单元允许芯片以更少的执行单元实现给定的目标吞吐量，这本质上是一种面积优化，但更快的时钟逻辑更耗电。
+![34.png](/assets/images/gpgpu/34.png)
+每个CUDA核有完整流水线的浮点和整数算术逻辑单元。SMX 单元中的计算核使用 GPU 主时钟，而不是 2x 着色器时钟。2x 着色器时钟是在 G80 Tesla 架构 GPU 中引入的，并用于所有后续的 Tesla 和 Fermi 架构 GPU。以更高的时钟速率运行执行单元允许芯片以更少的执行单元实现给定的目标吞吐量，这本质上是一种面积优化，但更快的时钟逻辑更耗电。
 
 SMX 以 32 个并行线程组作为一个warp来调度。每个 SMX 有 4 个 warp 调度器和 8 个指令分发单元，允许同时发射和执行 4 个 warp。4 个 warp 调度器每周期选择选择四个warp，每个warp分发两个独立的指令。Fermi不支持双精度指令与其他指令配对，但是Kepler允许双精度指令与其他指令配对。
-![31.png](/assets/images/gpgpu/31.png)
+![35.png](/assets/images/gpgpu/35.png)
 Kelper和Fermi的调度器都包含类似的硬件单元来处理调度功能，包括：
 a） 用于纹理和加载等长延迟操作的寄存器记分板
 b） warp间调度决策，用于在符合条件的候选者中选择最优的warp
 c） 用于线程块级调度的GigaThread 引擎
 
 然而，Fermi的调度器还包含一个复杂的硬件阶段，以防止数据路径本身的数据冒险。多端口寄存器记分板跟踪任何尚未准备好有效数据的寄存器，依赖关系检查器模块根据记分板分析大量完全解码的warp指令的寄存器使用情况，以确定哪些符合发射条件。对于 Kepler，这些信息都是确定的（计算流水线延迟是不变的），因此编译器可以预先确定指令何时准备好发出，并在指令本身中提供这些信息。因此可以用一个简单的硬件模块替换几个复杂且功耗高的模块；该模块提取预先确定的延迟信息，并在warp间调度时使用这些信息来屏蔽warp。
-![32.png](/assets/images/gpgpu/32.png)
+![36.png](/assets/images/gpgpu/36.png)
 
 在GK110中，一个线程可以访问的寄存器数量增加了四倍，每个线程可以访问多达255个寄存器。
 
 为了进一步提高性能，Kepler 实现了一个新的 Shuffle 指令，允许 warp 中的线程共享数据。之前，warp中的线程需要单独的存储和加载操作才能通过共享内存传递数据。使用 Shuffle 指令，warp中的线程可以以任何可以想象的排列方式从warp中的其他线程读取值。Shuffle 支持任意索引引用 - 即从任何其他线程读取任何线程。有用的随机排序子集，包括下一个线程（向上或向下偏移固定量）和warp中线程之间的异或“蝴蝶”样式排列，也可作为 CUDA 内部函数使用。与共享内存相比，Shuffle 存储和加载操作只需一步即可执行。Shuffle 还可以减少每个线程块所需的共享内存量，因为在 warp 级别交换的数据永远不需要放在共享内存中。
-![33.png](/assets/images/gpgpu/33.png)
+![37.png](/assets/images/gpgpu/37.png)
 原子内存操作在并行编程中非常重要，支持并发线程对共享数据结构正确执行读-修改-写操作。原子操作（如 add、min、max 和 compare-and-swap）的读取、修改和写入操作的执行不能被其他线程中断。原子内存操作广泛用于并行排序、reduction和并行数据结构，而无需串行化线程执行的锁。与Fermi相比，Kepler GK110/210上的全局内存原子操作的吞吐量提高了 9 倍。Kepler GK110 还扩展了对全局内存中 64 位原子操作的原生支持。除了 `atomicAdd`、`atomicCAS` 和 `atomicExch`之外，GK110 还支持`atomicMin` ，`atomicMax`, `atomicAnd`, `atomicOr`, `atomicXor`。不支持的其他原子操作（例如，64 位浮点原子）可以使用比较和交换 （CAS） 指令进行模拟。
 
 ### 内存结构
 Kepler的内存层次结构与 Fermi类似。Kepler 架构支持用于加载和存储的统一内存请求路径，每个 SMX 有一个 L1 缓存。Kepler GK110 还支持编译器直接使用额外的新缓存来存储只读数据。
-![34.png](/assets/images/gpgpu/34.png)
+![38.png](/assets/images/gpgpu/38.png)
 在 Kepler GK110 架构中，与上一代 Fermi 架构一样，每个 SMX 都有 64 KB 的片上存储，可以配置为 48 KB 共享存储和 16 KB 的 L1 缓存，或 16 KB 的共享存储和 48 KB 的 L1 缓存；另外，Kepler 还支持共享内存和 L1 缓存之间分配 32KB / 32KB，从而在配置共享内存和 L1 缓存的分配方面具有更大的灵活性。为了支持每个 SMX 单元的吞吐量增加，与 Fermi SM 相比，64b 和更大加载操作的共享内存带宽也增加了一倍，达到每个内核时钟 256B。对于 GK210 架构，可配置内存总量翻了一番，达到 128 KB，最多允许 112 KB 共享内存和 16 KB 的 L1 缓存。其他可能的内存配置包括 32 KB L1 缓存和 96 KB 共享内存，或 48 KB L1 缓存和 80 KB 共享内存。
 
 除了 L1 缓存之外，Kepler 还为已知在函数期间为只读的数据引入了一个 48KB 的缓存。在Fermi 中，只有纹理单元才能访问此缓存。在 Kepler 中，除了显著增加此缓存的容量以及纹理性能外，SM 可以直接访问缓存以进行一般加载操作。使用只读路径可以消除共享/L1 缓存路径的加载和工作集占用空间。此外，只读数据缓存的更高标记带宽支持全速未对齐的内存访问模式。只读路径的使用可以由编译器自动管理，也可以由程序员显式管理。通过使用 C99 标准`const __restrict`关键字访问已知为常量的任何变量或数据结构，编译器可能会标记以通过只读数据缓存加载。程序员还可以显式地将此路径与`__ldg()` 内部函数一起使用。
 
 ## 2.8 Maxwell
 2014年，NVIDIA发布Maxwell架构；GM200 GPU 采用 Maxwell 2.0 架构，使用台积电的 28 纳米工艺制造，面积 601 mm²，晶体管数量为 80 亿个。下图展示了GM200的物理版图：
-![35.png](/assets/images/gpgpu/35.png)
+![39.png](/assets/images/gpgpu/39.png)
 GM200 由 6 个 GPC(Graphics Processing Cluster)、24 个SMM和 6 个内存控制器组成。L2缓存一共2MB。
-![36.png](/assets/images/gpgpu/36.png)
+![40.png](/assets/images/gpgpu/40.png)
 每个 SMM 包含四个 warp 调度器，每个 warp 调度器每个时钟能够分发一个 warp 的两个指令。每个 SM 总共 128 个 CUDA 核，分成4个块，各有 32 个 CUDA 核，与warp线程数一致，以及用于调度的专用资源和指令缓冲。SMM有单独的96KB共享存储，但是每个线程块最大只能使用48KB；每个 SMM 还有 4 个 DP 单元。
-![37.png](/assets/images/gpgpu/37.png)
+![41.png](/assets/images/gpgpu/41.png)
 
 ## 2.9 Pascal
 2016年，NVIDIA推出Pascal架构，GP100采用台积电16nm工艺，面积610 mm²，153亿晶体管；支持8x512位宽的HBM，容量16GB；下图展示了GP100的物理版图，HBM I/O 位于顶部和底部，NVLink 和PCIe I/O 位于左侧:
-![38.png](/assets/images/gpgpu/38.png)
+![42.png](/assets/images/gpgpu/42.png)
 GP100 是首款支持硬件页面故障的 NVIDIA GPU，结合 49 位 （512 TB） 虚拟寻址，GPU 和 CPU 可以使用统一的虚拟地址空间。GP100 中新增的另一个重要的功能是计算抢占 ，允许以指令级粒度抢占计算任务，而不是像以前的 Maxwell 和 Kepler GPU 架构那样以线程块粒度抢占。计算抢占可防止长时间运行的应用程序独占系统或超时。
 
 GP100 由 6 个 GPC，30 个 TPC（每个包括 2 个 SM），60 个 Pascal SM。
-![39.png](/assets/images/gpgpu/39.png)
-每个 SM 有 64 个 CUDA 核和 4 个纹理单元。因此，GP100 一共有 3840 个单精度 CUDA 核和 240 个纹理单元。
-GP100 SM 分为两个处理块，每个处理块有 32 个单精度 CUDA 核、一个指令缓冲区、一个warp调度器和两个分发单元。GP100 SM 的 CUDA 核总数是 Maxwell SM 的一半，但寄存器文件大小相同的，并支持类似的warp和线程块占用。
-![40.png](/assets/images/gpgpu/40.png)
+![43.png](/assets/images/gpgpu/43.png)
+每个 SM 有 64 个 CUDA 核和 4 个纹理单元。因此，GP100 一共有 3840 个单精度 CUDA 核和 240 个纹理单元。GP100 SM 分为两个处理块，每个处理块有 32 个单精度 CUDA 核、一个指令缓冲区、一个warp调度器和两个分发单元。GP100 SM 的 CUDA 核总数是 Maxwell SM 的一半，但寄存器文件大小相同的，并支持类似的warp和线程块占用。
+![44.png](/assets/images/gpgpu/44.png)
 GP100 SM 有专用64 KB共享内存和 L1 缓存，该缓存也可用作纹理缓存。统一的 L1/纹理缓存充当内存访问的合并缓冲区，在将数据发送到warp之前收集warp里线程请求的数据。每个内存控制器都连接到 512 KB 的 L2 缓存，因此，GP100总共包括 4096 KB 的 L2 缓存。GP100 GPU 连接到四个 HBM2 DRAM 堆栈，每个 HBM2 DRAM 堆栈由一对内存控制器控制；Tesla P100 配备四个 4 芯片 HBM2 堆栈，总共 16 GB 的 HBM2 内存。
-![41.png](/assets/images/gpgpu/41.png)
+![45.png](/assets/images/gpgpu/45.png)
 ## 2.10 Volta
 2017年，NVIDIA推出Volta架构，V100采用台积电12nm工艺，面积815 mm²，211亿晶体管；V100物理版图如下所示：
-![42.png](/assets/images/gpgpu/42.png)
-完全版GV100一共6个GPC，每个TPC有7个TPC，每个TPC有2个SM，一共84个SM；V100一共80个SM。
-![43.png](/assets/images/gpgpu/43.png)
+![46.png](/assets/images/gpgpu/46.png)
+完全版GV100一共6个GPC，每个GPC有7个TPC，每个TPC有2个SM，一共84个SM；V100一共80个SM。
+![47.png](/assets/images/gpgpu/47.png)
 Volta架构一些主要新特性包括：
-* **Multi Processor Service** Volta 的MPS(Multi Processor Service)可以允许多个应用程序同时在GPU 执行。 但是，由于所有应用程序共享内存资源在，因此，如果一个应用程序要求很高的DRAM 带宽，或者其请求超额订阅了 L2 缓存，可能会干扰其他应用程序；并且只支持完整的物理 GPU 粒度使用。
-![44.png](/assets/images/gpgpu/44.png)
+* **Multi Processor Service** Volta 的MPS(Multi Processor Service)可以允许多个应用程序同时在GPU 执行。 但是，由于所有应用程序共享内存资源，因此，如果一个应用程序要求很高的DRAM 带宽，或者其请求超额订阅了 L2 缓存，可能会干扰其他应用程序；并且只支持完整的物理 GPU 粒度使用。
+![48.png](/assets/images/gpgpu/48.png)
 * **独立线程调度** Volta 架构引入了对互斥等算法防饥饿的支持，当编译器识别编程语言指定的可见机器步骤时，确保每个线程最终都会取得进展。下面代码用一个保护进入关键部分的简单的自旋锁来说明Volta 架构的新功能。当且仅当调度程序确保每个线程能独立的向前推进时，多个线程才可以同时调用以下示例中的函数`demo_A`。此自旋锁在 CUDA C++ 1.1 中在语法上是合法的，但在 Volta 架构上的 CUDA C++ 9.0 之前不完全支持：
 ```cpp
 enum { unlocked = 0, locked = 1 }; 
@@ -336,7 +337,7 @@ void demo_C() {
 		} 
 }
 ```
-函数`demo_C`在 SIMT 处理器上执行速度可能很慢，因为线程在执行条件指令时会串行化。预测最里面的块可能被所有线程执行并不足以避免这种串行化。Volta 架构支持的收敛优化可用于此类情况。下面的程序使用 shuffle 操作在线程之间交换值。`demo_D`使用 CUDA 9.0 中引入的 Cooperative Groups聚合来自整个 Warp 的数据，消除了应用 Warp 优化所需的猜测，并使高性能程序员的工作效率更高。执行路径重新收敛可以看作是性能优化，而 Warp 中的显式同步仍然受支持。
+函数`demo_C`在 SIMT 处理器上执行速度可能很慢，因为线程在执行条件指令时会串行化。预测最里面的块可能被所有线程执行并不足以避免这种串行化。Volta 架构支持的收敛优化可用于此类情况。下面的程序使用 `shuffle` 操作在线程之间交换值。`demo_D`使用 CUDA 9.0 中引入的 Cooperative Groups聚合来自整个 Warp 的数据，消除了应用 Warp 优化所需的猜测，并使高性能程序员的工作效率更高。执行路径重新收敛可以看作是性能优化，而 Warp 中的显式同步仍然受支持。
 ```cpp
 #include <cooperative_groups.h> 
 int demo_D(int *ptr) { 
@@ -352,40 +353,43 @@ int demo_D(int *ptr) {
 ```
 
 每个SM有64 个FP32核和32 个FP64核，并且分成4个部分，每一部分有16个FP32核，8个FP64核，16个INT32核，2个混合精度张量核(Tensor Core)，一个L0指令缓存，一个warp调度器，一个分发单元，以及64 KB寄存器文件。
-![45.png](/assets/images/gpgpu/45.png)
+![49.png](/assets/images/gpgpu/49.png)
 Volta SM由四个独立调度的Sub-Core组成。SM 执行 Warp的 SIMT 调度，每个Sub-Core调度器每个时钟可以调度一个 Warp 指令。将数据路径和调度器拆分可以最大限度地提高局部性，并降低数据路径、寄存器文件和调度器的功耗。全局内存加载和存储缓存操作、共享内存 （SMEM） 暂存器操作和纹理 （TEX） 操作将发送到共享内存和 I/O （MIO） 单元。四个 SM Sub-Core将其 MIO 指令发送到共享的 MIO 单元调度执行。MIO 调度器在纹理单元或统一共享内存和 L1 数据缓存上调度执行。TEX单元每个时钟可以执行一个像素的四边形纹理指令，纹理操作所需的数据来自 L1 数据缓存。共享的 MIO 单元在Sub-Core之间提供统一的线程间通信，从而实现高效、协作的线程执行。四个Sub-Core共享一个 L1 指令缓存，每个时钟可以发送四个 Warp 指令。
-![46.png](/assets/images/gpgpu/46.png)
+![50.png](/assets/images/gpgpu/50.png)
 
 每个时钟SM Sub-Core都可以从L0指令缓存中发出一个Warp 指令。指令被发送到本地分支单元 （BRU）、数学分发单元、张量核或共享 MIO 单元。数学分发单元每个时钟可以将一个Warp指令调度到四个执行单元：整数指令 （INT）、32 位浮点指令 （FP32）、64 位浮点指令 （FP64） 和其他超越指令 （MUFU）。数学分发单元能够保持两个或多个执行单元得到充分利用，具体取决于正在执行的程序中的指令组合。每个 SM Sub-Core还包含两个 4x4x4 张量核，Warp 调度器向张量核发射矩阵乘法运算；张量核从寄存器文件接收输入矩阵，执行多个 4x4x4 矩阵乘法，直到全矩阵乘法完成，并将生成的矩阵写回寄存器文件中。
-![47.png](/assets/images/gpgpu/47.png)
+![51.png](/assets/images/gpgpu/51.png)
 每个 SM 有8 个张量核，每个Sub-Core有2个；每个张量核每个时钟执行 64(4x4x4) 个浮点运算，SM 中的8个张量核每个时钟总共执行 1,024 次浮点运算。每个张量核在 4x4 矩阵上运行并执行以下操作：D=A×B+C，其中 A、B、C 和 D 是 4x4 矩阵。矩阵乘法输入 A 和 B 是 FP16 矩阵，而累积矩阵 C 和 D 可以是 FP16 或 FP32 矩阵；FP16 乘法产生全精度乘积，然后使用 FP32 与其他中间乘积累加，形成 4x4x4 矩阵乘法。
 ### 内存结构
 SM的L1 数据缓存为 128 KB，每个时钟最多可执行 32 个线程的加载和存储，最多可提供 128B。L1 数据缓存与 SMEM存储统一，128 KB 的 L1 数据存储中最多可以动态配置96 KB 用作 SMEM。L1 数据缓存加载和存储与 SMEM 加载和存储采用相同的执行路径。因此，L1 加载和存储缓存命与 SMEM 加载和存储有相同的带宽和延迟。所有SM共享6MB的L2缓存。8个512位宽的内存控制器一共提供900 GB/s带宽，支持16 GB HBM2内存。
-![48.png](/assets/images/gpgpu/48.png)
+![52.png](/assets/images/gpgpu/52.png)
 
 ## 2.11 Turing
 2018年，NVIDIA推出Turing架构；TU102 GPU采用台积电12 nm工艺，面积754 mm²，包含186亿晶体管， TDP功耗250W，支持384位宽的GDDR6内存，最高24GB。TU102的物理版图如下所示：
-![49.png](/assets/images/gpgpu/49.png)
+![53.png](/assets/images/gpgpu/53.png)
 TU102 GPU 包括 6 个图形处理集群GPC （Graphics Processing Cluster），36 个纹理处理集群TPC （Texture Processing Cluster） 和 72 个SM（Streaming Multiprocessor）。每个 GPC 都包括一个专用光栅引擎和 6 个 TPC，每个 TPC 包括 2 个 SM。每个 SM 包含 64 个 CUDA 核、8 个 Tensor 核、256 KB 寄存器文件、4 个纹理单元和 96 KB 的 L1/共享内存。SM 中的新 RT Core 处理光线追踪加速。Turing GPU 架构继承了 Volta 架构中首次引入的增强型多进程服务MPS （Multi-Process Service） 功能。
 在 Pascal GPU 架构之前，NVIDIA GPU 使用单个多输入/输出 （MIO） 接口作为 SLI 桥接技术，以允许第二个（或第三个或第四个）GPU 将其最终渲染的帧输出传输到物理连接到显示器的主 GPU。Pascal 通过使用更快的双 MIO 接口增强了 SLI 桥接器，提高了 GPU 之间的带宽，允许更高分辨率的输出，并为 NVIDIA Surround 提供了多个高分辨率显示器。Turing TU102使用 NVLink 而不是 MIO 和 PCIe 接口进行 SLI GPU 到 GPU 的数据传输。TU102 GPU 包括两个 x8 NVLink 2 链路，每个链路在两个 GPU 之间提供每个方向 25 GB/秒的峰值带宽（50 GB/秒的双向带宽），支持双向 SLI，但不支持 3 路和 4 路 SLI 配置。
-![50.png](/assets/images/gpgpu/50.png)
+![54.png](/assets/images/gpgpu/54.png)
 
 Turing 引入了一种新的SM，显着提高了着色效率，与 Pascal相比，每个 CUDA 核的性能提高了 50%。这些改进是通过两个关键的体系结构更改实现的：
 * 首先，Turing SM 增加了一个新的独立整数数据路径，可以与浮点数据路径同时执行指令。在之前几代中，执行整数指令会阻止浮点指令的发射
 * 其次，重新设计了 SM 内存路径，将共享内存、纹理缓存和内存加载缓存统一成一个单元。L1 缓存的带宽增加了 2 倍
 
-![51.png](/assets/images/gpgpu/51.png)
+![55.png](/assets/images/gpgpu/55.png)
 Turing SM 被划分为四个处理块，每个处理块有 16 个 FP32 核、16 个 INT32 核、两个 Tensor 核、一个 warp 调度器和一个调度单元。每个处理块包括一个新的 L0 指令缓存和一个 64 KB 的寄存器文件。四个处理块共享一个 96 KB 的 L1 数据缓存/共享内存，传统的图形工作负载可以将 96 KB L1/共享内存划分为 64 KB 的专用图形着色器 RAM 和 32 KB 的纹理缓存和寄存器文件溢出区域；而计算工作负载可以将 96 KB 划分为 32 KB 共享内存和 64 KB L1 缓存，或 64 KB 共享内存和 32 KB L1 缓存。Turing对核心执行数据路径进行了重大改造。现代着色器程序通常混合使用浮点算术指令（如 FADD 或 FMAD）以及用于寻址和获取数据的整数加法、用于浮点比较或最小值/最大值处理结果的简单指令；平均每 100 条浮点指令会和36 条整数指令共同执行。之前的着色器体系结构中，非 FP 指令执行时，浮点数据路径会处于空闲状态。Turing在每个 CUDA 核旁边添加了第二个并行执行单元，可以与浮点单元并行执行。
-![52.png](/assets/images/gpgpu/52.png)
+
+![56.png](/assets/images/gpgpu/56.png)
 Turing GPU 包括新版本的 Tensor Core 设计，增加了新的 INT8 和 INT4 精度模式。
-![53.png](/assets/images/gpgpu/53.png)
+
+![57.png](/assets/images/gpgpu/57.png)
 ### Turing 内存结构
 Turing SM包含一个 96 KB 的 L1 数据缓存/共享内存，传统的图形工作负载可以将 96 KB L1/共享内存划分为 64 KB 的专用图形着色器 RAM 和 32 KB 的纹理缓存和寄存器文件溢出区域；而计算工作负载可以将 96 KB 划分为 32 KB 共享内存和 64 KB L1 缓存，或 64 KB 共享内存和 32 KB L1 缓存。TU102 GPU 配备 6 MB 二级缓存。Turing 是第一个支持 GDDR6 内存的 GPU 架构，支持384位宽，可以提供 14 Gbps带宽。
-![54.png](/assets/images/gpgpu/54.png)
+
+![58.png](/assets/images/gpgpu/58.png)
 
 ## 2.12 Ampere
 2020年，NVIDIA推出Ampere架构，采用TSMC 7nm FFN工艺，面积826mm^2，一共542亿晶体管；完整GA100物理版图如下所示：
-![55.png](/assets/images/gpgpu/55.png)
+![59.png](/assets/images/gpgpu/59.png)
 Ampere GPU 中两个 SM 共同组成一个纹理处理器集群TPC，其中 8 个 TPC组成了一个GPU 处理集群(GPC)；一共 8 个GPC。因此，GA100 GPU 的完整实现包括以下单元：
 - 8 个 GPC，每个GPC有8 个 TPC，每个TPC有2 个 SM，一共128 个 SM
 - 每个SM有64 个 FP32 CUDA 核，每个完整 GPU 8192 个 FP32 CUDA 核
@@ -398,23 +402,23 @@ Ampere GPU 中两个 SM 共同组成一个纹理处理器集群TPC，其中 8 �
 - 每个SM有4 个第三代 Tensor Core，每个 GPU 432 个Tensor Core
 - 5 个 HBM2，10 个 512 位内存控制器
 
-![56.png](/assets/images/gpgpu/56.png)
+![60.png](/assets/images/gpgpu/60.png)
 
 ### SM
-每个SM有192 KB 的共享内存和 L1 数据缓存组合；与 V100 和 Turing GPU 类似，A100 SM 还包括单独的 FP32 和 INT32 核，允许同时执行 FP32 和 INT32 操作；许多应用程序都具有执行指针算术（整数内存地址计算）的内部循环，这些浮点计算受益于同时执行 FP32 和 INT32 指令。流水线循环的每次迭代都可以更新地址（INT32 指针算术）并加载下一次迭代的数据，同时在 FP32 中处理当前迭代。另外，SM主要增加一些指令和功能包括：
+每个SM有192 KB 的共享内存和 L1 数据缓存组合；与 V100 和 Turing GPU 类似，A100 SM 还包括单独的 FP32 和 INT32 核，允许同时执行 FP32 和 INT32 操作；许多应用程序都具有执行指针算术计算（整数内存地址计算）的内部循环，这些浮点计算受益于同时执行 FP32 和 INT32 指令。流水线循环的每次迭代都可以更新地址（INT32 指针算术）并加载下一次迭代的数据，同时在 FP32 中处理当前迭代。另外，SM主要增加一些指令和功能包括：
 * 增加新的异步复制指令将数据直接从全局内存加载到共享内存中，可以选择绕过 L1 缓存，并且无需使用中间寄存器文件 （RF）。异步复制可减少寄存器文件带宽，更有效地利用内存带宽，并降低功耗。顾名思义，当 SM 执行其他计算时，可以在后台完成异步复制
 * 用于新的异步复制指令的基于共享内存的屏障单元（异步屏障）。这些屏障可使用 CUDA 11 以符合 ISO C++ 的屏障对象的形式获得。异步屏障将屏障到达和等待操作分开，可用于从全局内存到共享内存的异步复制与 SM 中的计算重叠。可借助这些屏障使用 CUDA 线程实现生产者-消费者模型。屏障还提供了以不同粒度同步 CUDA 线程的机制，而不仅仅是warp或块级别
 * L2 缓存管理和驻留控制的新指令
 * CUDA Cooperative Groups 支持的新warp级reduction指令。
-![57.png](/assets/images/gpgpu/57.png)
+![61.png](/assets/images/gpgpu/61.png)
 Volta 和 Turing 每个 SM 有 8 个 Tensor Core，每个 Tensor Core 每个时钟执行 64 个 FP16/FP32 混合精度融合乘加 （FMA） 运算。A100 SM 包括新的第三代 Tensor Core，每个核每个时钟执行 256 个 FP16/FP32 FMA 操作；每个 SM 有四个 Tensor Core，每个时钟总共提供 1024 次密集的 FP16/FP32 FMA 操作。Tensor Core支持数据类型包括 FP16、BF16、TF32、FP64、INT8、INT4 和 Binary。Ampere 架构引入了对 TF32 的新支持，使 AI 训练能够默认使用张量核心，而无需用户付出任何努力。非张量运算继续使用 FP32 数据路径，而 TF32 张量核心读取 FP32 数据并使用与 FP32 相同的范围，但内部精度降低，然后生成标准 IEEE FP32 输出。TF32 包括一个 8 位指数（与 FP32 相同）、10 位尾数（与 FP16 相同精度）和 1 个符号位。
-![58.png](/assets/images/gpgpu/58.png)
+![62.png](/assets/images/gpgpu/62.png)
 下图比较了 V100 和 A100 FP16 Tensor Core 操作，并将 V100 FP32、FP64 和 INT8 标准操作与 A100 TF32、FP64 和 INT8 Tensor Core 操作进行了比较。
-![59.png](/assets/images/gpgpu/59.png)
+![63.png](/assets/images/gpgpu/63.png)
 Tensor Core还支持FP64计算，新的双精度矩阵乘加指令取代了 V100 上的 8 条 DFMA 指令，从而减少了取指，调度，寄存器读取开销，以及数据路径功耗和共享内存读取带宽。每个 SM 每周期可计算 64 个 FP64 FMA（或 128 个 FP64 操作）。
 
 A100 Tensor Core GPU 包含新的稀疏 Tensor Core 指令，这些指令跳过对值为零的条目的计算，从而使 Tensor Core 计算吞吐量翻倍。通过新的 2：4 稀疏矩阵定义支持稀疏计算，该定义允许在每个四输入向量中有两个非零值。A100 支持行上 2：4 的结构稀疏性，如图所示：
-![60.png](/assets/images/gpgpu/60.png)
+![64.png](/assets/images/gpgpu/64.png)
 NVIDIA 开发了一种简单而通用的方法使用这种 2：4 结构化稀疏模式进行推理。首先使用密集权重对网络进行训练，然后应用细粒度的结构化剪枝，最后通过额外的训练步骤对剩余的非零权重进行微调。
 
 ### 内存结构
@@ -428,7 +432,7 @@ Ampere 架构增加了计算数据压缩功能，以加速非结构化稀疏性�
 新的MIG-Multi-Instance (GPU） 功能允许将 A100安全地划分为多达 7 个独立的 GPU 实例，为多个用户提供单独的 GPU 资源来加速应用程序。使用 MIG，每个实例的处理器在整个内存系统中都有独立且隔离的路径。片上交叉端口、L2 缓存组、内存控制器和 DRAM 地址总线都唯一分配给单个实例。这可确保单个用户的工作负载能够以可预测的吞吐量和延迟运行，并具有相同的 L2 缓存分配和 DRAM 带宽。
 
 MIG 可提高 GPU 硬件利用率，同时在不同客户端（如 VM、容器和进程）之间提供确定的 QoS 和隔离。MIG 对于具有多租户用例的 CSP(Cloud Service Provider) 特别有益，可以确保一个客户端不会影响其他客户端的工作或调度，提供增强的安全性并保证客户的 GPU 利用率。下图所示的 A100 GPU 新 MIG 功能可以将单个 GPU 划分为多个 GPU 分区，称为 _GPU instances._ 
-![61.png](/assets/images/gpgpu/61.png)
+![65.png](/assets/images/gpgpu/65.png)
 
 ### RAS
 Ampere 架构 A100 GPU 包括改进错误/故障归因（归因于导致错误的应用程序）、隔离（隔离故障应用程序，以便它们不会影响在同一 GPU 或 GPU 集群中运行的其他应用程序）和包含（确保一个应用程序中的错误不会泄漏并影响其他应用程序）的新技术。这些故障处理技术对于 MIG 尤为重要，可确保共享单个 GPU 的客户端之间的适当隔离和安全性。
@@ -439,7 +443,7 @@ Ampere 架构 A100 GPU 包括改进错误/故障归因（归因于导致错误�
 
 ## 2.13 Hopper
 2022年，NVIDIA推出Hopper架构，H100采用台积电4nm工艺，面积814mm^2，一共800亿晶体管；下图是H100的物理版图：
-![62.png](/assets/images/gpgpu/62.png)
+![66.png](/assets/images/gpgpu/66.png)
 
 完整的Hopper架构包括
 - 8个GPCs, 72 个TPCs (9 TPCs/GPC), 一共144个 SMs(2 SMs/TPC)
@@ -466,33 +470,33 @@ Ampere 架构 A100 GPU 包括改进错误/故障归因（归因于导致错误�
 - NVLink 4.0 和PCIe Gen 5
 
 H100 SXM5 GPU 有 132 个 SM，PCIe 版本有 114 个 SM。SXM5 和 PCIe H100 GPU 中只有两个 TPC 支持图形处理（即可以运行顶点、几何体和像素着色器）。下图展示了完整的H100的架构框图：
-![63.png](/assets/images/gpgpu/63.png)
+![67.png](/assets/images/gpgpu/67.png)
 
-![64.png](/assets/images/gpgpu/64.png)
+![68.png](/assets/images/gpgpu/68.png)
 H100 Tensor Core支持 FP8、FP16、BF16、TF32、FP64 和 INT8数据类型。FP8是H100 Tensor Core新支持的数据类型。如下图所示，Tensor Core 支持 FP32 和 FP16 累加器，以及两种新的 FP8 输入类型：
 - **E4M3** 有 4 个指数位、3 个尾数位和 1 个符号位
 - **E5M2** 有 5 个指数位、2 个尾数位和 1 个符号位
-![65.png](/assets/images/gpgpu/65.png)
+![69.png](/assets/images/gpgpu/69.png)
 E4M3 支持需要更小动态范围和更高精度的计算，而 E5M2 提供更宽的动态范围和更低的精度。与 FP16 或 BF16 相比，FP8 将数据存储要求减半，吞吐量翻倍。
 
 **线程块集群**(Thread block cluster)功能支持以编程方式控制局部性，其粒度大于单个SM上的单个线程块。这扩展了 CUDA 编程模型，向编程层次结构添加了另一个级别，包括线程、线程块、线程块集群和网格。线程块集群支持跨多个 SM 同时运行的多个线程块，以同步和协作方式获取和交换数据。CUDA 编程模型使用包含多个线程块的网格来利用程序中的局部性。线程块包含在单个 SM 上并发运行的多个线程，其中线程可以使用屏障同步，利用SM 的共享内存交换数据。然而，随着 GPU 增长到 100个 SM 以上，计算程序变得越来越复杂，线程块作为编程模型中唯一局部性单位不足以最大限度地提高执行效率。
 
 线程块集群是一组线程块，保证并发调度到一组 SM 上，其目标是实现跨多个 SM 的线程的高效协作。H100 中的线程块集群在 GPC 内的 SM 之间并发运行。GPC 是硬件层次结构中的一组 SM，在物理上始终靠得很近。线程块群集具有硬件加速屏障和新的内存访问协作功能。GPC 中 SM 使用专用 SM 到 SM 网络在集群中的线程之间提供快速数据共享。在 CUDA 中，网格中的线程块可以选择在线程块启动时分组到集群中，通过CUDA `cooperative_groups` 使用集群功能。下图左边是由传统 CUDA 编程模型中的线程块组成的网格，右边则是H100的集群层次结构。
-![66.png](/assets/images/gpgpu/66.png)
+![70.png](/assets/images/gpgpu/70.png)
 
 **分布式共享内存(DSMEM)** 允许跨多个 SM 共享内存块进行直接 SM 到 SM 的加载、存储和原子通信。在一个线程块集群，所有线程都可以通过加载、存储和原子操作直接访问其他 SM 的共享内存。DSMEM 支持更高效的 SM 之间的数据交换，不再需要写入和读取全局内存来传递数据。集群专用的 SM 到 SM 网络可确保快速、低延迟地访问远程 DSMEM。与使用全局内存相比，DSMEM 将线程块之间的数据交换速度提高了约 7 倍。
-![67.png](/assets/images/gpgpu/67.png)
+![71.png](/assets/images/gpgpu/71.png)
 在 CUDA 中，集群中所有线程块的所有 DSMEM 段都映射到每个线程的通用地址空间中，因此可以使用简单的指针直接引用所有 DSMEM。CUDA 用户可以利用 `cooperative_groups` API 构建指向集群中任何线程块的通用指针。DSMEM 传输也可以表示为异步复制操作，使用共享内存的屏障同步。
 
 **动态规划DP (Dynamic programming)** 动态规划 （DP） 通过将复杂的递归问题分解为更简单的子问题来解决复杂的递归问题。通过存储子问题的结果，无需在以后需要时重新计算它们，DP 算法将指数问题集的计算复杂度降低到线性尺度。DP 通常用于广泛的优化、数据处理和基因组学算法。H100 引入了 DPX 指令，与 Ampere相比，DP 算法的性能提高了 7 倍。这些新指令为许多 DP 算法的内循环提供了对高级融合操作数的支持。
 
 **异步执行(Asynchronous execution)** Hopper 架构改进了异步执行，并使内存复制与计算和其他独立任务进一步重叠，同时最大限度地减少同步点；主要是张量内存加速器TMA （Tensor Memory Accelerator）和异步事务屏障(asynchronous transaction barrier)。
-![68.png](/assets/images/gpgpu/68.png)
+![72.png](/assets/images/gpgpu/72.png)
 
 **TMA(Tensor Memory Accelerator)** Tensor Memory Accelerator(TMA)可以在全局内存和共享内存之间传输大块数据和多维张量，满足Tensor Core对数据的需求。TMA 操作使用复制描述符启动，该描述符使用张量维度和块坐标而不是每个元素寻址来指定数据传输。可以指定高达共享内存容量的大数据块，并将其从全局内存加载到共享内存中，或者从共享内存存储回全局内存。TMA 通过支持不同的张量维度（1D-5D 张量）、不同的内存访问模式、reduction等功能，降低寻址开销并提高效率。
-![69.png](/assets/images/gpgpu/69.png)
+![73.png](/assets/images/gpgpu/73.png)
 TMA 操作是异步的，并利用 A100 中引入的基于共享内存的异步屏障。此外，TMA 编程模型是单线程的，warp 中的单个线程被选择发出异步 TMA 操作(`cuda::memcpy_async` )来复制张量。因此，多个线程可以使用`cuda::barrier`等待数据传输完成。TMA 的优势是释放了线程来执行其他独立工作。在 A100上，异步内存复制使用特殊的`LoadGlobalStoreShared`指令执行，因此线程负责生成所有地址并在整个复制区域中循环。在 Hopper 上，TMA 负责处理一切。单个线程在启动 TMA 之前创建复制描述符，从那时起，地址生成和数据移动将在硬件中处理。TMA 提供了一个更简单的编程模型，因为它在复制张量段时接管了计算步幅、偏移和边界计算的任务。
-![70.png](/assets/images/gpgpu/70.png)
+![74.png](/assets/images/gpgpu/74.png)
 
 **异步事务屏障(Asynchronous transaction barrier)** 异步屏障最初是在 NVIDIA Ampere 架构中引入的。比如，一组线程在生成数据，并在屏障之后使用这些数据。异步屏障将同步过程分为两个步骤：
 - 首先，当线程生成完其共享数据时，会发出`Arrive`信号。此`Arrive`是非阻塞的，因此线程可以自由地执行其他独立任务
@@ -501,10 +505,10 @@ TMA 操作是异步的，并利用 A100 中引入的基于共享内存的异步�
 异步屏障的优点是在等待时提前到达的线程能够执行独立工作，这种重叠提高了性能。如果有足够的独立执行的线程，则屏障会变得很轻量，因为`Wait`指令可以立即退休。Hopper 的新功能是 _waiting_ 线程能够休眠，直到所有其他线程到达。在之前架构，等待线程会在共享内存中的屏障对象上spin。
 
 Hopper增加了称为异步事务屏障(asynchronous transaction barrier)的新形式的屏障。异步事务障碍类似于异步障碍，是一个拆分屏障，不仅计算线程到达，还计算事务。Hopper 包含一个用于写入共享内存的新命令，该命令可传递要写入的数据和事务计数。事务计数实质上是一个字节计数。异步事务屏障在`Wait`命令下阻止线程，直到所有生产者线程都执行了`Arrive`，并且所有事务计数的总和达到预期值。异步事务屏障是异步 内存复制或数据交换的新原语。集群可以进行线程块到线程块的通信，用于具有隐含同步的数据交换，并且集群功能建立在异步事务屏障之上。
-![71.png](/assets/images/gpgpu/71.png)
+![75.png](/assets/images/gpgpu/75.png)
 
 **Transformer Engine** H100 包括一个新的 Transformer 引擎，使用软件和NVIDIA Hopper Tensor Core 技术来加速 Transformer 的 AI 计算。
-![72.png](/assets/images/gpgpu/72.png)
+![76.png](/assets/images/gpgpu/76.png)
 在 Transformer 模型的每一层，Transformer 引擎都会分析 Tensor Core 输出值的统计数据。在了解接下来是哪种类型的神经网络层以及它所需的精度后，transformer engine还可以在将张量存储到内存之前决定将张量转换为哪种目标格式。为了以最佳方式使用可用范围，Transformer engine还使用从张量统计数据计算出的缩放因子将张量数据动态缩放到可表示的范围内。因此，每一层都完全按照其所需的数据范围运行。
 
 ### 内存结构
@@ -521,7 +525,7 @@ NVIDIA GB200 Superchip Incl. Two Blackwell GPUs and One  Grace CPU
 # 3 AMD
 
 下图展示了AMD GPU 架构的发展变迁历史：
-![73.png](/assets/images/gpgpu/73.png)
+![77.png](/assets/images/gpgpu/77.png)
 * AMD的GPU的架构始于2008年的Terascale，一共发展了三代，到2010年的Terascale 3；AMD 的 TeraScale 专为可编程图形时代而设计，并通过 DirectX 11 的 DirectCompute API 和基于 VLIW 的架构引入了通用计算。
 	* TeraScale 3 （VLIW4） 用 4 路 VLIW 设计取代了之前的 5 路 VLIW 设计；还包含一个额外的曲面细分单元，以提高 Direct3D 11 性能。TeraScale 3 在 Radeon HD 6900 中引入。
 * 2012年，AMD转向GCN(Graphics Core Next)架构，并持续演进到GCN4；GCN（Graphics Core Next ） 架构转向了更具可编程性的交织向量计算模型，并引入了异步计算，使传统图形和通用计算能够高效地协同工作。
@@ -533,7 +537,7 @@ NVIDIA GB200 Superchip Incl. Two Blackwell GPUs and One  Grace CPU
 
 
 下图展示了AMD 的 GPU 架构从固定功能到RDNA/CDNA的演进:
-![74.png](/assets/images/gpgpu/74.png)
+![78.png](/assets/images/gpgpu/78.png)
 
 
   
@@ -549,17 +553,17 @@ NVIDIA GB200 Superchip Incl. Two Blackwell GPUs and One  Grace CPU
 |支持的数据类型|INT4、INT8、BF16、FP16、FP32、FP64|INT4、INT8、BF16、FP16、FP32、FP64|INT8、FP8、BF16、FP16、TF32、FP32、FP64（支持稀疏性）|INT4、FP4、FP6、INT8、FP8、BF16、FP16、TF32*、FP32、FP64（支持稀疏性）|
 |产品|AMD Instinct MI100 系列|AMD Instinct MI200 系列|AMD Instinct MI300 系列|AMD Instinct MI350 系列|
 
-![75.png](/assets/images/gpgpu/75.png)
+![79.png](/assets/images/gpgpu/79.png)
 ## 3.1 Xbox 360
 2006 年，Xbox 360 搭载的处理器包括3个 CPU 核、48 个统一着色器和 512 MB DRAM 主内。下图显示了 Xbox 360 系统核心芯片组件的框图：
-![76.png](/assets/images/gpgpu/76.png)
+![80.png](/assets/images/gpgpu/80.png)
 * 3个相同的 CPU 核共享一个 8 路组关联的 1 MB 二级缓存，运行频率为 3.2 GHz。每个核都包含四路SIMD向量单元。
 * GPU 3D 核有 48 个并行的统一着色器。
 * GPU 还包括 10 MB 嵌入式 DRAM （EDRAM），带宽 256 GB/s，提供可靠的帧和 z 缓冲带宽。
 * 由 GPU 控制的 512 MB 统一主内存GDDR3工作在 700 MHz ，工作速率为 1.4 Gbit/pin/s，总带宽为 22.4 GB/s。
 
 下图显示了 Xbox 360 GPU系统的结构框图：
-![77.png](/assets/images/gpgpu/77.png)
+![81.png](/assets/images/gpgpu/81.png)
 GPU 由以下功能模块组成：
 * 总线接口单元(BIU) ，和FSB连接，处理 CPU 发起的事务，以及 GPU 发起的事务，例如侦听和 L2 缓存读取
 * I/O 控制器，处理所有内部存储器映射的 I/O 访问，以及通过双通道 PCI-Express 总线 （PCI-E） 与 I/O 芯片之间的事务
@@ -571,8 +575,8 @@ GPU 由以下功能模块组成：
 * 视频显示
 
 下图显示了 GPU和 EDRAM的物理版图。GPU芯片采用台积电 90 纳米工艺，包含 2.32 亿个晶体管。EDRAM 芯片采用NEC 90nm 工艺，包含 1 亿个晶体管。
-![78.png](/assets/images/gpgpu/78.png)
-![79.png](/assets/images/gpgpu/79.png)
+![82.png](/assets/images/gpgpu/82.png)
+![83.png](/assets/images/gpgpu/83.png)
 * GPU来自ATI，运行频率为 500 MHz，由 48 个并行、组合向量和标量着色器 ALU 组成；着色器单元分为三个 SIMD 组，每个组有 16 个处理器，总共有 48 个处理器。
 	* 每个处理器有一个 5 宽向量单元（总共 5 个 FP32 ALU，一共 240 个单元）组成，每个周期最多可以串行执行两条指令（乘法和加法）。
 	* SIMD 组中的所有处理器都执行相同的指令，因此总共最多可以同时执行三个指令线程。
@@ -585,9 +589,9 @@ GPU 由以下功能模块组成：
 
 ## 3.2 TeraScale 1
 2008年，ATI推出了TeraScale的全新架构，应用在Radeon HD 2000系列产品。这是ATI的第一个统一着色器架构，也是ATI与AMD合并后推出的第一个设计。TeraScale旨在与Pixel Shader 4.0和Microsoft的DirectX 10.0 API完全兼容。下图是Radeon HD 2000的结构框图：
-![80.png](/assets/images/gpgpu/80.png)
+![84.png](/assets/images/gpgpu/84.png)
 
-![81.png](/assets/images/gpgpu/81.png)
+![85.png](/assets/images/gpgpu/85.png)
 TeraScale是继 XBOX 360 图形处理器之后统一着色器架构：
 * 新的调度处理器可同时处理数千个线程；
 * 增加指令缓存和常量缓存
@@ -597,17 +601,17 @@ TeraScale是继 XBOX 360 图形处理器之后统一着色器架构：
 * 完全支持 DirectX 10.0、Shader Model 4.0
 
 下图展示了统一着色器的架构：
-![82.png](/assets/images/gpgpu/82.png)
+![86.png](/assets/images/gpgpu/86.png)
 * 着色器指令是可变长度的VLIW（超长指令字)，包括分支、循环、堆栈操作，屏障等控制流程指令；算术指令有1到7个64位操作数，其中5个标量操作数，2个常量操作数。
 * 着色器处理单元(Shader Processing Unit)由 5 路标量流处理器(stream processor)组成，最多可同时发射 5 个标量 FP32 MAD（乘加），最多支持 5 个整数运算（cmp、逻辑、加法）；其中一个流处理单元可以处理超越指令（SIN、COS、LOG、EXP、RCP、RSQ），整数乘法和移位运算。
 * 分支执行单元处理流程控制和条件操作，包括全分支的条件代码生成以及ALU 中直接支持预测。1 MB 的 GPR 空间，用于快速寄存器访问。
-![83.png](/assets/images/gpgpu/83.png)
+![87.png](/assets/images/gpgpu/87.png)
 ## 3.3 TeraScale 2 
 2009年，AMD推出TeraScale 2架构，应用在Radeon HD 5870，处理能力是上一代的两倍 – 2.72 Teraflops 和 27.2 Giga Pixels/s。整体上有两个统一着色器引擎SE(Shader Engine) ,每个着色器引擎有一个光栅器(Rasterizer)，16 个像素 ROP 单元，10个SIMD Engine，支持248 个并发wavefront，如下图所示：
-![84.png](/assets/images/gpgpu/84.png)
+![88.png](/assets/images/gpgpu/88.png)
 
 每个SIMD Engine有16个Stream Core，如下图所示：
-![85.png](/assets/images/gpgpu/85.png)
+![89.png](/assets/images/gpgpu/89.png)
 * SIMD 引擎可以同时处理来自多个kernel的 Wavefronts，通过通道掩蔽和分支支持Wavefront内的线程发散，使Wavefront中的每个线程具有独立的程序执行路径;
 	* Wavefront长度为 64 个线程，其中每个线程可以执行 5 路 VLIW 指令 – 每个时钟执行1/4 Wavefront（16 个线程）分成T0-15、T16-31、T32-47、T48-T63。
 * 每个 SIMD 引擎最多支持 8 个work group（用于线程数据共享）；
@@ -617,24 +621,24 @@ TeraScale是继 XBOX 360 图形处理器之后统一着色器架构：
 * 4 个 PE(Processing Element)，可以支持4 个独立 SP 或整数运算，2 个 DP 加法，1 个 DP fma 或 mult ；
 * 1 个特殊功能 PE，支持1 个 SP 或整数运算，SP 或 DP 超越运算；以及操作数准备逻辑，通用寄存器和数据转发和预测逻辑
 
-![86.png](/assets/images/gpgpu/86.png)
+![90.png](/assets/images/gpgpu/90.png)
 
 LDS(Local Data Share)用于一个Work Group里的Work Item之间共享数据来提高性能：
 • 每个 SIMD 引擎的高带宽访问 （1024b/clk），外部 R/W 带宽的两倍 （512b/clk）
 • 每个 SIMD 引擎的低延迟访问，直接读取（无冲突或广播）0 延迟，LDS 间接操作 1 个 VLIW 指令延迟
 • 所有bank冲突都经过硬件检测，并在必要时进行序列化，并支持快速广播读取
 • 每个线程组调度的 LDS 空间由硬件分配 ，基址和大小存储在wavefront里以便私人访问
-![87.png](/assets/images/gpgpu/87.png)
+![91.png](/assets/images/gpgpu/91.png)
 GDS(Global Data Share)与 LDS 类似，不同之处在于它是整个调度网格的共享内存，而不是Work Group, 访问kernel中所有线程之间的全局数据共享内存有25个时钟周期的延迟。GDS与使用常规全局内存优势在于大量线程以少量内存运行（例如追加计数器、缩减）可能会产生阻塞点，并且硬件利用率不足；单独的共享内存 （GDS） 可以释放全局内存，供着色器用于其他wavefront。
-![88.png](/assets/images/gpgpu/88.png)
+![92.png](/assets/images/gpgpu/92.png)
 
 ## 3.4 TeraScale 3
 2010年，Radeon HD 6900中引入TeraScale 3 （VLIW4）， 用 4 路 VLIW 设计取代了之前的 5 路 VLIW 设计。
 ## 3.5 GCN
 2011 年，AMD 放弃了 TeraScale 架构，转而采用完全重新设计并基于 RISC 微架构的 Graphics Core Next(GCN)，目标之一是开发一款适合游戏和 GPGPU 工作的处理器。CU(Compute Unit)计算单元是 GCN 架构的基本计算单元。AMD Radeo HD 7970 分为 2 个原始(primitive)流水线和 4 个像素(pixel)流水线，有 32 个用于着色的计算单元(CU)和 384 位内存接口。GCN 的像素流水线分为 2 个 RBE 和 3 个内存控制器，内存带宽提高了 50%。整体架构如下所示：
-![89.png](/assets/images/gpgpu/89.png)
+![93.png](/assets/images/gpgpu/93.png)
 AMD Radeo HD 7970物理布局版图如下所示：
-![90.png](/assets/images/gpgpu/90.png)
+![94.png](/assets/images/gpgpu/94.png)
 
 * GCN 集成了一个 I/O 内存管理单元 （IOMMU），可以为GPU 透明的映射x86 地址。因此， GCN 中的 DMA 可以访问可分页的 CPU 内存来移动数据，而无需地址转换的开销；同时，虚拟内存是多任务处理的先决条件，因此对内存有竞争需求的应用程序可以安全地共存。在缓存一致性的同时，GCN 通过硬件和驱动程序支持的组合引入了虚拟内存，消除了内存管理中最具挑战性的方面。
 * GCN 命令处理器(Command Processor)负责从驱动程序接收高级 API 命令，并将它们映射到不同的流水线，GCN 中有两个主要流水线。
@@ -667,7 +671,7 @@ GCN中ACE(Asynchronous Compute Engines) 负责所有计算着色器调度和资�
 	* GDS(Global Data Share)
 	* 特殊指令
 * 同时只能发射一条一种类型的指令到SIMD，以避免超额订阅执行流水线；同时为了保证顺序执行，每个指令必须来自不同的wavefront。
-![91.png](/assets/images/gpgpu/91.png)
+![95.png](/assets/images/gpgpu/95.png)
 GCN CU里的标量流水线对于性能和功耗至关重要，控制流的处理分布在着色器，可以减少延迟并且减少了和中央调度逻辑通信的功耗。
 每个CU有8KB的标量寄存器文件，每个SIMD有512个条目，由10个wavefront共享；一个wavefront可以分配112个用户寄存器和几个用于保留架构状态的寄存器。每个寄存器32比特且相连的寄存器可以组成64比特。
 * 第一个标量流水线使用指令编码里的16比特偏移处理条件分支，同时还要负责处理中断和同步。
@@ -701,7 +705,7 @@ LDS 指令需要一个地址、两个数据值和一个目的地：
 * 目的地可以是vGPR 或直接从 LDS 读取的 SIMD
 * 两个数据值可以来自 L1 数据缓存（用于存储到 LDS）或 vGPR（加载或存储）
 * 与其他设计不同，专用流水线避免使用向量 ALU 指令进行数据移动，例如将 LDS 加载到寄存器
-![92.png](/assets/images/gpgpu/92.png)
+![96.png](/assets/images/gpgpu/96.png)
 #### EXPORT
 导出单元(EXPORT)是计算单元对固定功能图形硬件以及全局数据共享 （GDS） 的窗口。完成所有计算后，结果通常会发送到图形流水线中的其他单元。例如，像素被着色后，在最终输出到显示器之前，它们通常会被发送到渲染后端进行深度和模板测试，并进行混合。导出单元将图形流水线的可编程阶段的结果写入固定功能阶段，例如曲面细分、光栅化和渲染后端。
 
@@ -719,7 +723,7 @@ GCN 内存层次结构是一个统一的读/写缓存系统，支持虚拟内存
 * 如果内存请求在 L1D 缓存中缺失，则将其发送到统一且一致的 L2 缓存，该缓存位于着色器核心之外并与内存控制器连。
 * 为了提高效率并减少开销，灵活的内存层次结构也被用于图形，并带有一些专用硬件。地址生成单元每个周期接收 4 个纹理地址，然后计算最近的 16 个采样地址。样本从 L1 数据缓存中读取，并在纹理映射单元或TMU（Texture Mapping Unit）中解压缩。然后，TMU 过滤相邻样本，每个时钟生成多达 4 个最终插值纹理。
 	* TMU 输出被转换为所需的格式，并最终写入向量寄存器文件以供进一步使用。格式转换硬件还用于将一些图形内核里的值写到内存。
-![93.png](/assets/images/gpgpu/93.png)
+![97.png](/assets/images/gpgpu/97.png)
 ### L2 CACHE
 GCN 中的分布式 L2 缓存是 GPU 中一致性的中心点。它充当 CU 集群共享的只读 L1 指令和标量缓存以及每个 CU 中的 L1 数据缓存的后盾。L2 缓存在物理上被分区为耦合到每个内存通道的切片中，访问流通过交叉开关结构从计算单元流向缓存和内存分区。
 * 与 L1 数据缓存一样，L2 是虚拟寻址的，因此不需要 TLB。L2 缓存是 16 路组相联，64B 缓存行，采用 LRU 替换算法；采用写回和写分配设计，因此可以吸收所有 L1 数据缓存的写缺失。每个 L2 切片为 64-128KB，可以将 64B 缓存行发送到 L1 缓存。 L2 缓存一致性的一大优势是，很适合执行全局原子操作和在不同wavefront之间同步。虽然 LDS 可用于wabefront内的原子操作，但在某些时候，不同wavefront的结果需要组合。这正是 L2 发挥作用的地方。一个 L2 切片每个周期可以对缓存行执行多达 16 个原子操作。
@@ -727,7 +731,7 @@ GCN 中的分布式 L2 缓存是 GPU 中一致性的中心点。它充当 CU 集
 * 同时，缓存层次结构旨在与 x86 微处理器集成。GCN 虚拟内存系统可以支持 4KB 页，这是 x86 地址空间的自然映射粒度，为将来的共享地址空间铺平了道路。事实上，用于 DMA 传输的 IOMMU 已经可以将请求转换为 x86 地址空间，以帮助将数据移动到 GPU。此外，GCN 中的缓存使用 64B 缓存行，与 x86 处理器大小相同。这为异构系统通过传统缓存在 GPU 和 CPU 之间透明地共享数据奠定了基础，而无需程序员明确的控制。
 
 内存控制器将 GPU 连接在一起，并为系统的每个功能单元提供数据。命令处理器(CP)、ACE、L2 缓存、RBE、DMA 引擎、PCI Express、视频加速器、Crossfire 互连和显示控制器都可以访问本地图形内存。每个内存控制器的宽度为 64 位，由两个独立的 32 位 GDDR5 内存通道组成。对于低成本产品，GDDR5 也可以用 DDR3 内存代替。对于需要较大的内存空间，GDDR5 控制器可以在clasmshell模式下运行，每个通道使用两个 DRAM，从而使容量翻倍。
-![94.png](/assets/images/gpgpu/94.png)
+![98.png](/assets/images/gpgpu/98.png)
 现代芯片最大的可靠性问题是片上内存中的软错误soft error（或位翻转）。像 AMD Radeon HD 7970 这样的高端 GPU 拥有超过 12MB 的 SRAM 和寄存器文件，分布在整个 CU 和缓存中。GCN 的片上内存支持 SECDED。第二个可靠性挑战是外部存储器。标准 GDDR5 内存接口使用 CRC 检查传输的数据，并可以重新发送任何损坏的数据。但是，没有 ECC，因此无法知道 DRAM 中保存的数据是否被软错误损坏。GCN 内存控制器具有将 SECDED 应用于 DRAM 的可选模式。受 ECC 保护的数据大约大了 6%，这略微降低了整体内存容量和带宽。
 
 ## 3.6 GCN2
@@ -737,22 +741,22 @@ Hawaii是 GCN 1.1， 即GCN2。AMD 显著增强了 GPU 的前端和后端，将�
 * 在计算核心方面，从 32 个 CU 增加到 44 个 CU
 * 1MB的L2缓存
 
-![95.png](/assets/images/gpgpu/95.png)
+![99.png](/assets/images/gpgpu/99.png)
 Hawaii 里的 GCN 架构与之前相似。计算单元基本完全相同，有 64 个符合 IEEE 754-2008 标准的着色器，分为 4 个向量单元和 16 个纹理获取加载/存储单元。一些修改包括支持标准调用约定的全局平坦地址、对原生 LOG 和 EXP 运算的精度改进，以及对绝对差分的掩码四和Masked Quad Sum of Absolute Difference（MQSAD） 函数的优化，该函数可加快运动估计算法。
-![96.png](/assets/images/gpgpu/96.png)
+![100.png](/assets/images/gpgpu/100.png)
 CU 的排列方式有所不同，Tahiti有 32 个计算单元，总共 2048 个着色器和 128 个纹理单元，而Hawaii有 44 个 CU，这些 CU 被组织成 AMD 所说的四个着色器引擎，加起来一共 2816 个聚合着色器和 176 个纹理单元。最大的变化是 AMD 将硬件组织为“着色器引擎”。从概念上类似于 NVIDIA 的 SMX，每个着色器引擎 （SE） 包括着色器/CU、几何处理器、光栅器和 L1 缓存。此外，ROP 也被纳入着色器引擎模型中，每个 SE 承担一小部分 ROP。SE 之外的是命令处理器和 ACE、L2 高速缓存和内存控制器，以及各种专用的非重复功能，如视频解码器、显示控制器、DMA 控制器和 PCIe 接口。
-![97.png](/assets/images/gpgpu/97.png)
+![101.png](/assets/images/gpgpu/101.png)
 Hawaii 还使用了 8 个经过改进的异步计算引擎Asynchronous Compute Engine，负责将实时和后台任务调度到 CU。每个 ACE 最多管理 8 个队列，总共 64 个队列，并且可以访问 L2 缓存和共享内存。
-![98.png](/assets/images/gpgpu/98.png)
+![102.png](/assets/images/gpgpu/102.png)
 Hawaii采用与 5GHz GDDR5 配对的 512 位内存总线，内存带宽总量达到 320GB/s
 ## 3.7 GCN 3 - Radeon R9 Fury X
 GCN 1.2 即GCN3最重要功能是 AMD 最新一代的 delta 颜色压缩技术。与Fiji的 ROP 相关联，delta颜色压缩增强了 AMD 现有的颜色压缩功能，增加了基于图块内像素模式和它们之间的差异（即增量）的压缩模式，从而提高了帧缓冲区（和 RT）的压缩频率和压缩量。GCN 3能够以有限的方式在 SIMD 通道之间共享数据，超越了现有的 swizzling 和其他数据组织方式。
 中介层芯片超过了 65nm 工艺的标线限制，因此中介层经过精心构造，只有需要连接的区域才能接收金属层。在除去功能单元数量和内存变化的差异后，Fiji的整体逻辑布局接近Hawaii。64 个 CU 的布局方式与之前的 GCN 设计一致，着色器引擎整体组织方式也一样。整个GPU 分为四个部分，每个着色器引擎有 1 个几何单元(geometry unit)、1 个光栅器单元(rasterizer unit)、4 个渲染后端（总共 16 个 ROP），以及16个CU。
 
 具体的，CU 还是以 4 个为一组，每组共享一个 16KB 的 L1 标量缓存和 32KB 的 L1 指令缓存。同时，由于Fiji的 CU 数量是 16 的倍数，这也消除了Hawaii在每个着色器引擎尾端的 3 个 CU 的古怪组。Fiji的 L2 缓存也进行了升级,达到 2MB。
-![99.png](/assets/images/gpgpu/99.png)
+![103.png](/assets/images/gpgpu/103.png)
 
-![100.png](/assets/images/gpgpu/100.png)
+![104.png](/assets/images/gpgpu/104.png)
 ## 3.8 GCN 4 - Radeon RX 480
 Polaris 图形架构负责处理图形和计算工作负载，并尽可能高效地执行它们。Polaris 基于 GCN ，
 * 增加了每个区域的 CU 数量以提高原始计算吞吐量，但保留了相同的整体 CU 设计。
@@ -773,17 +777,17 @@ Polaris 架构通过两种新的QoS技术增强了命令处理器，旨在提高
  在“Hawaii”和其他基于 Graphics Core Next ISA 的 GPU 中，硬件设计为支持固定数量的计算队列（每个 ACE 最多 8 个）。但是，从第 3 代和第 4 代 GCN 开始，硬件调度器Hardware Scheduler(HWS) 可以虚拟化这些计算队列。这意味着可以支持任意数量的队列，并且 HWS 会在槽可用时将这些队列分配给可用的 ACE。Polaris 和 GCN 架构图中的每个 ACE 代表一个wavefront/工作组调度器。因此，“Fiji” GPU 和基于 Polaris 架构的 GPU 可以随时从任何计算队列向着色器引擎分配多达四个wavefront/工作组。HWS 单元是双线程微处理器，能够处理两个调度线程，它们的行为可以通过 AMD 的微码更新进行调整。
 
 9 个 CU 被组织成一个着色器引擎，Polaris 架构上最多支持 4 个 SE。每个着色器引擎都与一个几何引擎相关联。Polaris 也有2MB L2 缓存。
-![101.png](/assets/images/gpgpu/101.png)
+![105.png](/assets/images/gpgpu/105.png)
 Polaris采用 256 位内存总线，比Hawaii的 512 位窄得多。Radeon RX 480 的 4GB 版本包括 7 Gb/s GDDR5，实现 224 GB/s 的带宽； 8GB 型号使用 8 Gb/s 内存，将吞吐量提高到 256 GB/s。下图是基于 Polaris 架构的 Radeo RX 480 GPU 的芯片物理布局图：
-![102.png](/assets/images/gpgpu/102.png)
+![106.png](/assets/images/gpgpu/106.png)
 
 ## 3.9 GCN 5 - VEGA
 “Vega” 10 芯片采用TSMC 14 纳米 LPP FinFET 工艺制造，125 亿个晶体管，面积 486 mm^2，最高达到1.67GHz 的Boost频率；一共 64 个下一代计算单元 （NCU），总共有 4,096 个流处理器。“Vega” 10 是第一款使用 Infinity Fabric 互连构建的 AMD 图形处理器，该互连也是“Zen”微处理器的基础。这种低延迟的互连在片上逻辑模块之间提供一致性的通信，并有QoS和安全功能。在“Vega” 10 中，Infinity Fabric 将图形核心和芯片上的其他主要逻辑模块连接起来，包括内存控制器、PCI Express 控制器、显示引擎和视频加速模块。整体架构框图如下所示：
-![103.png](/assets/images/gpgpu/103.png)
+![107.png](/assets/images/gpgpu/107.png)
 流处理器支持 16 位packed math，使峰值浮点和整数速率相对于 32 位运算翻了一番, 同时寄存器空间以及处理给定数量的运算所需的数据移动减少了一半。新指令集包括 16 位浮点和整数指令的丰富组合，包括 FMA、MUL、ADD、MIN/MAX/MED、移位、打包作等等。对于可以利用此功能的应用程序，Rapid Packed Math 可以显著提高计算吞吐量和能源效率。对于机器学习和训练、视频处理和计算机视觉等专业应用，16 位数据类型是自然而然的选择，但对于更传统的渲染作也有好处。例如，除了标准 FP32 之外，现代游戏还使用多种数据类型，Normal/direction向量、照明值、HDR 颜色值和混合因子也可以使用 16 位运算。
 除了 Rapid Packed Math 之外，NCU 还引入了各种新的 32 位整数运算，可以提高特定场景的性能和效率。其中包括一组八条指令，用于加速内存地址生成和哈希函数（通常用于加密处理和加密货币挖掘），以及最大限度地减少寄存器使用的新 ADD/SUB 指令。NCU 还支持一组 8 位整数 SAD （Sum of Absolute Differences） 运算。这些指令对于各种视频和图像处理算法都非常重要，包括用于机器学习的图像分类、运动检测、手势识别、立体深度提取和计算机视觉。QSAD 指令可以在每个时钟周期内计算 16 个 4x4 像素图块，并将结果累积到 32 位或 16 位寄存器中。可屏蔽版本 （MQSAD） 可以通过忽略背景像素并将计算集中在图像中感兴趣的区域来提供进一步的优化。
 
-![104.png](/assets/images/gpgpu/104.png)
+![108.png](/assets/images/gpgpu/108.png)
 GPU 是大规模并行处理器，需要大量数据移动才能实现峰值吞吐量。主要依靠高级存储设备和多级缓存系统的组合来满足：
 * 各种PE的 registers 从一组 L1 cache中读取数据
 * L1 cache又访问一个统一的片上 L2 cache
@@ -791,7 +795,7 @@ GPU 是大规模并行处理器，需要大量数据移动才能实现峰值吞�
  
 GPU 通常需要将其整个工作数据集和资源保存在本地内存中，因为替代方案（即通过 PCI Express 总线从主机系统内存中提取数据）无法提供稳定的高带宽或足够低的延迟来保持其以最高性能运行。
 “Vega” 架构突破了这一限制，允许其本内存的行为类似于最后一级缓存。如果 GPU 尝试访问当前未存储在本地内存中的数据，它可以通过 PCIe 总线提取必要的内存页并将其存储在高带宽缓存中，而不是强制 GPU 在复制整个缺失资源时停止运行。由于页面通常比整个纹理或其他资源小得多，因此可以更快地复制它们。传输完成后，对这些内存页面的任何后续访问都将受益于更低的延迟，因为它们现在驻留在缓存中。此功能是通过添加称为高带宽缓存控制器 （HBCC） 的内存控制器逻辑来实现的，HBCC提供了一组功能，允许远程内存像本地内存一样工作，而本地内存的行为就像LLC(Last Level Cache)一样。HBCC 支持 49 位寻址，提供高达 512 TB 的虚拟地址空间，足以覆盖现代 CPU 可访问的 48 位地址空间，并且比当今 GPU 通常附带的几 GB 本地内存大几个数量级。HBCC 是适用于服务器和专业应用的革命性技术。对于处理的数据集大小接近系统内存容量的应用程序，基于“Vega”架构的 GPU 能为此类应用程序提供与本地内存相当的有效内存性能，而且未来甚至可以扩展到非易失性存储等大容量存储设备。应用程序可以将此存储容量视为一个统一的大内存空间。如果访问当前未存储在本地高带宽内存中的数据，HBCC 可以按需缓存页面，而最近未使用的页面将交换回系统内存。这个统一的内存池被称为 HBCC 内存段 （HMS，HBCC Memory Segment）。为了从“Vega”的新的缓存层次结构中获得最大收益，所有图形模块都通过L2 缓存进行访问。与以前基于 GCN 的架构不同，在之前架构中，像素引擎拥有自己的独立缓存，并支持更大的数据重用。由于 GPU 的 L2 缓存在新的内存层次结构中起着核心作用，因此基于“Vega”架构的 GPU 设计了大量 L2 缓存。“Vega” 10 GPU 具有 4 MB 的 L2 缓存，是以前高端 AMD GPU 中 L2 缓存大小的两倍。
-![105.png](/assets/images/gpgpu/105.png)
+![109.png](/assets/images/gpgpu/109.png)
 
 ## 4.0 CDNA 1 - MI100
 AMD Instinct MI100 GPU 分为几个主要功能模块，这些模块都通过片上互联连接在一起：
@@ -799,7 +803,7 @@ AMD Instinct MI100 GPU 分为几个主要功能模块，这些模块都通过片
 * 命令处理器接收 API 级命令并为 GPU 的各个组件分配工作。概括地说，任何计算处理器（无论是 CPU 还是 GPU）的三个主要功能是计算、内存和通信，每个功能由不同的模块实现。命令处理器和调度逻辑将更高级别的 API 命令转换为计算任务。这些计算任务反过来又作为计算阵列实现并由异步计算引擎 （ACE） 管理。四个 ACE 中的每一个都维护着独立的命令流，并且可以将wavefront分发到计算单元。
 
 AMD CDNA 架构中 120 个 CU 被组织成四个 CU 阵列。CU 源自之前的 GCN 架构，并执行包含 64 个工作项的wavefront。但是，CU 通过新的矩阵核心引擎(Matrix Core Engine)得到增强，这些引擎针对矩阵数据类型进行了优化，从而提高了计算吞吐量和能效。AMD Instinct MI100 加速器的框图如下，这是第一款由 AMD CDNA 架构提供支持的 GPU:
-![106.png](/assets/images/gpgpu/106.png)
+![110.png](/assets/images/gpgpu/110.png)
 CU 通过新的矩阵引擎进行增强，以处理 MFMA 指令并提高吞吐量和能源效率。与 GCN 中的传统向量流水线相比，矩阵执行单元具有多项优势:
 * 首先，执行单元减少了寄存器文件读取的次数，因为在矩阵乘法中，许多输入值被重复使用。
 * 其次，较窄的数据类型为不需要完全 FP32 精度的工作负载（例如机器学习）提供优化空间。一般来说，乘累加指令功耗是输入数据类型的平方，因此从 FP32 转移到 FP16 或 bf16 可以节省大量功耗。
@@ -820,7 +824,7 @@ AMD CDNA 架构建立在 GCN 的标量和向量基础之上，并将矩阵添加
 * FP16 是另一个 IEEE 标准，专为图形工作负载设计，使用 5 位指数和 10 位尾数。虽然 FP16 比 FP32 效率高得多，但对于 ML 训练需要调整算法以避免溢出和收敛问题。bfloat16 格式进行了折衷，使用 FP32 的 8 位指数，但将尾数截断为 7 位。bf16 数值更容易用于 ML 训练，收敛问题较少。
 
 下图是AMD CDNA里CU的架构框图：
-![107.png](/assets/images/gpgpu/107.png)
+![111.png](/assets/images/gpgpu/111.png)
 ### 内存层次结构
 AMD Instinct MI100 加速器的内存层次结构的最低级别位于 CU 内部，但大多数科学或机器学习数据集都以 GB 或 TB 为单位，并且会很快溢出到内存中。内存层次结构负责保存工作数据并将其有效地传送到计算阵列供计算使用。
 
@@ -829,12 +833,12 @@ L2 缓存在整个芯片上共享，并在物理上分区为多个 slice。对�
 AMD CDNA架构内存控制器以 2._4GT_/s的速度驱动 4 层或 8 层封装的 HBM2 堆栈，总理论吞吐量为 1.23TB/s，容量32GB，提供硬件 _ECC_ 保护。
 ### 系统扩展
 AMD CDNA 架构使用基于标准的高速 AMD Infinity Fabric 技术连接到其他 GPU。Infinity Fabric 链路速率为 23GT/s ，与上一代类似，宽度为 16 位；但 MI100 有3个IF链路，可在4个 GPU中实现完全连接，提供更大的双分带宽并支持高度可扩展的系统，完全连接的拓扑提高了常见通信模式的性能，例如 all-reduce 和 scatter/gather。与 PCIe 不同，AMD Infinity Fabric 链路支持一致性的 GPU 内存，这使得多个 GPU 能够共享一个地址空间。
-![108.png](/assets/images/gpgpu/108.png)
+![112.png](/assets/images/gpgpu/112.png)
 ##  4.1 CDNA 2 - MI200
 MI200是第二代CDNA架构，用于取代上一代MI100, MI200整体结构如下所示: 
-![109.png](/assets/images/gpgpu/109.png)
+![113.png](/assets/images/gpgpu/113.png)
 通过Infinity Fabric, AMD利用封装技术将多个计算芯粒组成一个芯片，称为MCM（Multiple Chip Module)。
-![110.png](/assets/images/gpgpu/110.png)
+![114.png](/assets/images/gpgpu/114.png)
 两个主要的 MI200 加速器（MI250、MI250X）都使用这种方法，其中每个加速器由两个小芯片（“GCD”——图形计算芯片Graphics Compute Die）通过一致性的 4x Infinity Fabric 链路相互连接组成。通过使用多个更小尺寸、产量更高的 GCD 而不是一个大型单片芯片可以提高灵活性和可扩展性。然而，也带来了多个问题:
 * 首先，从软件的角度来看，单个加速器暴漏为两个独立的 GPU。这意味着算法需要具有多 GPU 感知能力，才能充分利用加速器。
 * 其次，尽管通过 4 个高速 IF 链路连接，但芯片到芯片的互联带宽仍然远低于 HBM 内存带宽，导致在 GCD 之间移动数据相当痛苦，并且明显慢于内存访问。这实际上是 AMD 选择将加速器暴漏为两个不同的 GPU 的原因;互联带宽无法匹配两个芯片之间的 HBM 带宽。
@@ -842,11 +846,11 @@ MI200是第二代CDNA架构，用于取代上一代MI100, MI200整体结构如�
 这个缺点在 HPC 环境中不会有太大影响。HPC 代码旨在通过使用 MPI 通过高速网络同步和传递数据，从而跨多个节点进行扩展。双芯粒 MI250X 将简单地视为两个 GPU，具有特别快的链路用于在它们之间传递消息。
 
 MI200 GCD的整体架构框图如下所示:
-![111.png](/assets/images/gpgpu/111.png)
+![115.png](/assets/images/gpgpu/115.png)
 总体而言，MI200 GCD 的计算架构在 MI100 的先前架构上采用了迭代、进化的方法。芯片分为 4 个计算引擎，每个引擎由一个异步计算引擎提供任务，每个计算引擎分为 2 个着色器引擎，每个着色器引擎有 14 个计算单元 （CU）。
 
 CU的结构框图如下所示:
-![112.png](/assets/images/gpgpu/112.png)
+![116.png](/assets/images/gpgpu/116.png)
 CU 的结构与 MI100 基本相同。每个 CU 都有
 * 4 个 SIMD16 单元
 * 4 个 Matrix Core 单元
@@ -858,13 +862,13 @@ CU 的结构与 MI100 基本相同。每个 CU 都有
 这里的主要区别在于 ALU 现在是原生的 64 位宽。这意味着 MI200 可以全速率执行 FP64，不仅相对于 MI100 的吞吐量增加了 2 倍，而且与 NVIDIA A100 相比也具有相当大的优势，并使 MI200 加速器在 FP64 中略差于下一代 NVIDIA H100。
 
 AMD 还使用此功能支持Packed FP32 指令，从而使某些 FP32操作（FMA、FADD 和 FMUL）的吞吐量增加一倍。然而，这并不是免费的——它需要修改代码才能工作，因为操作数需要相邻并与偶数寄存器对齐。AMD 还包括专用的packed移动指令，对分散的操作数进行排序，以便可以适用packed FP32。寄存器分配是编译器的工作，而不是程序员的工作，但是对于packed FP32，需要指导编译器才能使用此功能，因此需要进行一些修改。
-![113.png](/assets/images/gpgpu/113.png)
+![117.png](/assets/images/gpgpu/117.png)
 从 MI100 开始，AMD 在 CU 中添加了矩阵单元。与 NVIDIA 的 Tensor Core 一样，矩阵单元可通过一组新指令进行访问。在 NVIDIA 和 AMD 上，矩阵指令打破了 SIMT 抽象模型，并在整个wavefront（或 NVIDIA 上的 “warp”）上工作。  
 矩阵操作在两边都有点奇怪。NVIDIA 依赖于向量寄存器文件中的特殊布局。AMD 添加了第二个累加寄存器文件。对于 A * B + C 矩阵运算，MFMA 指令可以从任一寄存器文件获取 A 和 B，但 C 必须来自累加器寄存器文件。
 
-![114.png](/assets/images/gpgpu/114.png)
+![118.png](/assets/images/gpgpu/118.png)
 CDNA2 通过删除单独的累加器 RF，提供一个大的统一寄存器文件来改进这一点。在 MI100 中，每个 SIMD16 单元都有 256 个“架构”向量通用寄存器 （VGPR），矩阵核心单元还有 256 个“累加器”寄存器。MI200 将这两者合并为一个具有 512 个条目的统一寄存器文件。对于矩阵运算，统一寄存器文件消除了在寄存器文件之间移动值的潜在麻烦，以确保累加器输入可以来自累加器寄存器文件。统一寄存器文件增加的条目数还有助于减少寄存器压力，并在运行非矩阵代码时可以增加占用率。
-![115.png](/assets/images/gpgpu/115.png)
+![119.png](/assets/images/gpgpu/119.png)
 MI200 中的矩阵核心单元还支持全速率 FP64，与 MI100 相比，CU 每个周期的 FP64 FLOPS 增加了 4 倍。较低精度的矩阵计算的吞吐量也有所增加，相比MI100，CU每个时钟的 BF16 吞吐量翻了一番。此外，还为 16x16x4 和 4x4x4 模块引入了功耗更低的矩阵指令。
 MI200 CU 中的 LDS 改进原子操作，并支持 FP64 原子。这些变化反映并加强了 AMD 在其服务器 GPU 中采用的以 HPC 为中心的方法，非常注重双精度向量性能，而不是较低的精度或矩阵性能。MI250X 的矩阵单元比 CDNA1 中的矩阵单元有所改进，但仍然只能与NVIDIA的 FP64 每 CU/SM 时钟吞吐量相匹配。在处理较低精度的格式时NVIDIA仍然提供更高的矩阵吞吐量，这使得 Hopper 成为 ML 和 AI 工作负载的更好选择。
 
@@ -872,7 +876,7 @@ MI200 CU 中的 LDS 改进原子操作，并支持 FP64 原子。这些变化反
 每个 GCD 都有一个 8MB 的 16 路 L2 缓存，物理分区为 32 个切片，BW 为 128B/clk/slice，总带宽为 4096B/clk，是 MI100 的 L2 带宽的两倍。与 LDS 一样， MI200 中L2 原子操作也得到了增强，增加了对 FP64 原子的支持。  
 
 在内存方面，每个 MI200 GCD 支持4 个  3.2 Gbps HBM2E，容量64GB； 物理上一共 32 个通道，在有效电压下带宽为 64B/clk；每个 GCD一共 1.6 TB/s 的内存带宽，带宽比 MI100 增加了 33%，内存容量增加了 100%。
-![116.png](/assets/images/gpgpu/116.png)
+![120.png](/assets/images/gpgpu/120.png)
 与 CDNA 相比，CDNA2 GCD 里CU 略少，但提供了更多的缓存和内存带宽。这种带宽增加可能是必要的，因为 CDNA2 计算单元可以全速率处理 FP64，而 FP64 消耗的内存和内存带宽是 FP32 的两倍。AMD 的 HPC 和消费类 GPU 架构在过去几年中越来越分化，CDNA2 和 RDNA2 的内存子系统截然不同。RDNA2 将廉价的 256 位 GDDR6 设置与非常复杂的缓存层次结构相结合，而 CDNA2 具有简单的两级缓存结构，但是巨大的 L2 和 DRAM 带宽。。
 
 NVIDIA 的缓存方法与 AMD 的相反，在消费类和 HPC 中都提供高的 DRAM 带宽。消费类 GA10x 芯片有高达 6 MB 的 L2，并使用高功耗、高带宽的 GDDR6X 。相比之下，面向 HPC 的 A100 具有 40 MB 的 L2，由 HBM2 提供支持。NVIDIA Hopper 架构类似，并带来了由 HBM3 支持的 50 MB L2。
@@ -885,26 +889,26 @@ NVIDIA 的缓存方法与 AMD 的相反，在消费类和 HPC 中都提供高的
 	* 四个 IF 链路具有封装内接口，允许同一封装芯片中的两个 GCD 以 400 GB/s 的带宽相互通信。
 	* 其余三个 IF 链路具有封装间接口，用于与其他 GCD 和主机 CPU 通信。与 MI100 中每个 GPU 三个 IF 链路允许完全连接4个GPU拓扑结构不同 ，MI250X 需要更复杂的拓扑。因为每个 MI250X 卡基都是一个双 GPU 板卡，所以对于1个由4个GPU组成的 HPC 需要连接8个 GCD。AMD 为每个 GCD 提供与对等 MI250X 卡中的两个 GCD 的直接链接。当跨 GCD 通信需要额外的跃点时，可以通过高带宽的封装内链接。这可避免在较低带宽的片间链路上造成拥塞。
 
-![117.png](/assets/images/gpgpu/117.png)
+![121.png](/assets/images/gpgpu/121.png)
 AMD 使用 GCD 的第三个片间 IF 链路连接到 CPU。此链路仅在 IF 模式下运行，使用经过专门优化的第 3 代 EPYC CPU（Frontier 中使用的 AMD Trento 平台）。这允许 CPU 和 GPU 之间保持缓存一致性，其中 CPU 缓存其内存和 MI250X 中HBM 内存 。当与其他常规 x86 CPU 连接时，该链路的行为类似于常规 PCIe x16 接口。
 
 MI200 的另一个重大变化是增加了一个下游 25Gbps PCIe 4.0 ESM 链路。这个下游接口耦合到 PCIe RC，使 GPU 能够驱动连接到它的 I/O 设备。因此，GPU 可以直接管理连接到它的设备，而不必依赖 CPU 进行管理。此功能对于超级计算集群中的高带宽的网卡特别有用。进出 IO 设备的流量通常由 DRAM 提供支持，这意味着通过网络控制器移动大量数据可能会占用大量 DRAM 带宽。将 NIC 直接连接到 MI250X GPU 允许 AMD 使用 GPU 的 HBM 内存支持网络流量，该内存带宽比 CPU 的 DDR4 多得多。
 
 ## 4.2 CDNA 3 - MI300
 如下图所示，CDNA 3架构利用了最新 3D 封装技术，并从根本上将处理器的计算、内存和通信单元重新分区到异构封装中。MI300 系列集成了多达 8 个垂直堆叠的加速器复合芯粒 （XCD） 和 4 个包含系统基础功能的 I/O 芯粒 （IOD），通过AMD Infinity Fabric连接，并提供 8 个高带宽内存 （HBM） 堆栈。在微架构层面，GPU 内核中向量和矩阵数据的计算吞吐量通过对稀疏数据的支持得到增强。在宏观层面，这种对物理实现的彻底重新思考与完全重新设计的缓存和内存层次结构相结合，该层次结构可以随着计算的增加而优雅扩展，并且还将缓存一致性作为一等公民。
-![118.png](/assets/images/gpgpu/118.png)
+![122.png](/assets/images/gpgpu/122.png)
 这种架构为构建 AMD CDNA 3 变体提供了多功能性，例如 MI300X 独立 GPU 或 MI300A APU，如下图所示。
 * MI300X 独立 GPU 主要专注于加速器计算，并包含 8 个加速器复杂芯粒 （XCD）。对于机器学习中常见的低精度数据，MI300X 独立 GPU 提供了显著的代际性能提升，峰值吞吐量为 3.4-6.8 倍，峰值理论 FP8 性能为 2.6 PFLOP/s。对于使用单精度和双精度的传统 HPC 工作负载，计算吞吐量提高了 1.7-3.4 倍，为单个处理器提供了 163.4 TFLOP/S FP64 矩阵计算能力。
 * MI300A APU 将 CPU、GPU 和内存集成在一个封装内。相比MI300X加速器，计算能力降低了 25%，为3个基于 x86 的“Zen 4”CPU 芯粒腾出空间，与 6 个 GPU 芯粒紧密耦合。APU 共享单个虚拟内存和物理内存池，延迟极低。MI300A 是世界上第一款高性能数据中心 APU，通过消除主机/设备数据拷贝，并为开发人员带来极大的易用性，并通过消除 DIMM 和 CPU 到 GPU 通信链路等组件，在系统级别降低功耗和面积。
-![119.png](/assets/images/gpgpu/119.png)
+![123.png](/assets/images/gpgpu/123.png)
 
 ### AMD CDNA 3 计算架构
 计算能力由加速器复合芯粒 （XCD）提供，它包含处理器的计算单元以及缓存层次结构的最低级别，并采用 TSMC 5nm 工艺制造。整体架构如下所示：
-![120.png](/assets/images/gpgpu/120.png)
+![124.png](/assets/images/gpgpu/124.png)
 如上图所示，每个 XCD 都包含一组共享的全局资源，包括调度程序、硬件队列和四个异步计算引擎 （ACE），这些引擎负责将计算着色器工作组分发到计算单元 （CU），这些计算单元是 AMD CDNA 3 架构的计算核心。四个 ACE 分别与 40 个 CU 相关联，但只有 38 个活动 CU，其中 2 个用于良率管理而被禁用。38 个 CU 共享一个 4MB 的 L2 缓存，用于聚合芯粒的所有内存流量。相比 AMD Instinct MI200，AMD CDNA 3 XCD 芯粒更小，CU数量 不到一半，但使用更先进的封装，芯片一共包括 6-8 个 XCD，总共多达 304 个 CU，比 MI250X 多出约 40%。
 
 如下图所示，AMD CDNA 3 计算单元是完整的、高度线程化的并行处理器内核，包括指令获取和调度，标量、向量和矩阵执行单元，以及包含 L1 缓存和本地数据共享 （LDS） 的加载/存储流水线，这些构成了内存层次结构的起点。虽然计算单元在架构上与 AMD CDNA 2 中的计算单元相似，但进行了全面改进，整个内核都进行了重大更改，几乎在每个级别都利用了更高的并行性，在许多情况下，每个 CU的向量和矩阵工作负载的性能提高了一倍甚至四倍。
-![121.png](/assets/images/gpgpu/121.png)
+![125.png](/assets/images/gpgpu/125.png)
 指令缓存在两个 CU 之间共享，比上一代的容量增加了一倍，达到 64KB，8 路组相联。这种结构利用了这样一个现实，即在绝大多数情况下，相同的指令流将由一组 CU 执行，因此增加可缓存窗口和命中率，同时保持芯片面积几乎不变。AMD CDNA 3 CU 改进了源缓存，以提供更好的重用和带宽放大，以便每个向量寄存器读取都可以支持更多的下游向量或矩阵操作。
 
 AMD CDNA 3 CU 的最大改进在于矩阵内核Matrix Core，通过提高通常用于尖端训练和推理的现有数据类型的吞吐量，以及添加全新的数据类型来支持人工智能和机器学习。机器学习性能的最大杠杆之一是采用更紧凑的数据类型，可以节省内存和缓存容量，提高吞吐量并降低功耗。十年前，大多数机器学习应用程序都依赖于 FP32，但随着时间的推移，社区使用越来越小的数据类型。为了实现最佳训练性能，AMD CDNA 2 矩阵内核支持 FP16 和 BF16，同时提供 INT8 进行推理。AMD CDNA 3 矩阵内核将 FP16 和 BF16 的性能提高了三倍，同时与上一代 MI250X 加速器相比，INT8 的性能提高了 6.8 倍。为了提高 AI 性能，AMD CDNA 3还支持FP8和TF32。 
@@ -913,7 +917,7 @@ AMD CDNA 3 计算单元中的 LDS 保持在 64KB，类似于 AMD CDNA 2 计算�
 
 ### AMD CDNA 3内存层次结构
 AMD CDNA 3 架构中最大的变化在于计算单元之外的内存层次结构，该架构已完全重新设计，以充分利用异构小芯片，并为 APU 产品中共同封装的 CPU 小芯片实现缓存一致性。这种内存层次结构的重新设计从 XCD 中的共享 L2 缓存开始。随着 AMD Infinity Cache 的加入，L2 缓存的作用发生了根本性的变化，AMD Infinity Cache 是位于有源 I/O 芯粒 （IOD） 上的最后一级缓存 （LLC）。下图显示了新的内存架构：
-![122.png](/assets/images/gpgpu/122.png)
+![126.png](/assets/images/gpgpu/126.png)
 一些更面向内存的功能已被删除并转移到 AMD Infinity Cache，而其他方面则是新的或更突出的。例如，L2 发挥着关键的新作用，因为它是最低级别的缓存，一致性由硬件自动维护。同时，它经过重新设计，为 CU 提供更丰富的资源组合，同时将它们与一致性流量隔离，并优化了与 AMD Infinity Fabric互联网络的接口。L2 的容量是 4MB，16 路组相联，分成16 个通道，每个通道 256KB。L2 缓存由所有 38 个计算单元共享，并为来自较低级别的指令和数据缓存的请求服务。在读取端，每个通道可以读出一条 128 字节的缓存行，而 L2 缓存每个周期可以接受来自不同 CU 的四个请求，每个 XCD 的总吞吐量为 2KB/时钟。16 个通道仅支持半行 64 字节写入，每个通道每个时钟有一个来自 Infinity Fabric 的填充请求。AMD CDNA 2 的每个 L2 缓存实际上有 32 个通道，但最多只有两个实例，而 AMD CDNA 3 总共有多达 8 个实例和高达 34.4 TB/s 的聚合读取带宽。
 
 L2 是一种写回和写分配设计，旨在聚合并减少从 AMD Infinity Fabric 到 AMD Infinity Cache 的访问次数。L2 本身在 XCD 中是保持一致性的。Infinity Cache 包括一个覆盖多个 XCD L2 缓存的监听过滤器（snoop filter），因此来自其他 XCD 的绝大多数一致性请求将在 Infinity Cache 中解析，而不会干扰高度利用的 L2 缓存。
@@ -924,60 +928,60 @@ AMD Infinity Cache 是 AMD CDNA 3 架构的全新结构，它通过增加缓存�
 
 就像 L2 缓存一样，AMD Infinity Cache 是 16 路组相联，并围绕通道的概念构建的。每个 HBM 内存堆栈与 16 个并行通道相关联。一个通道宽 64 字节，连接到 2 MB 的数据阵列支持同时读取和写入。四个 IOD 总共有 8 个 HBM 堆栈，一共 128 个通道和 256MB 数据阵列。Infinity Cache 的峰值带宽达到惊人的 17.2 TB/s，几乎与上一代 L2 缓存的总带宽一样大。除了 AMD Infinity Cache 之外，每个 IOD 通过封装扇出到两个内存堆栈。AMD CDNA 3 架构将内存接口从 HBM2e 升级到最新的 HBM3，速率5.2Gbps，每个堆栈包含 16GB 或 24GB 内存。总的来说，MI300A上容量是128GB 和 MI300X 上的 HBM3 内存容量是192GB， 峰值理论内存带宽是5.3 TB/s 。此外，在 MI300A 中，HBM3 内存在 GPU 和 CPU 之间统一共享，从而大大降低了延迟并提高了通信吞吐量。如下图所示，
 
-![123.png](/assets/images/gpgpu/123.png)
+![127.png](/assets/images/gpgpu/127.png)
 ### 片间互联和扩展
 AMD CDNA 2 架构在采用第 3 代 AMD Infinity 架构的功能方面取得了巨大飞跃，包括封装内、封装之间和主机处理器的 AMD Infinity Fabric 技术。AMD CDNA 3 架构在封装内部更广泛地使用第 4 代 Infinity 架构，将通信和扩展提升到一个新的水平，并全面提高了效率和性能。然而，AMD CDNA 3 系列的异构集成为 AMD 提供了独特的机会，可以通过 AMD Instinct MI300X 独立 GPU 和 AMD Instinct MI300A APU 在两个不同的方向上推动可扩展性。对于 AMD CDNA 3，通信链路速率为 32Gbps ，并在 IOD 之间重新分配。每个 IOD 包括两个 16 通道双向封装间 AMD Infinity Fabric 链路，用于连接其他 AMD 加速器。其中一个链路是多用途的，可以配置为 x16 PCIe Gen 5，以实现纯 I/O 功能。
 
-![124.png](/assets/images/gpgpu/124.png)
+![128.png](/assets/images/gpgpu/128.png)
 如上图所示，MI300X 独立 GPU 使用7个高带宽和低延迟的 AMD Infinity Fabric 链路来形成一个完全连接的 8-GPU 系统。每个 GPU 还通过 x16 PCIe Gen 5 链路连接到主机 CPU。这种方法通常使用 OCP 通用基板 （UBB） 外形尺寸，该外形尺寸基于各种行业标准技术构建，可轻松构建和部署系统。与上一代相比，这个 8 GPU 节点本质上更快、更高效，可用于 allreduce 和 allgather 等通信模式，这些通信模式用于机器学习的梯度求和和数据并行分片。对于 MI300A APU，CPU 内核和统一内存的封装集成更具变革性。在上一代产品中，AMD EPYC 处理器和 MI250X GPU 通过两个 AMD Infinity Fabric 链路连接，带宽 144GB/s，延迟是封装级别的。在 MI300A APU 上，封装内的 AMD Infinity Fabric 以芯粒内延迟和接口吞吐量将加速器复合体芯片 （XCD） 和 CPU 复合芯片 （CCD） 直接连接到共享的 Infinity Cache 和 8 堆栈的 HBM3 堆栈中。在节点级别，MI300A APU 还在处理器之间提供比上一代更大的结构带宽。许多 HPC 系统专注于 4 处理器节点，如下图所示，每个处理器都使用两个带宽为 256GB/s 的 AMD Infinity Fabric 链路与其对等节点完全连接。
-![125.png](/assets/images/gpgpu/125.png)
+![129.png](/assets/images/gpgpu/129.png)
 
 ### AMD CDNA 4 计算架构
 First off, a check on where we are at in the journey. In 2023, AMD shipped the Instinct MI300 series. The MI300A found great success at places like HPC with [El Capitan](https://www.servethehome.com/inside-top-classified-us-supercomputer-el-capitan-amd-hpe/) (and the [GIGABYTE G383-R80-AAP1](https://www.servethehome.com/gigabyte-g383-r80-aap1-amd-instinct-mi300a-server-review/)) while the MI300X series did well at Microsoft Azure for AI. The MI325X is effectively an update to the MI300X much like the NVIDIA H200 updates the H100. The MI350 series is more than that with some architectural changes an a pivot to focus more on AI than HPC.
-![126.png](/assets/images/gpgpu/126.png)
-
-![127.png](/assets/images/gpgpu/127.png)
-![128.png](/assets/images/gpgpu/128.png)
-the AMD Instinct MI350 is built in a similar manner to the MI300 and MI325 with the 3D Integration. The new accelerator compute die (XCD) is now on N3P process versus N5 in the previous generation. The I/O die (IOD) is between those XCDs and the interposer.
-![129.png](/assets/images/gpgpu/129.png)
-There are eight 32 CDNA 4 compute units per XCD. With eight XCDs that is 256 compute units total. You may note that is fewer than the full MI300X/ MI325X even with the N3P process shrink. AMD said that it added more compute to CDNA 4, so those are beefier compute units.
 ![130.png](/assets/images/gpgpu/130.png)
-Here is the block diagram including the Infinity Fabric and Infinity Cache. You might notice that on the XCD there are several compute units that are different colors. AMD has additional compute units that it can use to help bin chiplets and increase yield by binning for the best CUs.
+
 ![131.png](/assets/images/gpgpu/131.png)
-The AMD Instinct MI350 platforms are based on the OAM UBB (Universal Baseboard), the industry’s standard 8-GPU form factor. The AMD Instinct MI350X air-cooled and MI355X liquid-cooled platforms use the UBB form factor but the liquid-cooled version can scale to 1.4kW with liquid cooling.
 ![132.png](/assets/images/gpgpu/132.png)
-AMD’s vision is to use open standards like UltraEthernet Consortium (UEC) and UALink for scale out and scale up. Some of those are next-generation technologies, but for now, the focus is showing the racks with 64 to 128 GPUs per rack and offering up to 36TB of HBM3E memory in a single rack.
+the AMD Instinct MI350 is built in a similar manner to the MI300 and MI325 with the 3D Integration. The new accelerator compute die (XCD) is now on N3P process versus N5 in the previous generation. The I/O die (IOD) is between those XCDs and the interposer.
 ![133.png](/assets/images/gpgpu/133.png)
-As a result, we get designs for up to 128x liquid cooled MI355X GPUs. That is sixteen UBB 8 GPU trays. Even at 2U each, that is 32U worth of GPUs. Even if you have 1U host nodes, that is 48U of rack space which is significant. Remember, the NVIDIA GB200 NVL72 rack is only 72 GPUs in a rack.
+There are eight 32 CDNA 4 compute units per XCD. With eight XCDs that is 256 compute units total. You may note that is fewer than the full MI300X/ MI325X even with the N3P process shrink. AMD said that it added more compute to CDNA 4, so those are beefier compute units.
 ![134.png](/assets/images/gpgpu/134.png)
+Here is the block diagram including the Infinity Fabric and Infinity Cache. You might notice that on the XCD there are several compute units that are different colors. AMD has additional compute units that it can use to help bin chiplets and increase yield by binning for the best CUs.
+![135.png](/assets/images/gpgpu/135.png)
+The AMD Instinct MI350 platforms are based on the OAM UBB (Universal Baseboard), the industry’s standard 8-GPU form factor. The AMD Instinct MI350X air-cooled and MI355X liquid-cooled platforms use the UBB form factor but the liquid-cooled version can scale to 1.4kW with liquid cooling.
+![136.png](/assets/images/gpgpu/136.png)
+AMD’s vision is to use open standards like UltraEthernet Consortium (UEC) and UALink for scale out and scale up. Some of those are next-generation technologies, but for now, the focus is showing the racks with 64 to 128 GPUs per rack and offering up to 36TB of HBM3E memory in a single rack.
+![137.png](/assets/images/gpgpu/137.png)
+As a result, we get designs for up to 128x liquid cooled MI355X GPUs. That is sixteen UBB 8 GPU trays. Even at 2U each, that is 32U worth of GPUs. Even if you have 1U host nodes, that is 48U of rack space which is significant. Remember, the NVIDIA GB200 NVL72 rack is only 72 GPUs in a rack.
+![138.png](/assets/images/gpgpu/138.png)
 # 4 Intel Ponte Vecchio
 与 Nvidia 的 H100 和 AMD 的 MI210 相比，PVC 没有固定功能的图形硬件，并且缺少显示输出。而H100 和 MI210 仍然具有某种形式的纹理单元。因此，PVC实际上是一个巨大的并行处理器，其编程方式与为计算编程的 GPU 的方式相同。
-![135.png](/assets/images/gpgpu/135.png)
-![136.png](/assets/images/gpgpu/136.png)
+![139.png](/assets/images/gpgpu/139.png)
+![140.png](/assets/images/gpgpu/140.png)
 PVC 是一场小芯片盛会。 PVC 的计算芯粒采用台积电 5 纳米工艺制造，基本计算单元称为 Xe 内核(Xe Core)。计算芯粒位于 640 mm^2 基础芯粒的顶部，基础芯粒包括 144 MB L2 缓存并使用英特尔的 7 工艺。然后，基础芯粒充当 IO 芯粒，连接到 HBM2e、PCIe 和其他 GPU。PVC 将五个不同的工艺节点组合在同一个封装中，并使用嵌入式桥接(EMIB)或 3D 堆叠将它们连接起来。英特尔 GPU Max 1100实现了 56 个 Xe 内核，时钟频率高达 1.55 GHz。基本芯粒启用了 108 MB 的 L2 缓存，并连接到 48 GB 的 HBM2e 内存，理论带宽为 1.2 TB/s。Max 1100 是300W TDP 的 PCIe 卡，类似于 AMD 的 MI210 和 Nvidia 的 H100 PCIe。
-![137.png](/assets/images/gpgpu/137.png)
+![141.png](/assets/images/gpgpu/141.png)
 如果 L1未命中，将继续访问基础芯粒上的 L2。Intel 的 L2 缓存（有时称为 L3）非常大，标称容量为 144 MB。Nvidia 的 Ada Lovelace 架构的完整体 AD102 芯片有 96 MB 的 L2 缓存，而 AMD 的 RDNA 2 有高达 128 MB 的 Infinity 缓存。这两种架构都代表了最近的趋势，即消费类 GPU 使用巨型缓存来避免昂贵的 VRAM 。
-![138.png](/assets/images/gpgpu/138.png)
+![142.png](/assets/images/gpgpu/142.png)
 
 不幸的是，Intel 的 L2 延迟相当高，超过 286 ns。小芯片不是延迟增加的原因，因为 AMD CPU 上的垂直堆叠只会增加几纳秒的额外延迟。一般具有更大缓存的更大 GPU 往往会出现更高的延迟，但 Intel 比 AMD 或 Nvidia 更难解决这个问题。
-![139.png](/assets/images/gpgpu/139.png)
+![143.png](/assets/images/gpgpu/143.png)
 
 TLB 以及 L2 缓存是在基础芯粒上实现的，因此 L1 缓存实际上是VIVT寻址的，命中 L2 可能会导致地址转换延迟。很多 GPU 都这样做，但如果 TLB 查找速度很慢，会增加缓存延迟。高 L2 延迟可以由更大的L1容量来克服。PVC 的 上512 KB 的 L1 和较早之前的 GPU（如 Nvidia 的 GTX 680 或 AMD 的 Radeon HD 6950）上的 L2 容量一样大，也比 AMD 的 RDNA 2 和 3 架构上的 L1 缓存大。与 AMD 和 Nvidia 相比，Intel 的 L2 缓存的访问量应该要少得多，因为 L1 的未命中率会更低。
 
 除了全局内存外，GPU 还有充当软件管理暂存器的本地内存，英特尔称之为共享本地内存 （SLM）。Nvidia 称为共享内存(Shared Memory)，AMD 称之为本地数据共享 （LDS）。
 
 PVC 中的每个 Xe Core 有8个 512 位向量引擎，每个周期可进行 16 个 32 位操作。Nvidia 和 AMD 的设计则使用4个分区。H100 的 SM 有4个 32 位宽的 SMSP，或者32 位操作时为 1024 位宽。MI210 的 CU 有4个 16 宽的 SIMD，也是 1024 位宽的，因为每个通道本身都处理 64 位操作。
-![140.png](/assets/images/gpgpu/140.png)
+![144.png](/assets/images/gpgpu/144.png)
 
 PVC 有很多弱点，L2 缓存和 VRAM 延迟太高了，并且FP64 FMA 吞吐量出奇地低。对于PVC，大量的芯片面积却没有带来足够的计算能力，即使和 AMD 的 MI210 相比。不过开发 PVC 时可能获得了不同工艺节点和封装技术的大量经验。
-![141.png](/assets/images/gpgpu/141.png)
+![145.png](/assets/images/gpgpu/145.png)
 
 
 # 5 BR100 
 BR100 是由两个芯粒组成的多芯粒 GPU，采用台积电的 7nm 工艺，频率1 GHz，功耗为550W；每个芯粒的面积为 537 mm2，有 385 亿个晶体管，芯片一共有 770 亿个晶体管。每个芯粒有两个 HBM2E ，为 GPU 提供总共四个 HBM2E 堆栈和 64 GB 的 DRAM，1.6TB/s的存储带宽。计算芯粒和 HBM 使用 TSMC 的 CoWoS（Chip on Wafer on Substrate）封装，芯粒间 896 GB/s 的互联带宽。整体结构如下所示：
-![142.png](/assets/images/gpgpu/142.png)
+![146.png](/assets/images/gpgpu/146.png)
 GPU 通过PCIe Gen 5 x16连接到主机, 并且支持 CXL。GPU 可以通过8个“BLink”连接，每个提供 64 GB/s 的双向带宽。对于片上网络，BR100 与 Sapphire Rapids （SPR） 等英特尔的服务器 CPU 有很多共同点, 每个处理单元旁边实现一个缓存切片，并且可以将这些缓存切片组合成一个大型的统一缓存。BR100整体架构如下所示：
-![143.png](/assets/images/gpgpu/143.png)
+![147.png](/assets/images/gpgpu/147.png)
 BR100 计算单元由 SPC(Streaming Processing Cluster) 组成，SPC 的 L2 可以配置为私有暂存器(Scratchpad)或私有缓存。BR100 SPC 主要包括：
 * 16 个EU（执行单元），每个 EU 有：
 	* 16 个流处理核心（V 核）
@@ -992,7 +996,7 @@ BR100 计算单元由 SPC(Streaming Processing Cluster) 组成，SPC 的 L2 可�
 	* 内置归约引擎（Reduction Engine)
 
 TDA 专用于使用张量描述符加速地址计算和 OOB，TDA 通过卸载寻址开销和支持不同的张量布局来提高张量数据获取效率。
-![144.png](/assets/images/gpgpu/144.png)
+![148.png](/assets/images/gpgpu/148.png)
 
 V核支持通用计算的全套 ISA，支持 FP32、FP16、INT32、INT16，包括下列功能单元：
 * SFU
@@ -1004,21 +1008,21 @@ V核支持通用计算的全套 ISA，支持 FP32、FP16、INT32、INT16，包�
 BR100支持增强的 SIMT 模型
 * 128K 个线程在 32 个 SPC 上运行
 * 协作Warps (Cooperative Warp)
-![145.png](/assets/images/gpgpu/145.png)
+![149.png](/assets/images/gpgpu/149.png)
 与其他 GPU 相比，BR100 上的向量 FP32 较弱。每个 EU 只有 16 个向量 FP32 通道，只有 16 TFLOPS 的理论 FP32 吞吐量。
 
 一个SPC有16 个 T 核，形成2D 脉动阵列；每个 T 核有 2 组 8 x 8 点积 （dp）阵列（BF16 时为 8x 8 x dp8 3D MMA），相当于 64 x 64 矩阵乘法；支持 FP32、TF32、BF16、INT16、INT8、INT4 张量格式。
-![146.png](/assets/images/gpgpu/146.png)
+![150.png](/assets/images/gpgpu/150.png)
 
 Biren设计了TF32+ 张量数据类型 ，宣称在 AI 训练中比 TF32 精确 32 倍  ，
 * E8M15，共 24 位 
 * 重用 BF16 乘法器（带 1+7 尾数）并简化 T 核设计  
 * 使用张量加速库时自动启动并声明为 FP32
-![147.png](/assets/images/gpgpu/147.png)
+![151.png](/assets/images/gpgpu/151.png)
 
 
 采用8个GPU全互联进行扩展，每个 BR100 GPU 与其他每个 GPU 互联带宽是双向64 GB/s。
-![148.png](/assets/images/gpgpu/148.png)
+![152.png](/assets/images/gpgpu/152.png)
 节点外连接由连接到 PCIe 交换机的 NIC 处理。NIC 不直接连接到 GPU，因此网络流量可能由 CPU 端内存提供支持。如此高带宽的 NIC 会给 CPU 端内存带宽带来很大压力。
 # Reference
 1. CUDA Programming Guide Version 1.0
