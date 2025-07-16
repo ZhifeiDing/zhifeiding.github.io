@@ -398,7 +398,7 @@ Ampere GPU 中两个 SM 共同组成一个纹理处理器集群TPC，其中 8 �
  
  A100 基于 GA100，有 108 个 SM；A100 Tensor Core GPU 实现包括以下单元：
 - 7 个 GPC，每个GPC有7 或 8 个 TPC，每个TPC有2 个 SM，最多108 个 SM
-- 每个 GPU有 64 个 FP32 CUDA 核，一共6912 个 FP32 CUDA 核
+- 每个 SM有 64 个 FP32 CUDA 核，一共6912 个 FP32 CUDA 核
 - 每个SM有4 个第三代 Tensor Core，每个 GPU 432 个Tensor Core
 - 5 个 HBM2，10 个 512 位内存控制器
 
@@ -411,7 +411,7 @@ Ampere GPU 中两个 SM 共同组成一个纹理处理器集群TPC，其中 8 �
 * L2 缓存管理和驻留控制的新指令
 * CUDA Cooperative Groups 支持的新warp级reduction指令。
 ![61.png](/assets/images/gpgpu/61.png)
-Volta 和 Turing 每个 SM 有 8 个 Tensor Core，每个 Tensor Core 每个时钟执行 64 个 FP16/FP32 混合精度融合乘加 （FMA） 运算。A100 SM 包括新的第三代 Tensor Core，每个核每个时钟执行 256 个 FP16/FP32 FMA 操作；每个 SM 有四个 Tensor Core，每个时钟总共提供 1024 次密集的 FP16/FP32 FMA 操作。Tensor Core支持数据类型包括 FP16、BF16、TF32、FP64、INT8、INT4 和 Binary。Ampere 架构引入了对 TF32 的新支持，使 AI 训练能够默认使用张量核心，而无需用户付出任何努力。非张量运算继续使用 FP32 数据路径，而 TF32 张量核心读取 FP32 数据并使用与 FP32 相同的范围，但内部精度降低，然后生成标准 IEEE FP32 输出。TF32 包括一个 8 位指数（与 FP32 相同）、10 位尾数（与 FP16 相同精度）和 1 个符号位。
+Volta 和 Turing 每个 SM 有 8 个 Tensor Core，每个 Tensor Core 每个时钟执行 64 个 FP16/FP32 混合精度融合乘加 （FMA） 运算。A100 SM 包括新的第三代 Tensor Core，每个核每个时钟执行 256 个 FP16/FP32 FMA 操作；每个 SM 有四个 Tensor Core，每个时钟总共提供 1024 次密集的 FP16/FP32 FMA 操作。Tensor Core支持数据类型包括 FP16、BF16、TF32、FP64、INT8、INT4 和 Binary。Ampere 架构引入了对 TF32 的支持，使 AI 训练能够默认使用张量核心，而无需用修改。非张量运算继续使用 FP32 数据路径，而 TF32 张量核心读取 FP32 数据并使用与 FP32 相同的范围，但内部精度降低，然后生成标准 IEEE FP32 输出。TF32 包括一个 8 位指数（与 FP32 相同）、10 位尾数（与 FP16 相同精度）和 1 个符号位。
 ![62.png](/assets/images/gpgpu/62.png)
 下图比较了 V100 和 A100 FP16 Tensor Core 操作，并将 V100 FP32、FP64 和 INT8 标准操作与 A100 TF32、FP64 和 INT8 Tensor Core 操作进行了比较。
 ![63.png](/assets/images/gpgpu/63.png)
@@ -469,7 +469,7 @@ Ampere 架构 A100 GPU 包括改进错误/故障归因（归因于导致错误�
 - 50 MB的 L2缓存
 - NVLink 4.0 和PCIe Gen 5
 
-H100 SXM5 GPU 有 132 个 SM，PCIe 版本有 114 个 SM。SXM5 和 PCIe H100 GPU 中只有两个 TPC 支持图形处理（即可以运行顶点、几何体和像素着色器）。下图展示了完整的H100的架构框图：
+SXM5 和 PCIe H100 GPU 中只有两个 TPC 支持图形处理（即可以运行顶点、几何体和像素着色器）。下图展示了完整的H100的架构框图：
 ![67.png](/assets/images/gpgpu/67.png)
 
 ![68.png](/assets/images/gpgpu/68.png)
@@ -504,7 +504,7 @@ TMA 操作是异步的，并利用 A100 中引入的基于共享内存的异步�
 
 异步屏障的优点是在等待时提前到达的线程能够执行独立工作，这种重叠提高了性能。如果有足够的独立执行的线程，则屏障会变得很轻量，因为`Wait`指令可以立即退休。Hopper 的新功能是 _waiting_ 线程能够休眠，直到所有其他线程到达。在之前架构，等待线程会在共享内存中的屏障对象上spin。
 
-Hopper增加了称为异步事务屏障(asynchronous transaction barrier)的新形式的屏障。异步事务障碍类似于异步障碍，是一个拆分屏障，不仅计算线程到达，还计算事务。Hopper 包含一个用于写入共享内存的新命令，该命令可传递要写入的数据和事务计数。事务计数实质上是一个字节计数。异步事务屏障在`Wait`命令下阻止线程，直到所有生产者线程都执行了`Arrive`，并且所有事务计数的总和达到预期值。异步事务屏障是异步 内存复制或数据交换的新原语。集群可以进行线程块到线程块的通信，用于具有隐含同步的数据交换，并且集群功能建立在异步事务屏障之上。
+Hopper增加了称为异步事务屏障(asynchronous transaction barrier)的新形式的屏障。异步事务障碍类似于异步障碍，是一个拆分屏障，不仅计算线程到达，还计算事务。Hopper 包含一个用于写入共享内存的新命令，该命令可传递要写入的数据和事务计数。事务计数实质上是一个字节计数。异步事务屏障在`Wait`命令下阻止线程，直到所有生产者线程都执行了`Arrive`，并且所有事务计数的总和达到预期值。异步事务屏障是异步内存复制或数据交换的新原语。集群可以进行线程块到线程块的通信，用于具有隐含同步的数据交换，并且集群功能建立在异步事务屏障之上。
 ![75.png](/assets/images/gpgpu/75.png)
 
 **Transformer Engine** H100 包括一个新的 Transformer 引擎，使用软件和NVIDIA Hopper Tensor Core 技术来加速 Transformer 的 AI 计算。
