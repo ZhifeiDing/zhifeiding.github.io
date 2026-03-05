@@ -1,3 +1,16 @@
+---
+title: Huawei Ascend Architecture from 910 to 950
+categories:
+  - history
+tags:
+  - chip
+  - architecture
+  - history
+  - gpu
+  - AI
+---
+
+# 概述
 
 随着昇腾AI处理器架构的持续演进和不同产品的快速迭代，存在多种不同的架构，例如在最新的下一代架构950在硬件设计上增加了SIMT计算单元，用于提升离散操作场景及复杂分支场景的编程易用性；对华为昇腾AI处理器架构的演进历史进行一次回顾可以帮助了解不同架构的局限和应用需求，因此，本文从Ascend 910里原始DaVinci Core架构开始，最后以950结束，分析不同架构之间的异同。本文所有信息均来自公开渠道，如有错误，还请帮忙指正。
 
