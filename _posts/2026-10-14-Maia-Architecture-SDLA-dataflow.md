@@ -1,5 +1,5 @@
 ---
-title: History of GPGPU | What makes GPU General Purpose?
+title: Maia Architecture | SDLA dataflow
 categories:
   - history
 tags:
