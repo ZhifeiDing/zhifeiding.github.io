@@ -7,7 +7,7 @@
 
 Cerebras使用整个晶圆制造一个巨大的芯片WSE - Wafer Scale Engine，可以从下图中直观的感受到WSE和其他芯片在晶体管数量上的差异:
 
-![0.png](/assets/images/cerebras/0.png)
+![[Pasted image 20240314142509.png]]
 
 Cerebras的WSE通过将wafer 作为一个芯片，获得了巨大的片上访存带宽，但同时也导致系统供电，芯片良率等复杂问题，本文针对这些问题，从Cerebras第一代WSE1的系统结构，WSE2的计算架构和系统设计，WSE3系统设计到第四代系统CS-4来讲解分析。具体章节安排如下：
 * 第一章简单介绍采用Wafer Scale的一些背景
@@ -20,9 +20,9 @@ Cerebras的WSE通过将wafer 作为一个芯片，获得了巨大的片上访存
 # 概述
 
 一般而言，每一代芯片的性能提升会被归类于架构上的优化，但实际上，工艺进步，时钟频率，芯片面积等都会对芯片性能产生影响，过去五十年来对芯片性能提升的相对贡献如图所示：
-![1.png](/assets/images/cerebras/1.png)
+![[Pasted image 20240401152946.png]]
 可以看到工艺进步对性能影响其实是远远超过其他因素。芯片面积增加，为所需功能的晶体管数量提供了更多的硅面积。在当前技术下，存在一个最大尺寸限制。下图显示了一些比较有影响力的芯片面积增加的趋势曲线。
-![2.png](/assets/images/cerebras/2.png)
+![[Pasted image 20240401153759.png]]
 芯片尺寸增长放缓的原因包括:
 * 随着工艺进步，增加光罩尺寸（即晶圆的最大面积）变得更加困难，因为减少激光波长的同时维护激光聚焦在更大的区域越来越困难。这是芯片尺寸增长放缓的主要原因。
 * 随着芯片尺寸的增加，每个芯片的良率会降低。虽然有几种不同的缺陷分布模型——例如，墨菲模型、泊松模型、二项式模型、摩尔模型和 Seeds 模型 - 所有模型的共同点是，随着芯片尺寸的增加，良率呈指数级下降。虽然将芯片尺寸扩展到整个晶圆可以最大限度地提高计算和带宽，但是良率模型基本上是零良率，因为无缺陷晶圆是极其罕见的事件。晶圆级设计是一个非常具有挑战的任务。
@@ -34,64 +34,64 @@ Cerebras的WSE通过将wafer 作为一个芯片，获得了巨大的片上访存
 # WSE-1
 
 在2019年，Cerebras推出了其第一代晶圆级芯片Wafer Scale Engine，采用台积电16nm工艺，包含1.2T晶体管，面积46225平方毫米。与此同时，当时最大的GPU则是NVIDIA的V100，包含21.1B晶体管，面积815平方毫米，具体对比如下所示：
-![3.png](/assets/images/cerebras/3.png)
+![[Pasted image 20240314111414.png]]
 WSE-1一共有400,000 个AI 核心，芯片有 18GB 片上内存、9PB/s 内存带宽和超过 100Pb/s 的互连带宽。
 
 这40万个核组织成84个tile（7×12排布），每个tile约4,800个核。核的官方名称是SLA core（Sparse Linear Algebra core）：为深度学习的稀疏线性代数设计，但仍是可编程的通用处理器。按Cerebras在白皮书中给出的口径，深度学习训练数据里50%到98%是零值，SLA核的数据流机制让零值不触发计算，直接在发送端被过滤掉。
 
 ## Cerebras CS-1 Wafer-Scale AI System
 CS-1是由WSE-1组成的AI系统，前视图如下图所示，左上角是 I/O 模块，下方是 12 个电源。右边是泵模块，下面是风扇模块。
-![4.png](/assets/images/cerebras/4.png)
+![[Pasted image 20240314110810.png]]
 在俯视图中，可以看到 12 个 100GbE 链路朝向 15U 机箱的前部。在左侧有两个泵模块，帮助芯片保持冷却。
-![5.png](/assets/images/cerebras/5.png)
+![[Pasted image 20240314152025.png]]
 以下是泵模块的机械结构：
-![6.png](/assets/images/cerebras/6.png)
+![[Pasted image 20240314152205.png]]
 
 每个 Cerebras CS-1 的设计功率高达 20kW，其中约15kW给芯片本身，4kW给冷却子系统，1kW是电源转换损耗。在 15U 机箱中，每 U 仅为 1.3kW/，大约和 2U 4 节点服务器或 GPU 计算服务器的功率相当，整机只占标准机架的三分之一。该系统利用 12 个 100GbE 连接提供 1.2Tbps 的外部带宽。
 
 Cerebras 的软件堆栈支持从 Tensorflow 和 PyTorch 等高级框架到将模型编译到晶圆级芯片上并运行。
-![7.png](/assets/images/cerebras/7.png)
+![[Pasted image 20240314152337.png]]
 
 # WSE-2
 
 第二代 WSE-2 于 2021 年发布，采用台积电7nm工艺，面积 46,225 mm^2（215mm × 215mm），包含 2.6 万亿晶体管。一个晶圆级片上网络可连接 850,000 个内核，片上存储40GB，内存带宽20PB/s，片上结构（fabric）带宽220Pb/s，比当时最大的GPU大56倍。峰值算力FP16 dense为7.5 PFLOPS，FP16 sparse为75 PFLOPS（按10倍稀疏加速折算）。85万核 × 4个FP16 FMAC × 每周期2次运算 × 1.1GHz，正好是7.5 PFLOPS。集群架构利用 CS-2扩展能力 ，以提供简单的数据并行扩展到更大的模型和更大的集群。
-![8.png](/assets/images/cerebras/8.png)
+![[Pasted image 20240508090727.png]]
 
 WSE-2的构建方式很有意思：先设计一个传统意义上可切割的die，每个die含 10,156 个核（66 × 154 排布），尺寸 17mm × 30mm，即 510 平方毫米；之后不进行切割，而是在直径300 毫米圆形晶圆内切割出最大的正方形，最终以 12 × 7 的排布容纳 84 个芯粒，合计 850,000 个核。
-![9.png](/assets/images/cerebras/9.png)
+![[Pasted image 20240329150624.png]]
 不同于之前的 Trilogy 使用的冗余门设计，CereBras的冗余单元是PE；WSE-2中约1%的PE作为冗余备份，以便“修复”有缺陷的 PE。
-![10.png](/assets/images/cerebras/10.png)
+![[Pasted image 20240402170403.png]]
 
 Cerebras 核是一个小核心设计, 核心物理尺寸为228μm × 170μm（约38,760μm^2），如图所示。在TSMC 7nm工艺下，一半的面积是 48 kB 的SRAM，另一半是逻辑。整个内核以 1.1GHz 时钟频率运行，峰值功耗为 30mW。
-![11.png](/assets/images/cerebras/11.png)
+![[Pasted image 20240322171856.png]]
 每个小核都有48 kB的本地SRAM，分成8个单端口bank，每个bank都是32位宽，每个周期可以支持 256 位访问；小核每个周期支持两个 64 位读和一个64 位写， 一共 192 位访问。所有的内存都是核内单独寻址，没有传统意义上的共享内存。所有核之间的共享是通过互联网络完成。除了本地SRAM，还有一个256B 软件管理的缓存，用于经常访问的数据结构。
-![12.png](/assets/images/cerebras/12.png)
+![[Pasted image 20240329113306.png]]
 张量操作在 64 位数据路径上执行，由四个 16 位融合乘法累加组成（FMAC），支持FP16 和BF16，可选支持FP32。为了优化性能和灵活性，指令集架构将张量作为一等的操作数，类似通用寄存器或内存。下图显示了一个示例在 3D 和 2D 张量上操作的 FMAC 指令操作数。
-![13.png](/assets/images/cerebras/13.png)
+![[Pasted image 20240329142714.png]]
 小核使用数据结构寄存器 （DSR） 作为指令的操作数，有 44 个DSR，每个 DSR 都包含一个描述符，其中包含指向张量和其他关键信息的指针，如张量的长度、形状和大小。利用DSR，硬件架构可以原生支持最多4D 张量。
 
 小核同时支持八个张量操作，称为微线程，硬件上可以逐个周期切换。调度器持续监控正在处理的张量的输入和输出的可用性，选择一个符合条件且资源可用的微线程。每个微线程也分配了优先级，因此，如果多个微线程有资格运行，调度器将选择优先级更高的微线程。每个微线程都可以完全访问所有资源，包括核中的寄存器和内存，没有任何静态分区。
 
 互联使用 2-D 网络拓扑，如下图所示。其中每个核有一个Fabric Router。Fabric Router采用的五端口设计，每个都是32 位双向接口；使用低缓冲的无损流量控制，实现核间的单时钟周期延迟。基本数据包是单个 16 位数据元素（FP16 或 BF16）。除了这些 16 位数据外，还有 16 位数据的控制信息，构成 32 位细粒度包。为了进一步优化结构设计，它使用完全静态的布线，效率高且低开销。每个内核有 24 个本地静态可以配置的路由，称为Color。所有Color之间是非阻塞的，通过时间多路复用到相同的物理链路上。在整个网络范围内，这些本地独立Color被组合在一起支持整个核心阵列大量路由。此外，还使用每种Color对于各种不同的数据和控制通信，因此固定的 24 种Color使更多不同消息或任务总数。每个交换矩阵路由器中设计有本机广播和组播功能
-![14.png](/assets/images/cerebras/14.png)
+![[Pasted image 20240329152520.png]]
 
 不同于传统的封装之后安装到PCB，向晶圆提供小于 1 V且接近 20,000 A 的峰值电流，同时保持良好的稳压是艰巨的挑战。Cerebras采用分布在晶圆表面的 300 多个单独的电压调节模块 （VRM），每个WSE-2使用多个 VRM 确保电源分配冗余，并可单独控制每个电源域。
-![15.png](/assets/images/cerebras/15.png)
+![[Pasted image 20240407090232.png]]
 
 
 
-![16.png](/assets/images/cerebras/16.png)
+![[Pasted image 20240314101311.png]]
 Cerebras 开发了 MemoryX 技术来解决 CS-2 中超出 WSE-2 的内存容量问题。Cerebras CS-2 集群支持 1.5TB 和 12TB MemoryX 单元：
 * 支持4TB-2.4PB容量
 * 支持2000 亿 - 120 万亿个权重，带优化器状态
 * 支持DRAM 和闪存混合存储
 MemryX用于权重更新/优化器的内部计算，处理智能流水线以掩盖延迟，可扩展到极端模型大小，独立于计算的容量扩展
-![17.png](/assets/images/cerebras/17.png)
+![[Pasted image 20240314102656.png]]
 
 模型权重存储在MemoryX内部的DRAM 和SSD中，权重流式传输到CS-2 系统，一次一层，并以1.2 Tb/s的带宽流式传输到 CS-2 中；CS-2 依赖数据流机制进行计算，权重永远不会存储在 CS-2 系统上。
-![18.png](/assets/images/cerebras/18.png)
+![[Pasted image 20240401105848.png]]
 使用数据流调度，每个单独的权重将触发对片上存储的激活的AXPY 操作。训练时一旦每个权重计算完成，就会被丢弃，而不会存储在芯片上，并移动到下一个权重。为了降低从MemoryX流式传输每个权重的成本，每个权重在 CS-2 上复用多次。在向后传递时，梯度以相反的方向流出并返回 MemoryX 单元，并更新权重。
-![19.png](/assets/images/cerebras/19.png)
+![[企业微信截图_17103838933994.png]]
 
 GEMM在晶圆上的映射方式以Transformer层为例，激活张量的三个维度（Batch、Sequence、Hidden）中，Hidden沿fabric的x方向切分，Batch和Sequence沿y方向切分。权重按行广播到各列核上，每个非零权重触发本地一列激活的FMAC；部分和的归约走PSUM/FSUM两条命令：所有列收到PSUM命令后在行方向上做环形归约，其中一列收到FSUM命令负责存出最终结果。归约通过微线程与下一行权重的FMAC计算重叠，不占额外时间。这套映射下单芯片可以不切分地跑完100,000 × 100,000的MatMul——对当时任何模型都够用，这也是"不需要模型并行"的底气所在。
 如此之多流式传输和计算资源，延迟可能是一个挑战，尤其是在更新期间。Cerebras 解决延迟问题
@@ -101,13 +101,13 @@ GEMM在晶圆上的映射方式以Transformer层为例，激活张量的三个�
 	* 迭代中的所有流都没有层间依赖关系
 * 细粒度流水线
 	* 权重更新和前向传递的重叠涵盖了迭代间依赖关系
-![20.png](/assets/images/cerebras/20.png)
+![[Pasted image 20240314103934.png]]
 
 
 SwarmX Interconnect 是可横向扩展到多个系统的高速结构。 SwarmX 上的光学器件几乎不可插拔并且有 12 个端口。
-![21.png](/assets/images/cerebras/21.png)
+![[Pasted image 20240314102729.png]]
 通过专门设计的称为 SwarmX的互连来实现数据并行横向扩展，如下图所示。SwarmX 位于存储权重的MemoryX 单元和用于计算的 CS-2 系统之间；SwarmX 将权重广播到所有 CS-2 系统，并对所有 CS-2 的梯度进行reduction。在内部，SwarmX 使用树形拓扑来支持模块化和低成本扩展。按2021年发布时的口径，SwarmX最多可把192台CS-2连成一台逻辑设备，合计1.63亿个核，训练同一个网络。
-![22.png](/assets/images/cerebras/22.png)
+![[Pasted image 20240401103918.png]]
 
 CS-2整机的部署规格是15U机箱，445mm宽、1005mm深，300kg，最大功耗23kW，供电为6+6冗余的4kW电源模块，12个100GbE数据口合计1.2Tb/s I/O。冷却为内部闭环、直达芯片的液冷，泵模块1+1冗余热插拔；机房没有水路也可以选液冷转风冷的部署方式。这些数字与CS-1一脉相承，差别主要在芯片从16nm换成7nm后，同样功耗下性能翻了一倍还多。
 
@@ -118,26 +118,26 @@ WSE-2的数据流协议天然带稀疏加速。发送方的核会过滤掉零值
 WSE-3 于2024年3月发布，采用台积电5nm工艺，比最大的GPU 大 57 倍，包含 4 万亿个晶体管、900,000 个 AI 优化计算核； 44 GB片上SRAM，可以提供21PB/s内存带宽，片上结构带宽214Pb/s（折合26.7PB/s），峰值AI算力125 PFLOPS。晶圆仍由84个die组成，每个die约10,700个核。WSE-3在与WSE-2相同的功耗和价格下做到了两倍性能。
 
 对于计算核，16位数据（FP/BF16）的SIMD从4-wide翻倍到8-wide，8位定点（INT8）到16-wide，另加了一组快速非线性函数指令；调度与稀疏机制不变，仍是细粒度数据流调度加原生非结构化稀疏加速。存储侧，每核48kB SRAM不变，但本地缓存从256B扩到512B，DSR从44个增加到48个。
-![23.png](/assets/images/cerebras/23.png)
+![[Pasted image 20240314144311.png]]
 
-跨die互连也给出了具体数字。每个die边界上是480条24Gb/s的并行链路，合计2,880GB/s；整片晶圆跨越划片线的链路共40,320条，带宽242TB/s，而所有这些互连的总功耗只有97W（单个die边界1.1W，折合0.05pJ/bit）。对照DGX-H100那种靠SerDes、线缆和交换芯片堆出来的互联（5.0pJ/bit），同带宽下功耗差出近百倍；WSE-3的die间I/O带宽是DGX-H100的33倍，功耗却只有六分之一。
+每个die边界上是480条24Gb/s的并行链路，合计2,880GB/s；整片晶圆跨越划片线的链路共40,320条，带宽242TB/s，而所有这些互连的总功耗只有97W（单个die边界1.1W，折合0.05pJ/bit）。对照DGX-H100那种靠SerDes、线缆和交换芯片堆出来的互联（5.0pJ/bit），同带宽下功耗差出近百倍；WSE-3的die间I/O带宽是DGX-H100的33倍，功耗却只有六分之一。
 
 
 ## Cerebras CS-3 Wafer Scale System
 Cerebras CS-3 是第三代晶圆扩展系统。顶部有 MTP/MPO 光纤连接，以及用于冷却的电源、风扇和冗余泵。
-![24.png](/assets/images/cerebras/24.png)
+![[Pasted image 20240314093710.png]]
 Cerebras 需要为巨型芯片提供电力、数据和冷却，同时还需要管理相对较大的区域的热膨胀等。在内部，芯片是液冷的，热量可以通过风扇或水带走。
-![25.png](/assets/images/cerebras/25.png)
-![26.png](/assets/images/cerebras/26.png)
+![[Pasted image 20240314093920.png]]
+![[Pasted image 20240314095125.png]]
 与具有八个 NVIDIA H100 GPU 和内部 NVSwitch 和 PCIe 交换机的 NVIDIA DGX H100 系统相比，CS-3是一个更大的构建块。
-![27.png](/assets/images/cerebras/27.png)
+![[Pasted image 20240314094103.png]]
 
-![28.png](/assets/images/cerebras/28.png)
+![[Pasted image 20240407091845.png]]
 
 这一代的一大特点是更大的集群，多达 2048 个 CS-3，用于多达 256 exaFLOP 的 AI 计算。CS-3的系统I/O仍是12个100GbE端口（1.2Tb/s），与CS-2一致；对外部署的最大案例是与G42合作的Condor Galaxy网络：CG-1（圣克拉拉）与CG-2（斯托克顿）各4 exaFLOPS，CG-3到CG-5（达拉斯）合计20 exaFLOPS，规划中的CG-6到CG-9（明尼阿波利斯）再贡献32 exaFLOPS。
-![29.png](/assets/images/cerebras/29.png)
+![[Pasted image 20240314094316.png]]
 这个 12PB 的内存数字是一个高端超大规模 SKU，专为快速训练 GPT-5 大小的模型而设计。Cerebras 还可以缩小到类似单个 CS-2 ，并支持服务器和网络。借助 CS-3，大幅增加了 MemoryX 选项，包括面向企业客户的 24TB 和 36TB SKU，以及面向超大规模客户的 120TB 和 1,200 TB 选项。
-![30.png](/assets/images/cerebras/30.png)
+![[Pasted image 20240314094650.png]]
 部分内存不仅是片上内存（44GB），还包括支持服务器中的内存。
 
 
@@ -153,14 +153,14 @@ Cerebras的应对是把执行模型整个反过来。训练时权重从MemoryX�
 
 2026年8月18日，Cerebras发布第四代系统CS-4，首批出货在同年第三季度。按CS-1到CS-3的命名惯例，CS-4本该对应一块新的晶圆，也就是WSE-4。但并没有。CS-4装的是三颗WSE-3 Turbo，配套的是一套重新设计的机架，叫Nexus Platform Architecture。Cerebras第一次在没有换代硅片的情况下推出了换代系统。
 
-![31.png](/assets/images/cerebras/31.png)
+![图: CS-4机架](images/cs4-rack.png)
 
 ## WSE-3 Turbo
 
 WSE-3 Turbo和已经在出货的WSE-3是同一块硅片：4万亿晶体管、46,225mm²、台积电5nm、900,000个AI核、44GB片上SRAM，全部没变。变的是时钟，从约1.4GHz提到约2.8GHz。所谓Turbo就是超频。主频翻倍，单晶圆的指标也跟着翻倍：AI算力125 PFLOPS提到250 PFLOPS，内存带宽21.6PB/s提到43.2PB/s，片上结构带宽26.7PB/s提到53.5PB/s，片外I/O带宽1.2Tbit/s提到2.4Tbit/s。乘以机架内的三颗晶圆，就是CS-4的系统级数字。
 
 频率能提上去，靠的不是架构，是供电。Nexus把AC/DC转换放到距晶圆约0.5mm的位置，常规GPU板上这个距离大约50mm，近了约100倍；同时用铜母线（busbar）取代PCB走线供电。板级功率损耗被压到很小，送到WSE-3T的电力翻倍，频率才上得去。
-![32.png](/assets/images/cerebras/32.png)
+![图: 围绕晶圆的集成供电组件](images/cs4-powerref.png)
 
 ## 规格
 
@@ -188,9 +188,9 @@ Wafer-Scale Backpack是计算模块。它后置安装，垂直挂接到电源阵
 
 模块化I/O方面，CS-4引入了新的可编程I/O子系统，带宽翻倍、延迟减半。新的Wafer I/O Module从晶圆边缘引出模块化的可编程fabric，支持两种连接模式：标准RoCE v2 RDMA over Ethernet，用于接入现有基础设施；Direct Wafer Links，无交换机直连，支持机架内和跨机架，晶圆间延迟低至2微秒。
 
-![33.png](/assets/images/cerebras/33.png)
+![图: Wafer I/O Module](images/cs4-io.png)
 
-![34.png](/assets/images/cerebras/34.png)
+![图: Nexus与Wafer-Scale Backpack](images/cs4-backpack.png)
 
 ## 存储结构
 
@@ -202,7 +202,7 @@ CS-4的存储思路没有变，全部是片上SRAM，没有任何一级要出片
 
 CS-4这一代软件侧最大的变化不在编译器，而在部署范式，原生支持分离式推理（disaggregated inference）。推理被拆成两段，prefill处理输入prompt并准备好模型状态，decode逐token生成。CS-4几乎只为decode而生，2微秒的晶圆间延迟就是为这个场景准备的。至于prefill，Cerebras直接把客户指向AMD Helios和AWS Trainium。
 
-![35.png](/assets/images/cerebras/35.png)
+![图: 分离式推理](images/cs4-disagg.png)
 
 这在Cerebras的叙事里是一次后退，也是一次收缩。早年的说法是一块晶圆可以替代整个GPU机架，包办训练和推理；现在收缩到"只做低延迟token生成"这一段。在这段上巨大晶圆有物理优势，关键路径上没有芯片间跳变；而在计算密集的prefill上，不再硬碰NVIDIA的装机量和定价。这个定位比"通吃"更站得住。
 
@@ -217,6 +217,8 @@ CS-4这一代软件侧最大的变化不在编译器，而在部署范式，原�
 
 
 整套软件栈分三层。CSL（Cerebras Software Language）是设备侧语言，语法基于Zig但并非100%兼容，编译器也不共用Zig的代码。选Zig是为了它的编译期计算能力，让PE程序既能写成可维护的模板，又能编译出接近手写的代码。SdkRuntime是主机侧Python运行时，负责加载程序、启动内核、搬运张量。再往上是cstorch，把PyTorch模型编译到晶圆上。
+
+编程模型的硬件对象很朴素：一个PE由处理器、路由器和本地内存三样东西组成。处理器官方叫compute engine（CE），本地内存放这个PE的全部数据和代码，两者都不能被别的PE直接访问；PE之间唯一的通信设备是路由器。路由器拉出五条双向链路，四个通往邻居PE（NORTH/SOUTH/EAST/WEST），第五条连自己的CE，叫RAMP。整片晶圆就是这样一个二维mesh，每个PE有自己的内存、自己的程序计数器、自己的代码，靠32位的wavelet与邻居在单周期内互通。主机与设备的分界也在这里：CS叫device，主机CPU集群叫host，中间是并行的百兆以太网host I/O。
 
 CSL没有线程调度器，没有缓存一致性，没有动态路由。每个PE跑一份自己的程序，占用哪块区域、走哪条通道、数据从哪个方向来，全部在编译期定死。程序员拿到的是整块晶圆的静态地图，不是一个可以"申请资源"的运行时。
 
@@ -269,13 +271,150 @@ comptime {
 
 color是编译期命名的逻辑通道，每个PE有24个，互不阻塞、时分复用到同一物理链路；路由由`@set_color_config`静态指定，`rx`说明从哪个方向收，`tx`说明往哪些方向转发。也就是说，通信拓扑是程序的一部分，不是运行时协商出来的。
 
-任务分两类：data task由数据到达触发，local task由`@activate(task_id)`显式唤醒，跨PE归约的收尾就走后者。还有一个细节：WSE-2上数据任务ID由color派生，WSE-3上改由输入队列派生，同一份示例代码用`@is_arch("wse2")`/`@is_arch("wse3")`分支同时兼容两代硬件。微线程与队列解耦也是WSE-3那一代核内改动的一部分。
+任务分三类。data task由数据到达触发，local task由`@activate(task_id)`显式唤醒，control task同样由wavelet触发但用于内部控制；data task与control task合称wavelet-triggered task（WTT）。task ID是0到63的句柄，但只有一段是routable的：WSE-2上0到23号对应24个color，WSE-3上0到7号对应8个输入队列；local task的可激活区间跟着变，WSE-2是0到30，WSE-3是8到30。同一份示例代码用`@is_arch("wse2")`/`@is_arch("wse3")`分支同时兼容两代硬件，微线程与队列解耦也是WSE-3那一代核内改动的一部分。
+
+一个task必须同时处于activated与unblocked两态才会被task picker选中，默认所有ID都既未激活也不阻塞。于是有了`@block`/`@unblock`这一对，先把某个ID阻塞住，等前置任务做完再解锁；跨PE归约的收尾就靠`@activate`加`@unblock`串起来。这是CSL版本的依赖管理，比信号量更轻。
+
+## DSD：把循环压成一条指令
+
+CSL里表达数据搬移的核心构造是**DSD**（Data Structure Descriptor，数据结构描述符）。它描述一段可以不连续的内存，或一串来去的wavelet；配合DSD操作，一条硬件指令就能完成原本要写循环的重复动作。所有DSD共享一个属性`extent`，即这条描述符代表多少次重复操作。
+
+DSD用`@get_dsd(dsd_type, properties)`构造，`dsd_type`取五种：`mem1d_dsd`、`mem4d_dsd`、`circbuf_dsd`、`fabin_dsd`、`fabout_dsd`。FIFO另有一套分配方式。
+
+**mem1d_dsd**描述一维内存向量，字段是`base_address`（指针）、`extent`（u16）、`stride`（i8，默认1）、`offset`（i16，默认0）。更顺手的写法是`tensor_access`张量访问表达式：
+
+```csl
+const oddElements = @get_dsd(mem1d_dsd, .{
+  .tensor_access = |i|{5} -> array[2 * i + 1]
+});
+```
+
+`|i|{5} -> array[2*i+1]`读作：以i为归纳变量迭代5次，每次访问`array[2*i+1]`。它等价于`.base_address=&array, .offset=1, .stride=2, .extent=5`。箭头右侧必须是仿射表达式（线性加常数），好让硬件地址生成器直接展开。底层张量不必是一维的，`|i|{20} -> array[i,i]`取的就是20×20矩阵的对角线。tensor_access只能写编译期已知的量；stride或extent要到运行时才知道的话，就得逐字段写，比如`@get_dsd(mem1d_dsd, .{.base_address = ptr, .stride = @as(i8, stride), .extent = len})`。
+
+**mem4d_dsd**把维度升到最多四维，归纳变量与长度一一对应：
+
+```csl
+const subset = @get_dsd(mem4d_dsd, .{
+  .tensor_access = |i,j|{2,2} -> array[i, j]
+});
+```
+
+多维DSD的stride有个读法上的陷阱：stride从左到右读，访问表达式的维度却从右到左读，内维变化最快。`|i,j|{5,5} -> A[2*i+j]`折算出的stride是`{1, -2}`，j每加1地址加1，i每加1时j从4归零、净变化是2减4等于-2。四维stride最多要三个步长寄存器来存，最快那维由硬件隐含。
+
+**circbuf_dsd**是环形缓冲区，`base_address`兼作头指针，`wraparound`指定回绕位置，`extent`可以超过buffer大小，同一个buffer于是被反复迭代。它不能直接当DSD操作的操作数，必须先经`@load_to_dsr_xdsr`装进DSR。
+
+**fabin_dsd与fabout_dsd**描述fabric上的收发。`fabin_dsd`配`input_queue`与`extent`，意思是"从这个队列收这么多wavelet"，WSE-2上也可以直接写`fabric_color`；`fabout_dsd`多出两个字段，`control`标记控制wavelet，`wavelet_index_offset`让发出的wavelet带上索引。还有一类用法：color到达的wavelet可以不触发task，而由fabric DSD直接接走，做纯数据搬运。
+
+FIFO用`@allocate_fifo(buffer)`在内存上划一块先进先出区，`.empty_action`/`.full_action`规定读空写满时挂起还是终止，`.activate_pop`/`.activate_push`规定进出时唤醒哪个local task。它占用硬件资源，应当省着用。
+
+DSD属性运行期可以改，四个builtins都返回新值、不动原值：`@set_dsd_base_addr`换基址，`@increment_dsd_offset(dsd, n, T)`把访问推进n个T元素，`@set_dsd_length`改长度，`@set_dsd_stride`改步长。GEMV里每算完一列就把`A_dsd`推进一列，用的是第二个。
+
+还有几个字段藏得比较深，但在数据流程序里出镜率不低。`wavelet_index_offset = true`让DSD操作带上`index`参数：对内存DSD，index是加到基址的字偏移；对fabout_dsd，index被写进每个发出wavelet的高16位，跨PE流式GEMV里"wavelet自带索引、直接选中A的哪一列"靠的就是这个。`simd_mode`（`simd_32`/`simd_64`）让一个wavelet装两个16位值。`.zero = .{.first_source = true}`在发送完成后把源操作数清零，归约累加省一次显式清零。`advance_switch = true`则在最后一个wavelet发出后自动推进switch位置。
+
+DSD操作一旦涉及fabric操作数就可以异步（`.{.async = true}`），起一个**微线程**（microthread）与当前任务并发跑。完成时可选`.activate`唤醒一个local task、`.unblock`解锁一个任务，或`.on_control`由控制wavelet触发终止，三者取其一。异步操作消耗两类硬件资源，队列和微线程，两个并发操作不能共用：WSE-2上微线程ID由队列ID隐式决定，WSE-3上可以显式指定。优先级三档high/medium/low，WSE-2默认low，WSE-3默认high。
+
+## DSR：DSD的物理形态
+
+DSD只是描述，硬件真正执行的是**DSR**（Data Structure Register，数据结构寄存器）。每个DSR属于三个寄存器文件之一：`dest`只作目的，`src0`可源可目的，`src1`只作源。所有DSD操作实际都在DSR上进行，操作数必须先装进DSR；这一步通常由编译器代办，也可以显式写出来。
+
+寄存器类型五种：`dsr_dest`、`dsr_src0`、`dsr_src1`，加`dsr_fifo_dest`、`dsr_fifo_src1`两个FIFO变体。FIFO、环形缓冲、多维向量还要额外的扩展DSR（XDSR），多维向量再配最多三个步长寄存器（SR）存stride。WSE-2每核44个DSR、WSE-3增加到48个，指的就是这套寄存器。
+
+`@get_dsr(dsr_type, dsr_id)`取寄存器，`@load_to_dsr(dsr, dsd)`装填；环形缓冲走`@load_to_dsr_xdsr(dsr, xdsr, circbuf)`，4D向量走`@load_to_dsr_xdsr_sr(dsr, xdsr, .{sr1, sr2, sr3}, dsd)`。装填在comptime做则程序开始前就位，在任务里做则现装现用。
+
+两个配置值得单说。`save_address = true`让每次DSD操作结束后把基址推进到本次访问范围之后，DSR变成一段自动前进的游标：
+
+```csl
+comptime {
+  @load_to_dsr(chunks_in_dsr, chunks_in_dsd, .{ .save_address = true });
+}
+task main() void {
+  for (@range(i16, N_CHUNKS)) |i| {
+    @mov16(chunks_out_dsr, chunks_in_dsr);   // 每次拷一块，基址自己往前走
+  }
+}
+```
+
+`single_step = true`是给`@map`专用的：`@map(math_lib.sqrt_f16, inDSR, outDSR)`逐元素套一个数学函数，DSD在背后单步推进；拿它配别的DSD builtins是未定义行为。`@set_dsr_base_addr(dsr, tensor)`可以在不动长度和stride的前提下把DSR重新指向另一块张量，`save_address`是它的自动化版本。DSR上的异步配置（`async`/`activate`/`unblock`/`on_control`）必须在`@load_to_dsr`时装好，后续DSD操作照常写即可。
+
+## 一个完整的GEMV
+
+GEMV教程系列以`y = Ax + b`为贯穿例子，从单PE一路长到跨PE。把它的形态摊开，前面几节的概念正好各就各位。
+
+单PE版本的`pe_program.csl`只有一处要动脑筋：A按行主序存，`A_dsd`要按列访问，于是用stride把连续内存折成一列：
+
+```csl
+const M: i16 = 4;
+const N: i16 = 6;
+
+var A: [M*N]f32;                       // 行主序
+var x = @constants([N]f32, 1.0);
+var b = @constants([M]f32, 2.0);
+var y = @zeros([M]f32);
+
+var A_dsd = @get_dsd(mem1d_dsd, .{ .tensor_access = |i|{M} -> A[i*N] });  // 第0列
+var b_dsd = @get_dsd(mem1d_dsd, .{ .tensor_access = |i|{M} -> b[i] });
+var y_dsd = @get_dsd(mem1d_dsd, .{ .base_address = &y, .extent = M });
+
+fn gemv() void {
+  for (@range(u16, N)) |i| {
+    @fmacs(y_dsd, y_dsd, A_dsd, x[i]);              // y += 第i列 * x[i]
+    A_dsd = @increment_dsd_offset(A_dsd, 1, f32);   // 推进到下一列
+  }
+  @fadds(y_dsd, y_dsd, b_dsd);                      // y += b
+}
+```
+
+双重循环没了。`@fmacs`一条指令做完整列的向量-标量乘加，`@increment_dsd_offset`把A的访问从第i列挪到第i+1列，`@constants`与`@zeros`在声明时就把初值写好。主机侧三步走，拷进去、启动、拷回来：
+
+```python
+runner.memcpy_h2d(A_symbol, A.ravel(), 0, 0, 1, 1, M*N, streaming=False,
+  order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+runner.memcpy_h2d(x_symbol, x, 0, 0, 1, 1, N, streaming=False,
+  order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+runner.launch("init_and_compute", nonblock=False)
+runner.memcpy_d2h(y_result, y_symbol, 0, 0, 1, 1, M, streaming=False,
+  order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+```
+
+两个PE的版本把A和x按列对半分，左PE算前一半、右PE算后一半，左PE再把部分和发给右PE做最终累加。布局文件里多出的是color配置：
+
+```csl
+const send_color: color = @get_color(0);
+layout {
+  @set_rectangle(2, 1);
+  @set_tile_code(0, 0, "pe_program.csl", .{ .pe_id = 0, .send_color = send_color, ... });
+  @set_tile_code(1, 0, "pe_program.csl", .{ .pe_id = 1, .send_color = send_color, ... });
+
+  @set_color_config(0, 0, send_color, .{.routes = .{ .rx = .{RAMP}, .tx = .{EAST} }});
+  @set_color_config(1, 0, send_color, .{.routes = .{ .rx = .{WEST}, .tx = .{RAMP} }});
+}
+```
+
+左PE从RAMP收、往EAST发，右PE从WEST收、往RAMP发。路由器的五个方向在这两行配置里写完，运行期不再有路由决策。
+
+设备侧的收发各自一条异步DSD操作：
+
+```csl
+fn send_right() void {
+  const out_dsd = @get_dsd(fabout_dsd, .{ .extent = M, .output_queue = send_color_oq });
+  @fmovs(out_dsd, y_dsd, .{ .async = true, .activate = exit_task_id });
+}
+fn recv_left() void {
+  const in_dsd = @get_dsd(fabin_dsd, .{ .extent = M, .input_queue = send_color_iq });
+  @fadds(y_dsd, y_dsd, in_dsd, .{ .async = true, .activate = exit_task_id });
+}
+task exit_task() void { sys_mod.unblock_cmd_stream(); }
+```
+
+`.async = true`起微线程，`.activate`在搬完后唤醒`exit_task`，由它调`unblock_cmd_stream()`把控制权交还主机。两个PE都走到这一步，主机才能取回y。整个程序里没有一次轮询，也没有一次全局屏障，左PE发完即走、右PE收到即算，进度完全由wavelet的到达驱动。涉及fabric的DSD操作必须异步写，官方文档的警告是同步写"可能导致性能低下或死锁"。
+
+这套教程从gemv-00的语法讲起，逐节叠加DSD、memcpy、多PE、fabric，是官方给的入门路径。它教的是增量式写法；真正体现晶圆数据流味道的是下一节那个GEMV，同一个数学问题换一种组织方式，通信与计算完全融为一体。
 
 ## 跨PE的流式GEMV
 
-把这些组合起来，就是一个完整的数据流内核。`gemv-checkerboard-pattern`做`y = Ax + b`，4×4的PE阵列，M=32、N=16：A按行切四份、按列切四份，每个PE拿8×4的一块常驻内存；x从北侧流入，沿列向南广播；b从西侧进入；部分积沿行向东做链式归约，最终从最右列流出。
+`gemv-checkerboard-pattern`做`y = Ax + b`，4×4的PE阵列，M=32、N=16：A按行切四份、按列切四份，每个PE拿8×4的一块常驻内存；x从北侧流入，沿列向南广播；b从西侧进入；部分积沿行向东做链式归约，最终从最右列流出。
 
-![36.png](/assets/images/cerebras/36.png)
+![图: 4×4棋盘式GEMV的输入输出接口](images/csl-gemv-checkerboard.png)
 
 PE上的代码只有两个任务。收到一个x元素，就对A的一列做一次乘加；收满整列元素，唤醒归约：
 
@@ -366,3 +505,7 @@ def print_loss(loss): print(f"Loss: {loss.item()}")
 20. "Cerebras Systems Announces World's First Brain-Scale Artificial Intelligence Solution," Cerebras Press Release, Aug. 24, 2021.
 21. "Cerebras Systems Unveils World's Fastest AI Chip with Whopping 4 Trillion Transistors," Cerebras Press Release, Mar. 13, 2024.
 22. S. K. Moore, "4 Things to Know About the Biggest Chip Ever Built," IEEE Spectrum, Aug. 2019.
+23. Cerebras Systems, "Wafer-Scale Engine Architecture (Computing with Cerebras)," Cerebras SDK Documentation. URL [https://sdk.cerebras.ai/computing-with-cerebras](https://sdk.cerebras.ai/computing-with-cerebras)
+24. Cerebras Systems, "Data Structure Descriptors," Cerebras SDK Documentation. URL [https://sdk.cerebras.ai/csl/language/dsds](https://sdk.cerebras.ai/csl/language/dsds)
+25. Cerebras Systems, "Data Structure Registers," Cerebras SDK Documentation. URL [https://sdk.cerebras.ai/csl/language/dsrs](https://sdk.cerebras.ai/csl/language/dsrs)
+26. Cerebras Systems, "Build a GEMV Kernel (Tutorial Series)," Cerebras SDK Documentation. URL [https://sdk.cerebras.ai/csl/tutorials](https://sdk.cerebras.ai/csl/tutorials)

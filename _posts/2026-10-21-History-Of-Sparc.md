@@ -27,11 +27,12 @@
 - **2004 年**：**UltraSPARC IV**，UltraSPARC 家族进入双核心时代。
 - **2005 年**：**UltraSPARC T1**（Niagara）发布，确立 **Throughput Computing** 路线；同年 Sun 以 **OpenSPARC** 的形式开放 T1 的 RTL 源码。
 - **2007 年**：**UltraSPARC T2**（Niagara-2），单芯片 8 核 64 线程，并集成密码学加速与 10Gb 以太网。
-- ![[Pasted image 20230719100300.png]]
+![01.png](/assets/images/sparc/01.png)
 - **2010 年**：Oracle 完成对 Sun 的收购，**UltraSPARC RK**（Rock）被取消，SPARC Enterprise 品牌并入 SPARC T / M 系列。
 - **2011 年**：**SPARC T4**，S3 核心转向双指令派发、非循序预测执行；Oracle 发布 **OSA**（Oracle SPARC Architecture）。
 - **2014 年**：Fujitsu **SPARC64 XIfx**，SPARC 世界第一颗超级电脑系统单芯片。
 - ![[Pasted image 20230630141022.png]]
+![02.png](/assets/images/sparc/02.png)
 - **2015 / 2017 年**：**SPARC M7** 与 **SPARC M8**，分别达到 32 核 256 线程、5GHz 时钟，成为 SPARC 在高端服务器的绝响。
 - **2020 年**：由 SPARC64 XIfx 演化而来的 **A64FX**（改用 ARM 架构）驱动"富岳"登上 Top500 首位。
 ![0.png](/assets/images/sparc/0.png)
@@ -1327,7 +1328,7 @@ SPARC M7 升级成具改良后的快取存储器阶层和 **VIS 4** 指令集的
 
 ![72.png](/assets/images/sparc/72.png)
 
-#### 12.2.5.1 SPARC M6 Processor 
+#### 12.2.5.1 SPARC M6 Processor
 
 * **12 个 SPARC S3 核心，96 线程**
 * 48MB 共享 L3 缓存
