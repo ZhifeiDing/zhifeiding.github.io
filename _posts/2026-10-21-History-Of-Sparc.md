@@ -1,3 +1,9 @@
+---
+title : History Of SPARC | The Root of Throughput Computing
+categories : [history]
+tags : [chip, cpu, architecture, history]
+---
+
 # 前言
 
 最近几年系统性的学习并梳理了计算机体系结构的相关知识，稍有感悟。遂决定将之整理成文，一来沉淀所学，避免遗忘；二来将散落在各处的技术细节串联起来，形成相对完整的知识脉络；三则试图通过回顾历史，进而窥见未来的走向。
