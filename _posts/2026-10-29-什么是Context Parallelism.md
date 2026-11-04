@@ -1,14 +1,12 @@
 # 1. 概述
 
-在大语言模型的上下文越来越长背景下，Context Parallelism逐渐成为一种必要的模型并行方案。同时，为了能同时适配长上下文和短上下文的需求，Dynamic CP技术也应运而生。vLLM和SGLang推理引擎针对Prefill和Decode分别实现了PCP(Prefill CP)和DCP(Decode CP)，NVIDIA Megatron也实现了CP，以及Helix的Dynamic CP，Alibaba也发布了Adaptive Context Parallelism相关论文。
+随着大语言模型支持的上下文长度不断增长，上下文并行（Context Parallelism，CP）已逐渐从一种可选优化演变为支撑超长上下文训练与推理的必要并行手段。与此同时，生产负载中长短请求并存，能够随负载调整并行形态的动态 CP 技术也应运而生。在推理侧，vLLM 与 SGLang 针对 Prefill 和 Decode 两个阶段分别实现了 PCP（Prefill CP）与 DCP（Decode CP）；在训练侧，NVIDIA Megatron 提供了完整的 CP 实现；NVIDIA Helix 与北大、阿里联合提出的 Adaptive Context Parallelism 则代表了动态 CP 的两个研究方向。本文第 2 章介绍 CP 的基本概念，第 3 章比较各类通信方案，第 4 章讨论不同注意力结构下的 CP 实现，第 5 章梳理主流引擎中的工程落地，第 6 章介绍两种动态 CP 系统。
 
 # 2. 什么是CP
 
-传统的TP并行针对head_num进行切分，需要通过AllReduce汇聚结果，通信量大，而且受限于head_num。而且随着上下文越来越大，即使进行TP切分之后，激活和KVCache也越来越大。因此，针对超长上下文的需求，针对序列进行切分就是个迫切的需求了。
+张量并行（TP）沿 head 维切分注意力计算，每层需要通过 AllReduce 汇聚结果，通信量大，且并行度受 head 数限制。随着上下文长度增长，即使经过 TP 切分，每张卡上的激活与 KV Cache 仍随序列长度线性膨胀。因此，沿序列维切分成为支撑超长上下文的现实需求。
 
-CP（Context Parallelism，上下文并行）沿**序列（token）维度**切分。长度为 $T$ 的序列被切成 $C$ 份，每个 CP rank 持有 $T/C$ 个 token 的激活以及对应区间的 KV Cache。除 Attention（以及线性注意力的循环状态）外，Linear、MLP、Norm 等算子都是逐 token 独立的，天然可以按 token 并行；唯一的跨 token 依赖在注意力上，需要通过 rank 间通信解决。
-
-与 TP 的对比：
+CP（Context Parallelism，上下文并行）沿序列（token）维切分。长度为 $T$ 的序列被切成 $C$ 份，每个 CP rank 持有 $T/C$ 个 token 的激活以及对应区间的 KV Cache。除注意力（以及线性注意力的循环状态）之外，Linear、MLP、Norm 等算子对 token 逐一独立，天然可以按 token 并行；唯一的跨 token 依赖存在于注意力中，需要通过 rank 间通信解决。下表从五个维度对比 TP 与 CP。
 
 | 维度 | Tensor Parallel | Context Parallel |
 | --- | --- | --- |
@@ -18,9 +16,9 @@ CP（Context Parallelism，上下文并行）沿**序列（token）维度**切�
 | KV Cache | 按 head 切分，head 数少时会复制 | 按 T 切分，显存占用随 CP 度下降 |
 | 激活显存 | 按 head 切，长序列仍线性增长 | 按序列切，长序列显存近似除以 $C$ |
 
-CP 与 TP / PP / DP / EP 正交，可以组合成 4D/5D 混合并行。实践中的经验顺序是先用 Megatron-SP（TP 内的序列并行，几乎零额外开销），激活显存仍然不够时再叠加 CP。
+CP 与 TP、PP、DP、EP 正交，可以组合成 4D/5D 混合并行。实践中通常先启用 Megatron-SP（TP 组内的序列并行，几乎不引入额外通信），当激活显存仍然不足时再叠加 CP。
 
-因果注意力下如果按 rank 顺序连续切分，前段 rank 历史 KV 少、计算量小，后段 rank 历史 KV 多、计算量大，约有 2 倍的不均衡，慢的 rank 决定整体速度。通用解法是 **zigzag（首尾配对）切分**。序列切成 $2C$ 个块，rank $r$ 拿块 $r$ 和块 $2C-1-r$，即一个轻载前段块配一个重载后段块，各 rank 计算量趋衡。
+因果注意力下，如果按 rank 顺序对序列连续切分，前段 rank 可见的历史 KV 少、计算量小，后段 rank 的历史 KV 多、计算量大，整体产生约两倍的不均衡，而慢的 rank 决定整体速度。通用的解决办法是 zigzag（首尾配对）切分，即将序列切成 $2C$ 个块，rank $r$ 持有块 $r$ 与块 $2C-1-r$，以一个轻载的前段块搭配一个重载的后段块，各 rank 的计算量由此趋于均衡。下图以 C=4 为例给出切分矩阵与因果 mask 矩阵的对应关系。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 550" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="550" fill="#ffffff"/>
@@ -118,47 +116,37 @@ CP 与 TP / PP / DP / EP 正交，可以组合成 4D/5D 混合并行。实践中
 <text x="340" y="502" text-anchor="middle" font-size="10" fill="#64748b">轻载前段块（行短）配重载后段块（行长），每个 rank 的着色格数均为 9，慢 rank 不再拖累整体</text>
 </svg>
 
-▲ 切分矩阵与因果 mask 矩阵：切分矩阵给出每个 query 块归属的 rank；mask 矩阵行为 query 块、列为 key 块，下三角（着色）参与计算、上三角（灰）被因果 mask 屏蔽。顺序切分下负载 3/7/11/15，zigzag 首尾配对后各 rank 均为 9
+▲ 切分矩阵与因果 mask 矩阵：切分矩阵给出每个 query 块所属的 rank；mask 矩阵以 query 块为行、key 块为列，下三角（着色）参与计算，上三角（灰）被因果 mask 屏蔽。顺序切分下各 rank 负载为 3/7/11/15，zigzag 首尾配对后各 rank 均为 9
 
 ## 2.1 Prefill CP
 
-Prefill 阶段是算力受限（compute-bound）的，一个长请求有 $T$ 个新 token 要计算 Q/K/V 并做完整的因果注意力。Prefill CP 的目标是**摊薄 TTFT**（Time-To-First-Token），把请求切成 $N$ 个 chunk，每个 GPU 计算一个 chunk 的 Q/K/V 及该 chunk query 对应的注意力输出。按 KV 的处理方式分两种策略。
+Prefill 阶段是算力受限（compute-bound）的。一个长请求包含 $T$ 个新 token，需要计算其 Q/K/V 并完成完整的因果注意力。Prefill CP 的目标是摊薄首 token 延迟（Time-To-First-Token，TTFT），做法是把请求切成 $N$ 个 chunk，每张 GPU 计算一个 chunk 的 Q/K/V 以及该 chunk 内 query 对应的注意力输出。按照 KV 的处理方式，已有做法可以归为两类。
 
-1. **Partial Query + Full KV（AllGather KV）**：请求长度适中、能放得下完整 KV 时，各 rank AllGather 得到完整 KV，每个 GPU 只为自己那部分 query 计算注意力输出。实现最简单，无需改注意力 kernel，是 SGLang Prefill CP、vLLM PCP、DSA-CP 的主流做法；代价是每层需要临时放得下全局 KV（可逐层聚合、用完即弃以压峰值）。现代架构（MLA / DSA / CSA）把 KV 压得很小，AllGather 的代价可接受。
-2. **Partial Query + Partial KV（Ring Attention）**：请求太长、全局 KV 放不下时，KV 块沿环 P2P 传/收，每个 rank 用本地 Q 对收到的 KV 块做部分注意力，用在线 softmax（LSE）合并结果。通信可与计算重叠，但实现复杂度和 kernel 侵入性更高。
+第一类是 Partial Query + Full KV，即 AllGather KV。当请求长度适中、单卡能够容纳完整 KV 时，各 rank 先通过 AllGather 获得全局 KV，再只为本地那部分 query 计算注意力输出。这一策略实现最为简单，无须改动注意力 kernel，是 SGLang Prefill CP、vLLM PCP 与昇腾 DSA-CP 的共同选择；其代价是每层需要临时容纳全局 KV，工程上通常逐层聚合、用完即弃以压低显存峰值。由于 MLA、DSA、CSA 等现代架构把 KV 压缩得很小，AllGather 的代价在多数情况下可以接受。
 
-工程要点：
+第二类是 Partial Query + Partial KV，即 Ring Attention。当请求过长、全局 KV 无法容纳时，KV 块沿环形拓扑在各 rank 间点对点传递，每个 rank 用本地 Q 对收到的 KV 块计算部分注意力，并借助在线 softmax（LSE）合并中间结果。该策略的通信可以与计算重叠，但实现复杂度与对 kernel 的侵入性都更高。
 
-- **头尾配对切分**（如 vLLM PCP 的 DualChunkSwap、SGLang Zigzag 策略、Megatron CP）：序列填充到 $2C$ 的倍数后切成 $2C$ 块，rank $i$ 拿 chunk $i$ 与 chunk $2C-1-i$，并通过 restore 索引把 AllGather 后交错的 token 顺序还原回因果顺序。
-- 对带 **Indexer 的稀疏注意力**（DSA、DeepSeek V4 系列），Indexer 的 top-k 选择计算也随 query 切分到各 rank，避免重复计算——这本身也是 Prefill CP 的收益之一。
-- 与 EP 组合时，CP 可以用 all-to-all 的 token dispatch/combine 替代 TP 的 AllReduce，降低通信时间。
-- 收益参考：SGLang 合入 CP 后长文本 TTFT 最多降低约 80%（PR #12065）；Moreh 的 SLOPE 引擎在 100K 上下文做到 TTFT < 2s，而同配置 SGLang TP=8 约 9s。
+在工程实现上，各引擎还有若干共同的处理。其一，头尾配对切分已成为标准配置，vLLM PCP 的 DualChunkSwap、SGLang 的 Zigzag 策略与 Megatron CP 均属此类。序列先被填充到 $2C$ 的倍数并切成 $2C$ 块，rank $i$ 持有 chunk $i$ 与 chunk $2C-1-i$，再通过 restore 索引把 AllGather 后交错的 token 顺序还原为因果顺序。其二，对于带 Indexer 的稀疏注意力（DSA、DeepSeek V4 系列），Indexer 的 top-k 选择计算同样随 query 切分到各 rank，避免了重复计算，这本身也构成 Prefill CP 的收益之一。其三，与 EP 组合时，CP 可以采用 all-to-all 形式的 token dispatch/combine 替代 TP 的 AllReduce，从而降低通信时间。从收益上看，SGLang 合入 CP 后长文本 TTFT 最多降低约 80%（PR #12065）；Moreh 的 SLOPE 引擎在 100K 上下文下将 TTFT 压到 2 秒以内，而同配置下 SGLang TP=8 约为 9 秒。
 
 ## 2.2 Decode CP
 
-Decode 阶段是访存受限（memory-bound）的。每步只有少量 query token，却要扫描大量存在 paged KV cache 里的历史 KV。Decode CP 的目标是**把 KV Cache 按序列维切开，腾出显存放更多请求（更大 batch），从而提高吞吐**。
+Decode 阶段是访存受限（memory-bound）的。每一步只有少量 query token，却需要扫描存放在分页 KV Cache 中的全部历史 KV。Decode CP 的目标因此与 Prefill CP 不同，它把 KV Cache 沿序列维切开以腾出显存，从而容纳更多并发请求（更大的 batch），最终提高吞吐。
 
-先看 KV Cache 的分片路径。模型有 $H$ 个 KV head 时，TP 可以先按 head 维切 KV（就是普通的 TP 分片）；但 $H$ 由模型结构决定，当 `tp_size > H` 时每个 GPU 上的 KV Cache 会**复制** `tp_size / H` 份。以 MLA 模型（DeepSeek-R1 / Kimi-K2，推理时只有 1 个 KV head）为例，tp=8 就是 8 倍 KV 复制。此时就需要 DCP 再沿 **T 维**切 KV Cache。
+KV Cache 的分片可以从两个维度理解。当模型有 $H$ 个 KV head 时，TP 可以先沿 head 维切分 KV，即普通的 TP 分片；但 $H$ 由模型结构决定，当 `tp_size > H` 时，每张 GPU 上的 KV Cache 会被复制 `tp_size / H` 份。以采用 MLA 的模型（DeepSeek-R1、Kimi-K2，推理时只有 1 个 KV head）为例，tp=8 意味着 8 倍的 KV 复制，此时需要 DCP 沿序列维进一步切分 KV Cache。具体而言，`dcp_size` 的取值范围是 $[1, tp\_size/H]$。DCP 不增加进程数，只是复用 TP/PCP 的 rank 来消除 KV 复制，`dcp_size` 越大复制越少，相应的通信开销也越大。
 
-- `dcp_size` 取值范围 $[1, tp\_size/H]$，DCP 不增加进程数，只是复用 TP/PCP 的 rank 去掉 KV 复制。`dcp_size` 越大复制越少，但通信开销越大。
-- **交错（interleave）分片**：decode 过程中 KV Cache 持续增长，vLLM 用交错策略沿 T 维分片——token $i$ 存到 `dcp_rank (i % dcp_world_size)`（`cp_kv_cache_interleave_size=1`，token 级对齐），或按 block 级对齐（先填满前序 rank 的 block 再写下一个 rank），使未来 token 的 KV 天然落到正确的 GPU 上，各 rank 显存均匀增长。该方案由 Moonshot 的 Chao Hong 提出，Helix 论文（arXiv:2507.07120）中有详细说明。
-- 通信方式与 prefill 相反，decode 的 Q 极小、KV 极大，所以走**传 Q**——把 Q 广播/AllGather 到各 rank，每个 rank 对本地 KV 分片算 partial attention 输出和 softmax 统计量（LSE），再做一次很小的合并（在线 softmax trick，通信量与上下文长度无关）。vLLM DCP 提供 `ag_rs`（AllGather + ReduceScatter）与 `a2a`（交换 partial output + LSE 后用 Triton kernel 合并）两种通信后端。
+Decode 过程中 KV Cache 持续增长，分片方式必须保证各 rank 的显存均匀增长。vLLM 采用交错（interleave）分片，token $i$ 被存到 `dcp_rank (i % dcp_world_size)`（`cp_kv_cache_interleave_size=1`，token 级对齐），或者按 block 级对齐（先填满前序 rank 的 block 再写下一个 rank），使未来 token 的 KV 天然落到正确的 GPU 上。该方案由 Moonshot 的 Chao Hong 提出，Helix 论文（arXiv:2507.07120）给出了详细说明。
 
-案例（vLLM 官方文档）：
+通信方式上，decode 与 prefill 恰好相反。decode 的 Q 极小、KV 极大，因此采用传 Q，即把 Q 广播或 AllGather 到各 rank，每个 rank 对本地 KV 分片计算 partial attention 输出与 softmax 统计量（LSE），最后做一次很小的合并（在线 softmax，通信量与上下文长度无关）。vLLM DCP 提供 `ag_rs`（AllGather + ReduceScatter）与 `a2a`（交换 partial output 与 LSE 后用 Triton kernel 合并）两种通信后端。
 
-- **DeepSeek-R1**（MLA，1 个 KV head）：单机 tp=8 → 8 倍 KV 复制，加 `-dcp 8` 可完全消除复制。
-- **Kimi-K2**：tp=16 → 16 倍复制，可加 `-dcp 16` 完全消除，或 `-dcp 8` 把复制降到 2 倍（通信限制在节点内，开销更小）。
-- **Qwen3-235B-A22B**（4 个 KV head）：tp=8 → 2 倍复制，加 `-dcp 2` 消除。
-
-去掉 KV 复制之后 batch size 可以显著放大，Moonshot 在 Kimi K2 分享中给出的经验是 2~3 倍吞吐提升，对 RL rollout 这类吞吐敏感场景尤其重要。
+vLLM 官方文档给出了三个典型案例。DeepSeek-R1（MLA，1 个 KV head）在单机 tp=8 下存在 8 倍 KV 复制，加 `-dcp 8` 可完全消除；Kimi-K2 在 tp=16 下存在 16 倍复制，可用 `-dcp 16` 完全消除，或用 `-dcp 8` 把复制降到 2 倍并把通信限制在节点内；Qwen3-235B-A22B（4 个 KV head）在 tp=8 下存在 2 倍复制，加 `-dcp 2` 即可消除。消除 KV 复制之后，batch size 可以显著放大。Moonshot 在 Kimi K2 的技术分享中报告了 2~3 倍的吞吐提升，这对 RL rollout 等吞吐敏感场景尤为重要。
 
 # 3. 不同的CP通信方案
 
-针对CP并行，有多种不同的通信实现方案，常见的有传递Q、传递KV，或者Ulysses的All-to-All（常被混称为 AllGather）。下面分别介绍。
+CP 的通信集中于注意力，已有方案之间的本质差别在于 rank 之间传递什么数据。常见的做法包括传递 KV（Ring Attention 或 AllGather KV）、传递 Q（AllGather Q 或 Pass Q），以及 Ulysses 的 All-to-All 换维（其通信原语常被混称为 AllGather）。本章依次介绍这些方案，随后讨论它们共用的 LSE 合并组件，最后给出选型对比。
 
 ## 3.1 传 KV：Ring Attention（P2P 环）
 
-Q 留在本地，KV 块沿环形拓扑 P2P send/recv 传一圈。第 $t$ 轮每个 rank 用手里的 KV 块算本地 Q 的部分注意力结果，同时把该块发给下一个 rank、从上一个 rank 收新块，用 FlashAttention 的 LSE 累加技巧合并，最终结果与单卡稠密注意力等价。只要单块计算时间能盖住单块传输时间，通信可以完全隐藏。这是 Megatron `cp_comm_type=p2p` 的默认实现（工业级 Ring Attention，即 zigzag 切分 + 双 CUDA stream 重叠 + FA2 集成）。
+Ring Attention 中 Q 留在本地，KV 块沿环形拓扑以 P2P send/recv 传递一圈。第 $t$ 轮，每个 rank 用手中的 KV 块计算本地 Q 的部分注意力结果，同时把该块发往下一个 rank、从上一个 rank 接收新块，中间结果用 FlashAttention 的 LSE 累加技巧合并，最终结果与单卡稠密注意力精确等价。只要单块的计算时间能够覆盖单块的传输时间，通信即可被完全隐藏。Megatron `cp_comm_type=p2p` 的默认实现就属于这一类，它在 zigzag 切分的基础上引入双 CUDA stream 重叠与 FlashAttention-2 集成，是工业级 Ring Attention 的代表。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 430" style="width:100%;height:auto">
 <defs>
@@ -260,14 +248,13 @@ Q 留在本地，KV 块沿环形拓扑 P2P send/recv 传一圈。第 $t$ 轮每�
 <text x="340" y="415" text-anchor="middle" font-size="10" fill="#475569">通信量：每轮每链路 1 个 KV 块，共 C 轮 = KV 沿环走一遍 O(T)；zigzag 切分只改行归属，轮转日程不变</text>
 </svg>
 
-▲ Ring Attention 每轮通信日程：上排 = 4 轮中各 GPU 持有的 K 块与每轮 P2P 跳转；下排 = score tile 矩阵（颜色 = 该 tile 被计算的轮次，灰 = 因果 mask）
+▲ Ring Attention 每轮通信日程：上排为 4 轮中各 GPU 持有的 K 块与每轮的 P2P 跳转；下排为 score tile 矩阵（颜色表示该 tile 被计算的轮次，灰为因果 mask）
 
-- 优点：CP 度不受 head 数限制，通信量 $O(T)$（KV 沿环走一遍）。
-- 缺点：多轮流通信 + 结果合并，kernel 需要支持 partial output/LSE 合并；小块时 kernel 效率下降。
+该方案的优点是 CP 度不受 head 数限制，通信量为 $O(T)$（KV 沿环走一遍）；其代价在于多轮流水通信与结果合并要求 kernel 支持 partial output 与 LSE 累加，且块较小时 kernel 效率会下降。
 
 ## 3.2 传 KV：AllGather KV
 
-一次性 AllGather 完整 KV，本地 Q 对全局 KV 用标准注意力 kernel 算完即可。实现最简单、不改 kernel、不受 head 数限制，但需要临时放得下整层全局 KV，且全量 KV 要在 CP 组内传一遍。由于 MLA/DSA/CSA 等架构把 KV 压缩得非常小（MLA 传 latent，CSA 传压缩条目），"先 AllGather KV 再算"反而常常是又快又好写的选择。SGLang Prefill CP、vLLM PCP、昇腾 DSA-CP 都采用该方案。
+AllGather KV 一次性聚齐完整 KV，本地 Q 对全局 KV 用标准注意力 kernel 计算即可。这一方案实现最简单、不改动 kernel、不受 head 数限制，但需要临时容纳整层的全局 KV，且全量 KV 要在 CP 组内完整传输一遍。由于 MLA、DSA、CSA 等架构把 KV 压缩得非常小（MLA 传 latent，CSA 传压缩条目），先 AllGather KV 再计算往往同时兼顾了效率与实现便利性，SGLang Prefill CP、vLLM PCP 与昇腾 DSA-CP 均采用该方案。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 395" style="width:100%;height:auto">
 <defs>
@@ -389,11 +376,11 @@ Q 留在本地，KV 块沿环形拓扑 P2P send/recv 传一圈。第 $t$ 轮每�
 
 ## 3.3 传 Q：AllGather Q / Pass Q
 
-KV 按 T 维分片留在本地不动，把（很小的）Q 送达各 rank，每个 rank 对本地 KV 分片算 partial output $O_j$ 和 LSE $L_j$，再合并。通信量与 KV Cache 大小**无关**，因此是 decode 阶段的首选。按 Q 的送达方式分为两种形态。
+与传 KV 相对，传 Q 让 KV 按序列维分片留在本地不动，只把（很小的）Q 送达各 rank。每个 rank 对本地 KV 分片计算 partial output $O_j$ 与 LSE $L_j$，再做合并。由于通信量与 KV Cache 大小无关，传 Q 是 decode 阶段的首选。按照 Q 的送达方式，可以进一步分为两种形态。
 
 ### 3.3.1 AllGather / Broadcast Q
 
-一次性集合通信把 Q 聚齐到每个 rank。DCP 组与 TP 组重叠时各 rank 只持有自己那部分 head 的 Q 分片，需要先沿 head 维 AllGather 得到完整 Q；DCP 组独立时 Q 本来就在各 rank 复制，一次 broadcast 即可。之后各 rank 用完整 Q 对本地 KV 分片算 score 列段 $S_j$ 并得到 $(O_j, L_j)$，再做一次 LSE 感知的归并（all-reduce 或 gather，如 vLLM 的 `cp_lse_ag_out_rs`）。全程两个集合通信拍、延迟低，是 SGLang Decode CP（all-gather Q）、vLLM DCP、Helix 的 KV Parallelism 的共同选择。
+该形态用一次集合通信把 Q 聚齐到每个 rank。当 DCP 组与 TP 组重叠时，各 rank 只持有自己那部分 head 的 Q 分片，需要先沿 head 维 AllGather 得到完整 Q；当 DCP 组独立时，Q 本来就在各 rank 复制，一次 broadcast 即可。随后各 rank 用完整 Q 对本地 KV 分片计算 score 列段 $S_j$ 并得到 $(O_j, L_j)$，再做一次 LSE 感知的归并（all-reduce 或 gather，例如 vLLM 的 `cp_lse_ag_out_rs`）。全程只需两个集合通信步骤，延迟低，是 SGLang Decode CP（all-gather Q）、vLLM DCP 与 Helix KV Parallelism 的共同选择。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
 <defs>
@@ -525,7 +512,7 @@ KV 按 T 维分片留在本地不动，把（很小的）Q 送达各 rank，每�
 
 ### 3.3.2 Pass Q（环形传 Q）
 
-Ring 传 KV 的镜像版本。KV 分片常驻不动，Q 连同运行中的 partial 累加器 $(O_{acc}, L_{acc})$ 沿环逐 hop P2P 传递，每个 rank 收到后用本地 KV 算 partial、按在线 softmax 合并进累加器再发给下家，转满 $C$ 跳回到源 rank 时累加器即精确输出，连最后的归并通信都省掉。通信量同样只正比于 $q$（与 KV 无关），但 $C$ 跳串行，延迟高于 AllGather Q。适合 KV 常驻缓存的多轮 decode / incremental prefill，即 Meta《Context Parallelism for Scalable Million-Token Inference》提出的 pass-Q 变体（动态切换见 3.5）。
+Pass Q 可以看作 Ring 传 KV 的镜像。KV 分片常驻不动，Q 连同运行中的 partial 累加器 $(O_{acc}, L_{acc})$ 沿环逐跳以 P2P 传递。每个 rank 收到后用本地 KV 计算 partial，按在线 softmax 并入累加器，再转发给下一个 rank；转满 $C$ 跳回到源 rank 时，累加器即精确输出，最后的归并通信也随之省去。这一形态的通信量同样只与 $q$ 成正比，但 $C$ 跳串行使延迟高于 AllGather Q，因而更适合 KV 常驻缓存的多轮 decode 与 incremental prefill。Meta 在《Context Parallelism for Scalable Million-Token Inference》中提出的 pass-Q 变体即属此类，它与 pass-KV 之间的动态切换将在 3.5 节讨论。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" style="width:100%;height:auto">
 <defs>
@@ -604,7 +591,7 @@ Ring 传 KV 的镜像版本。KV 分片常驻不动，Q 连同运行中的 parti
 
 ## 3.4 Ulysses：All-to-All 换维
 
-DeepSpeed-Ulysses 在注意力前后各做一次 All-to-All，把"按序列切分"转置成"按 head 切分"，通信后每个 rank 持有**全序列**的部分 head，直接用普通 FlashAttention，再 All-to-All 转回序列切分。不需要改 kernel、不需要 LSE 合并；通信量正比于 $T$ 但不随 CP 度增长（序列与设备等比例扩展时通信量恒定）。
+DeepSpeed-Ulysses 在注意力前后各做一次 All-to-All，把按序列切分的数据转置为按 head 切分。通信之后，每个 rank 持有全序列上的部分 head，可以直接调用普通 FlashAttention，之后再经一次 All-to-All 转回序列切分。该方案不需要修改 kernel，也不需要 LSE 合并；通信量正比于 $T$，但不随 CP 度增长（序列与设备等比例扩展时通信量保持恒定）。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="360" fill="#ffffff"/>
@@ -652,14 +639,13 @@ DeepSpeed-Ulysses 在注意力前后各做一次 All-to-All，把"按序列切�
 <text x="340" y="336" text-anchor="middle" font-size="11" fill="#475569">硬约束：CP 度 ≤ head 数 —— GQA/MQA/MLA 的 KV head 极少，Ulysses 很快到顶</text>
 </svg>
 
-▲ Ulysses 示意图：矩阵从「按行（序列）切分」经 All-to-All 变为「按列（head）切分」（注意：其集合通信原语是 All-to-All，不是 AllGather）
+▲ Ulysses 示意图：矩阵从按行（序列）切分经 All-to-All 变为按列（head）切分。注意其集合通信原语是 All-to-All，不是 AllGather
 
-- 硬约束：CP 度 ≤ head 数（GQA/MQA/MLA 下 KV head 极少，约束非常紧；MLA 吸收式下甚至没有 per-head KV 可交换，有效 Ulysses 度塌缩为 1）。
-- 注意：Ulysses 的集合通信原语是 **All-to-All**，不是 AllGather，常被混称。
+这一方案的硬约束是 CP 度不能超过 head 数。GQA、MQA、MLA 的 KV head 极少，该约束在现代模型上非常紧；MLA 的吸收形式下甚至不存在 per-head KV 可供交换，有效 Ulysses 并行度退化为 1。此外需要指出，Ulysses 的集合通信原语是 All-to-All 而非 AllGather，两者在文献与讨论中常被混称。
 
 ## 3.5 混合方案：USP / a2a+p2p、pass-KV / pass-Q 动态切换
 
-Ulysses 与 Ring 不互斥，USP（Unified Sequence Parallelism）在 2D 网格上组合两者——节点内（NVLink）用 Ulysses All-to-All，节点间（IB/RoCE）用 Ring P2P，总 CP 度可超过 head 数。Megatron-Core 的 `cp_comm_type=a2a+p2p` 配合 `hierarchical_context_parallel_sizes`（内层 a2a 尺寸、外层 p2p 尺寸）就是该思路。USP 论文还给出 4D 并行的推荐嵌套顺序（TP < SP-Ulysses < SP-Ring < ZeRO-DP < PP）。
+Ulysses 与 Ring 并不互斥。USP（Unified Sequence Parallelism）在二维网格上组合两者，节点内（NVLink）使用 Ulysses All-to-All，节点间（IB/RoCE）使用 Ring P2P，总 CP 度由此可以超过 head 数。Megatron-Core 的 `cp_comm_type=a2a+p2p` 配合 `hierarchical_context_parallel_sizes`（内层 a2a 尺寸、外层 p2p 尺寸）即对应这一思路。USP 论文还给出了 4D 并行的推荐嵌套顺序（TP < SP-Ulysses < SP-Ring < ZeRO-DP < PP）。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 350" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="350" fill="#ffffff"/>
@@ -713,15 +699,19 @@ Ulysses 与 Ring 不互斥，USP（Unified Sequence Parallelism）在 2D 网格�
 
 ▲ USP 混合示意图：[T, H] 矩阵二维切块，列向走 Ulysses a2a（节点内）、行向走 Ring P2P（节点间）
 
-**另一种混合：pass-KV / pass-Q 动态切换（Meta CP，MLSys 2025）**
+**pass-KV / pass-Q 动态切换（Meta CP，MLSys 2025）**
 
-USP 是把 3.4 的 Ulysses 与 3.1 的 Ring 在**拓扑层面**组合；Meta 的《Context Parallelism for Scalable Million-Token Inference》（arXiv:2411.01783，MLSys 2025）则是在**算法层面**把 3.1 的传 KV 与 3.3 的传 Q 做成两个无损精确的 ring attention 变体 **pass-KV** 与 **pass-Q**，运行时按负载动态切换。这是首篇公开 CP 推理系统实现细节的论文，16 节点 128 张 H100 上 Llama3-405B 的 1M 上下文 prefill 仅 **77 秒**（并行效率 93%、FLOPS 利用率 63%），128K prefill 3.8 秒；RDMA 与中低带宽 TCP（约 3 GB/s per rank）下均近线性扩展——跨节点通信量比 TP 小数个量级（8 节点 128K 时 TP16 已比 CP8 慢约 100%）。
+USP 把 Ulysses 与 Ring 在拓扑层面组合，Meta 的《Context Parallelism for Scalable Million-Token Inference》（arXiv:2411.01783，MLSys 2025）则在算法层面把 3.1 节的传 KV 与 3.3 节的传 Q 实现为两个无损精确的 ring attention 变体 pass-KV 与 pass-Q，并在运行时按负载动态切换。这篇论文首次公开了 CP 推理系统的实现细节。在 16 节点 128 张 H100 上，Llama3-405B 的 1M 上下文 prefill 仅需 77 秒（并行效率 93%、FLOPS 利用率 63%），128K prefill 为 3.8 秒；在 RDMA 与中低带宽 TCP（约 3 GB/s per rank）下均接近线性扩展。由于跨节点通信量比 TP 小几个数量级，8 节点 128K 的场景下 TP16 已比 CP8 慢约一倍。
 
-- **pass-KV（= 3.1 Ring）**：Q 行块留本地，KV 沿环 P2P 传 $N-1$ 轮，每轮 SendRecv 与 attention 计算重叠，LSE（论文称 merge attention）合并。通信量 $\propto T\cdot N_{kv}\cdot d$，GQA 下比传 Q 小约 $N_h/N_{kv}$ 倍（405B 约 16 倍）。适合 full prefill 与 miss rate 高（新 token 占比大）的 partial prefill；decode 不用（$T=1$ 时传 KV 几乎总是更贵）。
-- **pass-Q（= 3.3 传 Q）**：KV 分片**跨轮常驻**（persistent KV cache，多轮会话间不动），Q 沿环传，各 rank 对本地 KV 分片算 partial $(O_j, L_j)$，经 **All2All + permute** 把散落在各 rank 的部分结果归位后再 LSE 合并。通信量只与新 token 数 $T$ 成正比，与 KV cache 长度无关。适合 decode（$T=1$）与 miss rate 低（$P \gg T$）的 partial prefill。
-- **动态切换启发式**：记 miss rate $=T/(T+P)$（$T$=新 token 数，$P$=已缓存 KV 长度），传 Q 消息更小当且仅当 $\frac{T}{T+P}\le 2\frac{N_{kv}}{N_h}$（405B 阈值 12.5%）；实际再叠加 roofline 条件（pass-KV 的 SendRecv 能被 attention 遮蔽时优先 pass-KV）、计入 All2All 的精化式，以及经验拟合 $h(T,P)=-1.059\log T+1.145\log\frac{T}{T+P}+12.112$（$h>0$ 选 pass-KV）。128K / CP4 实测切换点约在 miss rate 5% 附近。
-- **多轮 persistent KV 与负载均衡**：KV cache 按 CP rank 分布存储、跨轮保持；序列切 $2N$ 块、rank $i$ 取 $(C_i,\ C_{2N-1-i})$ 首尾配对（同 zigzag 切分），同时均衡 attention 计算与 KV 显存；decode 用 round-robin 每步偏移 1 个 index，防某 rank 既背 decode 又持最长 KV 而 OOM；ring 消息按 $\max_i P_i+\lceil T/N\rceil$ 等长 padding 以满足集合通信接口。
-- **适用边界**：CP 显著降低 TTFT，但 TTIT 略有退化（padding + SendRecv/All2All 开销），论文建议与 PD 分离（DistServe / Mooncake）配合部署。
+pass-KV 对应 3.1 节的 Ring。Q 行块留在本地，KV 沿环以 P2P 传递 $N-1$ 轮，每轮 SendRecv 与 attention 计算重叠，最后用 LSE（论文称 merge attention）合并。其通信量正比于 $T\cdot N_{kv}\cdot d$，在 GQA 下比传 Q 小约 $N_h/N_{kv}$ 倍（405B 约为 16 倍），适合 full prefill 与 miss rate 较高（新 token 占比大）的 partial prefill。decode 阶段不采用这一变体，因为 $T=1$ 时传 KV 几乎总是更贵。
+
+pass-Q 对应 3.3 节的传 Q。KV 分片跨轮常驻（persistent KV cache，多轮会话之间保持不动），Q 沿环传递，各 rank 对本地 KV 分片计算 partial $(O_j, L_j)$，再经 All2All 加 permute 把散落在各 rank 的部分结果归位后做 LSE 合并。其通信量只与新 token 数 $T$ 成正比，与 KV cache 长度无关，适合 decode（$T=1$）与 miss rate 较低（$P \gg T$）的 partial prefill。
+
+两种变体之间的切换由启发式规则决定。记 miss rate 为 $T/(T+P)$（$T$ 为新 token 数，$P$ 为已缓存 KV 长度），则传 Q 的消息更小当且仅当 $\frac{T}{T+P}\le 2\frac{N_{kv}}{N_h}$（405B 的阈值为 12.5%）。实际决策还要叠加 roofline 条件（pass-KV 的 SendRecv 能被 attention 计算遮蔽时优先 pass-KV）、计入 All2All 的精化式，以及经验拟合 $h(T,P)=-1.059\log T+1.145\log\frac{T}{T+P}+12.112$（$h>0$ 时选 pass-KV）。128K、CP4 的实测切换点约在 miss rate 5% 附近。
+
+多轮会话下，KV cache 按 CP rank 分布存储并跨轮保持。序列切成 $2N$ 块、rank $i$ 取 $(C_i, C_{2N-1-i})$ 首尾配对（与 zigzag 相同），同时均衡注意力计算量与 KV 显存；decode 采用 round-robin 每步偏移一个 index，避免某个 rank 既承担 decode 又持有最长 KV 而溢出显存；ring 消息按 $\max_i P_i+\lceil T/N\rceil$ 等长 padding，以满足集合通信接口的要求。
+
+最后是该方案的适用边界。CP 显著降低 TTFT，但 TTIT 略有退化（padding 与 SendRecv/All2All 的开销），论文建议与 PD 分离（DistServe、Mooncake）配合部署。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" style="width:100%;height:auto">
 <defs>
@@ -810,15 +800,15 @@ USP 是把 3.4 的 Ulysses 与 3.1 的 Ring 在**拓扑层面**组合；Meta 的
 <text x="340" y="424" text-anchor="middle" font-size="10" fill="#475569">两者均以 LSE 合并收尾、无损精确，按 miss rate T/(T+P) 与 roofline 自动切换，覆盖 full prefill / persistent KV prefill / decode</text>
 </svg>
 
-▲ pass-KV / pass-Q 动态切换示意图：上 = 多轮会话的 miss rate 与切换规则；下左 = pass-KV 的 KV 列块每轮环传（GPU0 视角），下右 = pass-Q 的 Q 行块每轮环传 + KV 列块常驻
+▲ pass-KV / pass-Q 动态切换示意图：上为多轮会话的 miss rate 与切换规则；下左为 pass-KV 的 KV 列块每轮环传（GPU0 视角），下右为 pass-Q 的 Q 行块每轮环传与 KV 列块常驻
 
 ## 3.6 公共组件：LSE 合并（在线 softmax）
 
-"传 KV 分多轮算"与"传 Q 分片算"最终都要把部分注意力结果合并成精确结果。设分片 $j$ 给出归一化输出 $O_j$ 和对数和 $L_j$。
+无论传 KV 分多轮计算，还是传 Q 分片计算，最终都要把各部分注意力的中间结果合并为精确结果。设分片 $j$ 给出归一化输出 $O_j$ 与对数和 $L_j$，则合并公式为
 
 $$m = \max_j L_j,\quad w_j = \exp(L_j - m),\quad O = \frac{\sum_j w_j O_j}{\sum_j w_j}$$
 
-这就是 FlashAttention 的 online softmax 推广，也是 decode CP 通信量极小的原因——每步只需传输出和 LSE，无需传原始 KV。
+这正是 FlashAttention 在线 softmax 的推广，也是 decode CP 通信量可以极小的原因。每一步只需传递输出与 LSE，无须传递原始 KV。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
@@ -868,6 +858,8 @@ $$m = \max_j L_j,\quad w_j = \exp(L_j - m),\quad O = \frac{\sum_j w_j O_j}{\sum_
 ▲ LSE 合并示意图：各列段 partial 结果 (O_j, L_j) 与整行 score 矩阵的对应关系
 
 ## 3.7 选型小结
+
+下表从通信内容、通信量、head 数约束与 kernel 侵入性四个维度对比上述方案，随后的图给出按场景的选择路径。
 
 | 方案 | 通信内容 | 通信量 | 受 head 数限制 | Kernel 侵入 | 典型场景 |
 | --- | --- | --- | --- | --- | --- |
@@ -926,16 +918,13 @@ $$m = \max_j L_j,\quad w_j = \exp(L_j - m),\quad O = \frac{\sum_j w_j O_j}{\sum_
 
 # 4. 不同Attention的CP
 
-大语言模型的Attention有多种实现，比较常见的包括GQA, MLA, DSA, GDN, KDA, CSA等。而不同的Attention在CP时需要传递的数据有所不同。下面分别针对不同的Attention进行详细介绍。
+大语言模型的注意力有多种实现，常见的包括 GQA、MLA、DSA、GDN、KDA、CSA 等。不同注意力结构下，CP 需要传递的数据并不相同，本章逐一讨论。
 
 ## 4.1 GQA
 
+GQA（Grouped Query Attention）让多个 query head 共享一组 KV head，压缩了 KV Cache，代价是 KV head 数很少（Llama3-8B 为 8 个，Qwen3-235B 为 4 个）。这一结构对 CP 有两方面影响。
 
-
-GQA（Grouped Query Attention）让多个 query head 共享一组 KV head，KV Cache 省了，但代价是 KV head 数很少（Llama3-8B 8 个、Qwen3-235B 4 个）。这带来两个 CP 特征。
-
-- **Ulysses 度被 KV head 数卡死**：a2a 按 head 切分时 CP 度 ≤ KV head 数，GQA 下很快到顶；这也是 Ulysses 在现代模型上逐渐让位给 Ring/AllGather KV/传 Q 的原因。
-- **传 KV 或传 Q 都可行**：prefill 常用 AllGather KV（SGLang/vLLM PCP），decode 常用传 Q（AllGather Q + 本地 KV 分片 + LSE 合并）。vLLM DCP 中 GQA 的 `dcp_size` 上界是 `tp_size / H_kv`；当 DCP 组与 TP 组重叠时各 rank 的 Q head 不同，需要先沿 head 维 AllGather Q，算完再用 LSE 感知的 all-reduce/a2a 归并（如 `cp_lse_ag_out_rs`）。
+一方面，KV head 数直接限制了 Ulysses 的并行度。All-to-All 按 head 切分时 CP 度不能超过 KV head 数，GQA 下很快触顶，这也是 Ulysses 在现代模型上逐渐让位于 Ring、AllGather KV 与传 Q 的原因。另一方面，传 KV 与传 Q 对 GQA 都可行。prefill 常用 AllGather KV（SGLang、vLLM PCP），decode 常用传 Q（AllGather Q、本地 KV 分片与 LSE 合并）。在 vLLM DCP 中，GQA 的 `dcp_size` 上界为 `tp_size / H_kv`；当 DCP 组与 TP 组重叠时，各 rank 的 Q head 不同，需要先沿 head 维 AllGather Q，算完再用 LSE 感知的 all-reduce 或 All-to-All 归并（如 `cp_lse_ag_out_rs`）。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
@@ -990,14 +979,13 @@ GQA（Grouped Query Attention）让多个 query head 共享一组 KV head，KV C
 
 ## 4.2 MLA
 
-传递Latent
+MLA（Multi-head Latent Attention，DeepSeek-V2/V3）把每个 token 的 K/V 压缩为一个共享的低秩 latent $c_{KV}$（$d_{kv}=512$）外加解耦的 RoPE key $k_{pe}$，比 per-head KV 小约 32 倍。因此 MLA 在 CP 下传递的是 latent 而非 per-head KV。
 
-MLA（Multi-head Latent Attention，DeepSeek-V2/V3）把每 token 的 K/V 压缩成一个共享的低秩 latent $c_{KV}$（$d_{kv}=512$）外加解耦 RoPE key $k_{pe}$，比 per-head KV 小约 32 倍。CP 时传递的是 **latent** 而非 per-head KV。
+具体地，AllGather latent（或沿环传递 latent）即可让每个 rank 对全局历史做注意力。配合吸收（absorb）形式，即把 $W_{kv,b}$ 吸收进 Q、直接在 latent 上计算注意力，是推理 decode 的标准做法，也是 vLLM DCP 支持 MLA 的路径；vLLM 还提供 `--dcp-q-replicate` 选项，在 DCP 组内冗余复制 MLA 的 Q 投影，省掉每一步的 query all-gather。如 3.4 节所述，Ulysses 对 MLA 失效，因为吸收形式下不存在可供 All-to-All 交换的 per-head KV，有效并行度退化为 1，MLA 的 CP 因而基本只有 AllGather latent 与环传 latent 两条路。
 
-- **AllGather latent**（或 ring 传递 latent）即可让每个 rank 对全局历史做注意力；配合 absorb 形式（把 $W_{kv,b}$ 吸收进 Q，直接在 latent 上算注意力）是推理 decode 的标准做法，也是 vLLM DCP 支持 MLA 的路径（可选 `--dcp-q-replicate`：在 DCP 组内冗余复制 MLA 的 Q 投影，省掉每步的 query all-gather）。
-- **Ulysses 对 MLA 失效**：吸收式下不存在 per-head KV 可供 a2a scatter，有效 Ulysses 并行度塌缩为 1，因此 MLA 的 CP 基本走 AllGather latent 或 ring 传 latent。
-- **训练侧的坑**：Megatron-Core 明确禁止在训练中使用 absorbed 形式（代码里硬 assert）——absorb 的中间激活在 $n_h \times d_{kv}$ 维，比 per-head K/V 更大，激活显存多 20~34%（DeepSeek-V3 规模最多 9.2GB）。LAGA（Latent All-Gather Attention，arXiv:2607.17644）给出训练方案：通信仍只传 latent，但本地重建 per-head K/V 再做显式注意力，通信量降 1.98 倍、显存与显式形式持平，跨节点长序列吞吐提升 1.07~1.24 倍。
-- KV Cache 复制案例：DeepSeek-R1 推理只有 1 个 KV head，tp=8 时 8 倍复制，DCP=8 消除——这是 DCP 最典型的应用场景。
+训练侧另有一个隐性问题。Megatron-Core 明确禁止在训练中使用 absorbed 形式（代码中以 assert 硬性禁止），因为 absorb 的中间激活位于 $n_h \times d_{kv}$ 维，比 per-head K/V 更大，激活显存多出 20~34%（DeepSeek-V3 规模下最多 9.2GB）。LAGA（Latent All-Gather Attention，arXiv:2607.17644）给出了训练侧方案，其通信仍只传 latent，但在本地重建 per-head K/V 后做显式注意力，通信量降低 1.98 倍，显存与显式形式持平，跨节点长序列吞吐提升 1.07~1.24 倍。
+
+MLA 也是 DCP 最典型的应用场景。DeepSeek-R1 推理时只有 1 个 KV head，tp=8 时存在 8 倍复制，DCP=8 可以将其完全消除。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
@@ -1050,18 +1038,11 @@ MLA（Multi-head Latent Attention，DeepSeek-V2/V3）把每 token 的 K/V 压缩
 
 ## 4.3 DSA
 
-DSA（DeepSeek Sparse Attention，DeepSeek-V3.2-Exp）由两部分组成。**Lightning Indexer**（轻量 MQA 式打分器，全层合计约 0.85B 参数）为每个 query 从全序列中选出 top-k 个最相关 token（64K 时 k≈2048），再对选中 token 做细粒度稀疏注意力，复杂度从 $O(L^2)$ 降到 $O(kL)$。
+DSA（DeepSeek Sparse Attention，DeepSeek-V3.2-Exp）由两部分组成。Lightning Indexer 是一个轻量的 MQA 式打分器（全层合计约 0.85B 参数），为每个 query 从全序列中选出 top-k 个最相关 token（64K 时 k≈2048），随后再对选中的 token 做细粒度稀疏注意力，复杂度从 $O(L^2)$ 降到 $O(kL)$。
 
-CP 下需要传递的数据有两类。
+DSA 叠加在 MLA 之上，CP 下需要传递的数据因而有两类，即 MLA 的 latent KV 与 Indexer 的 key（indexer key cache，用于避免 decode 时重算打分）。由于 top-k 选择需要对全序列的 indexer key 打分，各 rank 需要全局的 key 视图。主流做法是 AllGather latent KV 与 indexer key，之后各 rank 只为本地 query 做 indexer 打分与稀疏注意力。在 weight-absorb 模式下，latent 与 indexer key 都很小，AllGather 的内存与通信代价完全可以接受。昇腾在 TorchTitan 适配时对比过 Ring Attention 与 AllGather KV 两条路径，结论是 DSA 场景下 AllGather KV 实现简单且灵活，Ring 形式复杂且收益有限。
 
-1. **MLA latent KV**（DSA 叠加在 MLA 之上）；
-2. **Indexer 的 Key**（indexer key cache，避免 decode 重算）。
-
-top-k 选择需要对全序列的 indexer key 打分，因此需要全局 key 视图——主流做法是 **AllGather latent KV + indexer key**，之后各 rank 只为本地 query 做 indexer 打分与稀疏注意力。在 weight-absorb 模式下 latent 与 indexer key 都很小，AllGather 的内存与通信代价完全可以接受；昇腾 TorchTitan 适配时明确对比过 RingAttention 与 AllGather KV 两条路，结论是 DSA 场景下 AllGather KV 实现简单且灵活，Ring 形式复杂且不划算。工程上还有以下配套做法。
-
-- 用 **2C 头尾对称切片 + token 重排**做负载均衡（每层 Indexer 与稀疏注意力前把 KV 还原回因果顺序），SGLang 的 interleave 策略、vLLM PCP 的 DualChunkSwap 同理；
-- SGLang Prefill CP 的 Interleave 策略对 DSA 有专门集成（按请求切分 query/indexer 元数据，按需 gather indexer key 与 MLA KV）；
-- vLLM Ascend 曾实现独立的 `DSA-CP`（`enable_dsa_cp`），现已由通用的 PCP 路径承接（两者不能同时开启）。
+工程上还有若干配套做法。负载均衡采用 2C 头尾对称切片加 token 重排，在每层 Indexer 与稀疏注意力之前把 KV 还原回因果顺序，SGLang 的 interleave 策略与 vLLM PCP 的 DualChunkSwap 与此同理。SGLang Prefill CP 的 Interleave 策略对 DSA 有专门集成，按请求切分 query 与 indexer 元数据，并按需 gather indexer key 与 MLA KV。vLLM Ascend 曾实现独立的 DSA-CP 路径（`enable_dsa_cp`），现已由通用的 PCP 路径承接，两者不能同时开启。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
@@ -1109,18 +1090,11 @@ top-k 选择需要对全序列的 indexer key 打分，因此需要全局 key �
 
 ## 4.4 GDN
 
-需要传递状态S
-
-GDN（Gated DeltaNet）是线性注意力，用固定大小的循环状态 $S \in \mathbb{R}^{d_v \times d_k}$ 替代随序列增长的 KV Cache，门控遗忘 + delta rule 定向覆盖。
+GDN（Gated DeltaNet）是线性注意力的一种，用固定大小的循环状态 $S \in \mathbb{R}^{d_v \times d_k}$ 替代随序列增长的 KV Cache，通过门控遗忘与 delta rule 实现定向覆盖。
 
 $$S_t = \alpha_t S_{t-1} + \beta_t (v_t - \alpha_t S_{t-1} k_t) k_t^\top, \qquad o_t = S_t q_t$$
 
-$\alpha_t \in (0,1]$ 控制旧状态整体遗忘，$\beta_t$ 控制当前 key 关联的写入强度。CP 下的特征：
-
-- **需要传递的是状态 $S$**：没有 KV Cache 可传，也不能用 AllGather KV 方案；状态大小固定（例如 Qwen3-Next 每 head 128×128），跨 rank 同步状态的通信量**与序列长度无关**。
-- **串行依赖**：$S_t$ 依赖 $S_{t-1}$，训练/预填充用 **chunk-wise 并行**（chunk 内矩阵并行、chunk 间串行传状态）摊开；CP 时可以沿序列在 rank 间传递状态（类似 ring 的状态链），或者各段先独立算"状态转移"再精确合成。
-- 兜底方案还有重算和 Ulysses（按 head 切），但状态链传递是通信量最优的。
-- 实际模型多为混合架构，如 Qwen3.5/Qwen3.8-Flash-Next 大部分层用 GDN、少数层保留全局注意力，CP 时两类层分别走状态传递与常规注意力通信。
+其中 $\alpha_t \in (0,1]$ 控制旧状态的整体遗忘，$\beta_t$ 控制当前 key 关联的写入强度。这一结构决定了 GDN 在 CP 下的形态。由于没有 KV Cache 可传，AllGather KV 类方案不再适用，rank 之间传递的是状态 $S$。状态大小固定（例如 Qwen3-Next 每 head 为 128×128），跨 rank 同步状态的通信量与序列长度无关。另一方面，$S_t$ 依赖 $S_{t-1}$ 的串行依赖必须妥善处理。训练与预填充阶段通常用 chunk-wise 并行（chunk 内矩阵并行、chunk 间串行传状态）摊开；CP 时可以沿序列在 rank 间传递状态（类似 ring 的状态链），也可以各段先独立计算状态转移再精确合成。兜底方案还有重算与 Ulysses（按 head 切），但状态链传递的通信量最优。实际模型多为混合架构，例如 Qwen3.5、Qwen3.8-Flash-Next 的大部分层使用 GDN、少数层保留全局注意力，CP 时两类层分别走状态传递与常规注意力通信。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
@@ -1167,34 +1141,31 @@ $\alpha_t \in (0,1]$ 控制旧状态整体遗忘，$\beta_t$ 控制当前 key �
 
 $$S_t = S_{t-1} + v_t k_t^\top, \qquad o_t = S_t q_t$$
 
-状态大小固定，不随序列增长。但它只能**叠加**，同一个 key 写入 $v_1$、$v_2$ 之后读回的是 $v_1 + v_2$，旧关联无法被覆盖。
+状态大小固定，不随序列增长。但它只能叠加，同一个 key 先后写入 $v_1$、$v_2$ 之后读回的是 $v_1 + v_2$，旧关联无法被覆盖。
 
-**② Delta rule（定向覆盖）。** 写入前先把 $k_t$ 处的旧关联减掉，只写"修正量"。
+**② Delta rule（定向覆盖）。** 写入前先把 $k_t$ 处的旧关联减掉，只写修正量。
 
 $$S_t = S_{t-1} + \beta_t (v_t - S_{t-1} k_t)\, k_t^\top$$
 
-展开右式 $= S_{t-1} - \beta_t S_{t-1} k_t k_t^\top + \beta_t v_t k_t^\top$，合并得等价形式
+展开右式得 $S_{t-1} - \beta_t S_{t-1} k_t k_t^\top + \beta_t v_t k_t^\top$，合并后得到等价形式
 
 $$S_t = S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$$
 
-即"先在 $k_t$ 方向擦除旧值、再写入 $v_t$"，$\beta_t \in (0,1]$ 是写入步长。同一 key 连续写 $v_1、v_2$ 后读回恰为 $v_2$（可直接验证），这就是 delta rule 的"定向覆盖"。
+即先在 $k_t$ 方向擦除旧值、再写入 $v_t$，$\beta_t \in (0,1]$ 是写入步长。同一 key 连续写 $v_1、v_2$ 后读回恰为 $v_2$（可直接验证），这就是 delta rule 的定向覆盖。
 
 **③ 加遗忘门（Gated DeltaNet）。** 对旧状态整体乘衰减 $\alpha_t \in (0,1]$。
 
 $$S_t = \alpha_t S_{t-1} + \beta_t (v_t - \alpha_t S_{t-1} k_t)\, k_t^\top \;\equiv\; S_{t-1} T_t + \beta_t v_t k_t^\top, \qquad T_t = \alpha_t (I - \beta_t k_t k_t^\top)$$
 
-等价性：右式展开 $S_{t-1}\,\alpha_t(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top = \alpha_t S_{t-1} + \beta_t(v_t - \alpha_t S_{t-1} k_t) k_t^\top$。于是整层递推是**右乘线性转移 $T_t$ 加一次秩一写入**，输出 $o_t = S_t q_t$。$\alpha$ 负责"整体快速遗忘"，delta 负责"定向覆盖"，两者互补。
+可以验证两种形式等价，将右式展开即 $S_{t-1}\,\alpha_t(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top = \alpha_t S_{t-1} + \beta_t(v_t - \alpha_t S_{t-1} k_t) k_t^\top$。于是整层递推是右乘线性转移 $T_t$ 再加一次秩一写入，输出 $o_t = S_t q_t$。$\alpha$ 负责整体快速遗忘，delta 负责定向覆盖，两者互补。
 
-**④ 段级分解——为什么各段可以独立求值再合成。** 对长度为 $L$ 的一段递推展开。
+**④ 段级分解，即各段可以独立求值再合成的原因。** 对长度为 $L$ 的一段递推展开。
 
 $$S_L = S_0\, \Phi_{0 \to L} + \sum_{s=1}^{L} \beta_s v_s k_s^\top\, \Phi_{s \to L}, \qquad \Phi_{s \to L} = T_{s+1} T_{s+2} \cdots T_L \;(\Phi_{L \to L} = I)$$
 
-即 $S_L = S_0 \Phi + B$，其中 $B = \sum_s \beta_s v_s k_s^\top \Phi_{s \to L}$ **完全由该段的 $(k, v, \alpha, \beta)$ 决定，与输入状态 $S_0$ 无关**。这带来 CP 需要的两个关键性质。
+即 $S_L = S_0 \Phi + B$，其中 $B = \sum_s \beta_s v_s k_s^\top \Phi_{s \to L}$ 完全由该段的 $(k, v, \alpha, \beta)$ 决定，与输入状态 $S_0$ 无关。这一分解带来 CP 所需的两个关键性质。其一，各 rank 可以零通信地并行求出本段的 $(\Phi, B)$；其二，段间只需把固定大小的状态沿链传播，$S^{(i)}_{\text{out}} = S^{(i)}_{\text{in}} \Phi_i + B_i$，也可以两两合成段级摘要（$\Phi_{12} = \Phi_1 \Phi_2,\ B_{12} = B_1 \Phi_2 + B_2$）后一次性得到末状态。段内各位置输出 $o_t = (S_{\text{in}} \Phi_{\text{in} \to t} + B_{\text{in} \to t}) q_t$ 在 $S_{\text{in}}$ 到位后本地并行计算。
 
-1. 各 rank 可先**零通信地并行**求出本段的 $(\Phi, B)$；
-2. 段间只需把**固定大小**的状态沿链传播，$S^{(i)}_{\text{out}} = S^{(i)}_{\text{in}} \Phi_i + B_i$；也可以两两合成段级摘要（$\Phi_{12} = \Phi_1 \Phi_2,\ B_{12} = B_1 \Phi_2 + B_2$）后一次性得到末状态。段内各位置输出 $o_t = (S_{\text{in}} \Phi_{\text{in} \to t} + B_{\text{in} \to t}) q_t$ 在 $S_{\text{in}}$ 到位后本地并行算。
-
-**这就是"需要传递状态 $S$"的来源**。CP 之间要传的只是 $d_v \times d_k$ 的状态（或等价的段级摘要），通信量与序列长度无关。
+这正是 CP 下只需传递状态 $S$ 的原因。rank 之间要传的只是 $d_v \times d_k$ 的状态（或等价的段级摘要），通信量与序列长度无关。
 
 **⑤ Chunk-wise 并行（GPU 上的落地）。** 标量 $\alpha_t$ 可以提到连乘外面，于是
 
@@ -1204,17 +1175,9 @@ $$\Phi = \Big(\prod_t \alpha_t\Big) \prod_t (I - \beta_t k_t k_t^\top) = \Big(\p
 
 ## 4.5 KDA
 
-需要采用KCP
+KDA（Kimi Delta Attention，Kimi Linear，arXiv:2510.26692）是 Gated DeltaNet 的细粒度升级。它把标量遗忘门换成逐通道遗忘门 $\alpha_t \in [0,1]^{d_k}$（对角转移矩阵），状态仍为固定大小，并配有 DPLR（对角加低秩）转移与 chunkwise 算法。Kimi-K3（2.8T 参数、1M 上下文）采用 3 层 KDA 加 1 层 Gated MLA 的混合结构。
 
-KDA（Kimi Delta Attention，Kimi Linear，arXiv:2510.26692）是 Gated DeltaNet 的细粒度升级，把标量遗忘门换成**逐通道**遗忘门 $\alpha_t \in [0,1]^{d_k}$（对角转移矩阵），状态仍是固定大小，配 DPLR（对角加低秩）转移与 chunkwise 算法。Kimi-K3（2.8T 参数、1M 上下文）采用 3 层 KDA + 1 层 Gated MLA 的混合结构。
-
-KDA 的 CP 必须用专门的 **KCP（KDA Context Parallelism）**。
-
-- 对标准线性注意力，每个序列分段的状态转移可以在不知道输入状态的情况下独立求值，再精确合成递归链；但 KDA 的逐通道遗忘门在数学上使这种"独立求值再合成"不能直接成立。
-- KCP 把状态转移中**可独立计算的部分尽可能拆解出来**，分发到不同 GPU 进程并行计算，再合成各段应得的状态；此外还支持**单卡内 SM 级**的序列二次切分（intra-device KCP）与跨设备 KCP 两条线并行——长序列（百万 token）时仅靠 TP 切 head 会让 prefill 的 SM 大量空转。
-- 跨设备只同步**固定大小的状态**，通信成本恒定，不随文本变长。
-- 配套工程：FlashKDA（基于 CUTLASS 的 chunkwise kernel，chunk 内并行与跨 chunk 状态传播重叠）、state-aware prefix caching（固定大小状态天然适合缓存复用）。
-- 生态：SGLang 针对 Kimi-K3 提供 fused KDA decode kernel、KDA-aware prefix caching、DP attention、MTP 与 PD 分离支持。
+KDA 的 CP 需要采用专门的 KCP（KDA Context Parallelism）。对标准线性注意力，每个序列分段的状态转移可以在不知道输入状态的情况下独立求值，再精确合成递归链；KDA 的逐通道遗忘门在数学上使这种独立求值再合成不再直接成立，具体推导见下文。KCP 的做法是把状态转移中可以独立计算的部分尽可能拆解出来，分发到不同 GPU 进程并行计算，再合成各段应得的状态。除跨设备 KCP 外，KCP 还支持单卡内 SM 级的序列二次切分（intra-device KCP），两者可以同时进行。这一点对百万 token 的长序列尤为重要，因为仅靠 TP 切 head 会让 prefill 的 SM 大量空转。跨设备同步的只是固定大小的状态，通信成本恒定，不随文本变长。工程配套方面，FlashKDA（基于 CUTLASS 的 chunkwise kernel）把 chunk 内并行与跨 chunk 状态传播重叠执行，state-aware prefix caching 则利用了固定大小状态天然适合缓存复用的特性。生态上，SGLang 针对 Kimi-K3 提供了 fused KDA decode kernel、KDA-aware prefix caching、DP attention、MTP 与 PD 分离支持。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
@@ -1263,7 +1226,7 @@ KDA 的 CP 必须用专门的 **KCP（KDA Context Parallelism）**。
 
 **推导过程**
 
-**① KDA 的更新律与 DPLR 转移。** 把 GDN 的标量遗忘门换成**逐通道（对角）**遗忘门 $\alpha_t \in [0,1]^{d_k}$，$D_t = \mathrm{Diag}(\alpha_t)$。
+**① KDA 的更新律与 DPLR 转移。** 把 GDN 的标量遗忘门换成逐通道（对角）遗忘门 $\alpha_t \in [0,1]^{d_k}$，记 $D_t = \mathrm{Diag}(\alpha_t)$。
 
 $$S_t = S_{t-1}\, D_t (I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top \;=\; S_{t-1}\, T_t + \beta_t v_t k_t^\top, \qquad o_t = S_t q_t$$
 
@@ -1271,48 +1234,35 @@ $$S_t = S_{t-1}\, D_t (I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top \;=\; S_
 
 $$T_t = D_t - \beta_t (D_t k_t)\, k_t^\top$$
 
-即 **"对角 + 秩一"**——这正是 DPLR（Diagonal-Plus-Low-Rank）转移矩阵；Kimi Linear 的 chunkwise 算法对这一特殊 DPLR 形式做了专门化（比通用 DPLR 求解省掉大量计算，同时保持与经典 delta rule 一致的语义）。逐通道门的意义：不同 key 维度可以有自己的遗忘速率，固定大小状态的记忆利用率更高。
+即对角加秩一的形式，这正是 DPLR（Diagonal-Plus-Low-Rank）转移矩阵。Kimi Linear 的 chunkwise 算法对这一特殊 DPLR 形式做了专门化，比通用 DPLR 求解省掉大量计算，同时保持与经典 delta rule 一致的语义。逐通道门的意义在于，不同 key 维度可以有自己的遗忘速率，固定大小状态的记忆利用率更高。
 
-**② 段级仿射结构（形式上仍然成立）。** 与 GDN 完全相同地展开：
+**② 段级仿射结构（形式上仍然成立）。** 与 GDN 完全相同地展开得
 
 $$S_L = S_0\, \Phi_{0 \to L} + \sum_{s=1}^{L} \beta_s v_s k_s^\top\, \Phi_{s \to L}, \qquad \Phi_{s \to L} = T_{s+1} \cdots T_L$$
 
-"每段先算 $(\Phi, B)$、再合成"在代数上依旧成立——问题变成**如何高效地表示与计算 $\Phi$**。
+每段先算 $(\Phi, B)$ 再合成，在代数上依旧成立，问题变成如何高效地表示与计算 $\Phi$。
 
-**③ 为什么 GDN 的"独立求值再合成"不能直接搬到 KDA。** GDN 的 $T_t = \alpha_t(I - \beta_t k_t k_t^\top)$ 中标量 $\alpha_t$ 与一切对易，可以提到连乘外面。
+**③ GDN 的独立求值再合成不能直接搬到 KDA 的原因。** GDN 的 $T_t = \alpha_t(I - \beta_t k_t k_t^\top)$ 中标量 $\alpha_t$ 与一切对易，可以提到连乘外面。
 
 $$\Phi_{\text{GDN}} = \Big(\prod_t \alpha_t\Big)\,(I - K C K^\top)$$
 
-紧凑结构（对角缩放 × 秩一修正的连乘）在段内 keys 张成的空间里**封闭**，段间合成只是小矩阵运算。KDA 中各 $D_t$ 是互不相同的对角阵，与秩一项**不对易**。
+紧凑结构（对角缩放与秩一修正的连乘）在段内 keys 张成的空间里封闭，段间合成只是小矩阵运算。KDA 中各 $D_t$ 是互不相同的对角阵，与秩一项不对易。
 
 $$D(I - \beta k k^\top) = D - \beta (Dk) k^\top \;\neq\; (I - \beta k k^\top) D = D - \beta k (Dk)^\top$$
 
-（除非 $k$ 落在退化方向上）。于是 $D_t$ 不能像标量那样外提，$(I - KCK^\top)$ 的 WY 紧凑形式不再封闭，连乘 $D_1R_1D_2R_2\cdots$（$R_t = I - \beta_t k_t k_t^\top$）会不断混合对角与低秩结构，直接套用通用 DPLR 合成的代价随段长增长。这就是公开材料里说的"KDA 的状态转移函数具有记忆遗忘机制，在数学上导致额外困难，（标准线性注意力的）独立求值再合成并不直接可行"。
+（除非 $k$ 落在退化方向上）。于是 $D_t$ 不能像标量那样外提，$(I - KCK^\top)$ 的 WY 紧凑形式不再封闭，连乘 $D_1R_1D_2R_2\cdots$（$R_t = I - \beta_t k_t k_t^\top$）会不断混合对角与低秩结构，直接套用通用 DPLR 合成的代价随段长增长。这正是公开资料所指出的，KDA 的状态转移函数带有记忆遗忘机制，在数学上引入了额外困难，使标准线性注意力的独立求值再合成不再直接可行。
 
-**④ KCP 的拆解思路。** KCP 的做法是把状态转移中**可以独立计算的部分尽可能拆解出来**，再分发并行。
+**④ KCP 的拆解思路。** KCP 的做法是把状态转移中可以独立计算的部分尽可能拆解出来，再分发并行，具体分为四个层面。第一，段内与输入状态无关的量照常并行求值，包括 key/value 统计、累积对角衰减 $\prod_t D_t$、DPLR 转移中的低秩因子等，它们被拆到不同 GPU 进程独立计算。第二，段链上只传递固定大小的状态（或等价的段级转移摘要），再与各段的独立计算结果合成，跨设备同步的就是 $d_v \times d_k$ 的状态，通信成本恒定，不随文本变长。第三，除跨设备 KCP 外还有单卡内 SM 级的序列二次切分（intra-device KCP），百万 token 时只靠 TP 切 head 会让 prefill 的 SM 空转，KCP 把序列在 SM 之间再切分，各自算完状态再合并，与跨设备 KCP 同时进行。第四，工程配套上，FlashKDA 的 chunkwise kernel 把 chunk 内并行与跨 chunk 状态传播重叠，state-aware prefix caching 直接缓存固定大小的状态。
 
-1. **段内与输入状态无关的量照常并行求值**：key/value 统计、累积对角衰减 $\prod_t D_t$、DPLR 转移中的低秩因子等，拆到不同 GPU 进程独立计算；
-2. **只沿段链传递固定大小的状态**（或等价的段级转移摘要），把它与各段的独立计算结果合成——跨设备同步的就是 $d_v \times d_k$ 的状态，**通信成本恒定，不随文本变长**；
-3. **两级并行**：除跨设备 KCP 外，还有单卡内 **SM 级**的序列二次切分（intra-device KCP）——百万 token 时只靠 TP 切 head 会让 prefill 的 SM 空转，KCP 把序列在 SM 之间再切一段，各自算完状态再合并，与跨设备 KCP 同时进行；
-4. **工程配套**：FlashKDA 的 chunkwise kernel 把 chunk 内并行与跨 chunk 状态传播重叠；state-aware prefix caching 直接缓存固定大小的状态。
-
-（KCP 完整数学细节以 Kimi K3 技术资料为准；公开材料给出的核心即上述"可独立计算部分拆解 + 固定状态合成"。）
+KCP 的完整数学细节以 Kimi K3 技术资料为准，公开材料给出的核心即上述可独立计算部分的拆解与固定状态的合成。
 
 ## 4.6 CSA
 
-CSA（Compressed Sparse Attention，压缩稀疏注意力，DeepSeek-V4）是 DSA 思路的进一步演化，核心是"先压缩、再稀疏选择"。
+CSA（Compressed Sparse Attention，压缩稀疏注意力，DeepSeek-V4）是 DSA 思路的进一步演化，其核心是先压缩、再稀疏选择，整个机制由三部分构成。首先，KV 压缩用带学习位置偏差的 softmax-gated pooling，把每 $m=4$ 个 token 的 KV 条目压缩为一条压缩条目，序列长度缩为 $1/m$。其次，稀疏选择由 FP4 精度的 Lightning Indexer 对压缩条目打分，每个 query 只取 top-k（512~1024）个压缩块做注意力。最后，SWA 分支保留最近窗口内的精细局部依赖。CSA 还与 HCA（Heavily Compressed Attention，压缩率约 128 倍后做稠密注意力）在层间交替堆叠（V4-Pro 为 61 层 CSA/HCA 交替），兼顾近处细节、中程精准检索与远程全局覆盖。在 1M 上下文下，KV Cache 降到 V3 的 10%，单 token FLOPs 降到 27%。
 
-1. **KV 压缩**：用带学习位置偏差的 softmax-gated pooling，把每 $m=4$ 个 token 的 KV 条目压缩成 1 条压缩条目，序列长度缩为 $1/m$；
-2. **稀疏选择**：Lightning Indexer（FP4 精度）对压缩条目打分，每个 query 只取 top-k（512~1024）个压缩块做注意力；
-3. **SWA 分支**保留最近窗口内的精细局部依赖；与 HCA（Heavily Compressed Attention，压缩率约 128 倍后做稠密注意力）在层间交替堆叠（V4-Pro 61 层 CSA/HCA 交替），兼顾"近处细节、中程精准检索、远程全局覆盖"。1M 上下文下 KV Cache 降到 V3 的 10%、单 token FLOPs 降到 27%。
+CP 下传递的是压缩 KV 条目（以及独立缓存时的 indexer key），体量只有原始 KV 的 $1/m$，比 DSA 的 AllGather 更轻，因此传 KV 与 AllGather KV 几乎是自然选择。top-k 选择同样需要对全部压缩条目打分，即需要全局（压缩后的）key 视图，做法与 DSA 相同。需要注意的是，压缩组（每 $m$ 个 token）应作为 CP 切分的最小粒度，避免把一个压缩组切断到两个 rank，HCA 的高压缩摘要同理；SWA 分支只依赖局部窗口，除窗口跨界外基本不需要跨 rank 通信。
 
-CP 下需要传递的数据与注意事项：
-
-- 传递的是**压缩 KV 条目**（以及独立缓存时的 **indexer key**），体量只有原始 KV 的 $1/m$，比 DSA 的 AllGather 更轻，"传 KV / AllGather KV"几乎是自然选择；
-- top-k 选择同样需要对**全部压缩条目**打分，需要全局（压缩后的）key 视图，做法与 DSA 相同；
-- 压缩组（每 $m$ 个 token）应作为 CP 切分的最小粒度，避免把一个压缩组切断到两个 rank；HCA 的高压缩摘要同理；
-- SWA 分支只依赖局部窗口，基本不需要跨 rank 通信（窗口跨界除外）。
-- 演化路线：NSA（2025-02，压缩/选择/滑窗三分支、块级稀疏）→ DSA（V3.2，token 级动态稀疏 + Lightning Indexer）→ CSA（V4，KV 压缩 + 稀疏选择）。SGLang 的 DeepSeek-V4 后端（multi-ratio compressed KV pools + FlashMLA + 稀疏索引）与 Prefill CP 的 "DeepSeek V4 interleave" 路径已有对应集成。
+从演化路线看，NSA（2025-02，压缩、选择、滑窗三分支与块级稀疏）开其端，DSA（V3.2，token 级动态稀疏加 Lightning Indexer）继其后，CSA（V4，KV 压缩加稀疏选择）是最新形态。SGLang 的 DeepSeek-V4 后端（multi-ratio compressed KV pools、FlashMLA 与稀疏索引）以及 Prefill CP 的 DeepSeek V4 interleave 路径已有对应集成。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
@@ -1377,85 +1327,45 @@ CP 下需要传递的数据与注意事项：
 
 # 5. 推理和训练引擎的实现
 
+本章分别介绍 vLLM、SGLang 与 Megatron 中 CP 的工程实现。
+
 ## 5.1 vLLM
 
-vLLM 把 PCP 与 DCP 做成了两个正交的命令行维度（讨论集中在 vLLM Slack `#sig-context-parallel`）。
+vLLM 把 PCP 与 DCP 设计为两个正交的命令行维度，相关讨论集中在 vLLM Slack 的 `#sig-context-parallel` 频道。
 
-**PCP（Prefill Context Parallel）**：`--prefill-context-parallel-size` / `-pcp`
+PCP（Prefill Context Parallel）由 `--prefill-context-parallel-size`（`-pcp`）开启。它按序列切分 prefill 计算、扩展进程的 world size，但不增加 KV cache 的分片数。官方文档给出两种策略，即 Partial query + full key/value（AllGather KV，摊薄 TTFT）与 Partial query + partial key/value（ring 式传 KV，应对放不下全局 KV 的超长请求），两者均在持续开发中。token 分区采用头尾式的 DualChunkSwap 保证负载均衡，并用 restore 索引（`pcp_allgather_restore_idx`）恢复原始 token 顺序。在 PD 分离部署中，PCP 只开在 prefill（kv_producer）引擎上，decode 侧的 `prefill_context_parallel_size` 为 1。
 
-- 按序列切分 prefill 计算，**扩展进程 world size**，但不增加 KV cache 的分片数；
-- 两种策略（官方文档）："Partial query, full key/value"（AllGather KV，摊薄 TTFT）与 "Partial query, partial key/value"（ring 式传 KV，应对放不下全局 KV 的超长请求），均在持续开发中；
-- 头尾式（DualChunkSwap）token 分区保证负载均衡，并用 restore 索引恢复原始 token 顺序（`pcp_allgather_restore_idx`）；
-- PD 分离部署中 PCP 只开在 prefill（kv_producer）引擎上，decode 侧 `prefill_context_parallel_size=1`。
-
-**DCP（Decode Context Parallel）**：`--decode-context-parallel-size` / `-dcp`
-
-- 沿 T 维分片 decode KV Cache，**不扩大 world size**（复用 TP/PCP rank），`dcp_size ∈ [1, tp_size / H_kv]`；
-- 交错分片由 `--cp_kv_cache_interleave_size` 控制（token 级 `i % dcp_world_size` 或 block 级对齐）；KV 传输（KV pooling / PD 分离）时建议设为 KV cache 的 block_size（默认 128）；
-- 通信后端 `--dcp-comm-backend`：`ag_rs`（AllGather + ReduceScatter）或 `a2a`（交换 partial output + LSE 后用 Triton kernel 合并，MLA 模型每层 NCCL 调用从 3 次降到 2 次）；
-- `--dcp-q-replicate`：在 DCP 组内冗余复制 MLA 的 Q 投影，让 decode 跳过每步的 query all-gather；
-- 支持 MLA 与 GQA 模型，部分注意力后端还支持 DCP + MTP（multi-token prediction）组合加速解码。
+DCP（Decode Context Parallel）由 `--decode-context-parallel-size`（`-dcp`）开启。它沿序列维分片 decode 的 KV Cache，不扩大 world size（复用 TP/PCP rank），`dcp_size` 的取值范围是 $[1, tp\_size/H_{kv}]$。交错分片由 `--cp_kv_cache_interleave_size` 控制，可以按 token 级（$i \bmod$ `dcp_world_size`）或 block 级对齐；涉及 KV 传输（KV pooling、PD 分离）时建议设为 KV cache 的 block_size（默认 128）。通信后端由 `--dcp-comm-backend` 选择，`ag_rs` 为 AllGather 加 ReduceScatter，`a2a` 则交换 partial output 与 LSE 后用 Triton kernel 合并，MLA 模型下每层 NCCL 调用从 3 次降到 2 次。`--dcp-q-replicate` 在 DCP 组内冗余复制 MLA 的 Q 投影，使 decode 跳过每步的 query all-gather。目前 DCP 支持 MLA 与 GQA 模型，部分注意力后端还支持 DCP 与 MTP（multi-token prediction）组合加速解码。
 
 ## 5.2 SGLang
 
-**Prefill CP**（2025-12 由百度百舸 AIAK 贡献合入主线，PR #12065）：
+SGLang 的 Prefill CP 于 2025 年 12 月由百度百舸 AIAK 贡献合入主线（PR #12065）。它把 prompt 的 token 分布到 attention CP 组，各 rank 为本地 query 计算注意力（含 indexer），并通过 AllGather KV cache 获得所需的 K/V。实现上，`ContextParallelStrategy` 把 token 布局策略与模型执行、注意力 kernel 解耦，每进程一个策略实例，每次前向的状态放在 `ForwardBatch.attn_cp_metadata` 中。切分策略有两种。Zigzag 策略把每个请求的新增 token 切成 $2C$ 个连续块，rank $r$ 拿块 $r$ 与块 $2C-1-r$（每个请求独立重启切分，长度不整除时前段块拿余数），既保留连续的 query 块又保证因果负载均衡。Interleave 策略让 rank $r$ 拿展平索引 $r, r+C, r+2C, \dots$（索引跨 batch 的新增 token 连续、不按请求重置，position id 保持原值），query 分布更均匀，并配合 DSA 与 DeepSeek V4 的稀疏注意力集成（gather indexer key 与 MLA KV）。后端集成路径包括 Zigzag 加 FlashAttention（gather 并重排新 KV）、Zigzag 加 trtllm_mha（zigzag page table 的变长注意力）、Interleave 加 DSA，以及 DeepSeek V4 interleave。收益上，该实现把 indexer（DSA、DeepSeek V4）这类原本由各 rank 重复执行的工作切开；与 KV cache 分片（DSA cache LayerSplit）叠加可以进一步节省显存；与 EP 组合时可用 all-to-all 的 token dispatch/combine 替代 TP 的 AllReduce。
 
-- 把 prompt 的 token 分布到 attention CP 组，各 rank 为本地 query 计算注意力（含 indexer），通过 **all-gather KV cache** 拿到所需 K/V；
-- `ContextParallelStrategy` 把 token 布局策略与模型执行/注意力 kernel 解耦，每进程一个策略实例，per-forward 状态放在 `ForwardBatch.attn_cp_metadata`；
-- 两种切分策略：
-  - **Zigzag**：每请求新增 token 切成 $2C$ 个连续块，rank $r$ 拿块 $r$ 与块 $2C-1-r$（每请求独立重启切分；长度不整除时前段块拿余数），保留连续 query 块且因果负载均衡；
-  - **Interleave**：rank $r$ 拿展平索引 $r, r+C, r+2C, \dots$（索引跨 batch 新增 token 连续、不按请求重置，position id 保持原值），query 分布更均匀，配合 DSA/DeepSeek V4 的稀疏注意力集成（gather indexer key 与 MLA KV）；
-- 后端集成路径：Zigzag + FlashAttention（gather 并重排新 KV）、Zigzag + trtllm_mha（zigzag page table 的变长注意力）、Interleave + DSA、DeepSeek V4 interleave；
-- 收益：把 indexer（DSA/DeepSeek V4）这类原本各 rank 重复的工作切开；与 KV cache 分片（DSA cache LayerSplit）叠加省显存；与 EP 组合时用 all-to-all token dispatch/combine 替代 TP all-reduce。
+Decode CP 采用传 Q 策略，即 decode 阶段先对 Q 做 AllGather，各 rank 对本地 KV 分片算注意力后再以在线 softmax（LSE）合并。RadixTree 的处理上，逻辑树留在中心 scheduler，物理存储按 rank 分片（一条上下文序列的 KV cache 切到各 dcp rank），调度时把逻辑节点映射到物理 GPU rank。PD 分离下还支持 CP 感知的 KV 传输，`SGLANG_DISAGGREGATION_ALL_CP_RANKS_TRANSFER` 用于控制由 CP rank 0 单独传输还是所有 CP rank 各传自己那部分。
 
-**Decode CP**：
-
-- 采用**传 Q** 策略，即"an all_gather of q is done for decode stage"，各 rank 对本地 KV 分片算注意力后合并（在线 softmax/LSE）；
-- RadixTree 的处理：逻辑树留在中心 scheduler，物理存储按 rank 分片（一条上下文序列的 KV cache 切到各 dcp rank），调度时把逻辑节点映射到物理 GPU rank；
-- PD 分离下 CP 感知的 KV 传输：`SGLANG_DISAGGREGATION_ALL_CP_RANKS_TRANSFER` 控制由 CP rank 0 单独传输还是所有 CP rank 各传自己那部分。
-
-模型支持面上，SGLang 已适配混合注意力模型（GLM-5.3-Flash 的 MLA + DSA + KDA、Kimi-K3 的 fused KDA decode + KDA-aware prefix caching、Qwen3.8-Flash-Next 的 GDN + 稀疏注意力等），CP 需要按层类型分别处理 KV / latent / 状态 / indexer key。
+模型支持面上，SGLang 已适配多种混合注意力模型（GLM-5.3-Flash 的 MLA、DSA 与 KDA，Kimi-K3 的 fused KDA decode 与 KDA-aware prefix caching，Qwen3.8-Flash-Next 的 GDN 与稀疏注意力等），CP 需要按层类型分别处理 KV、latent、状态与 indexer key。
 
 ## 5.3 Megatron
 
-Megatron-LM / Megatron-Core 的 CP 是训练侧的工业级实现。
+Megatron-LM / Megatron-Core 的 CP 是训练侧的工业级实现。入口参数包括 `--context-parallel-size`、`--cp-comm-type`（可选 `p2p`、`all_gather`、`a2a`、`a2a+p2p`）、`hierarchical_context_parallel_sizes`（内层 a2a 尺寸乘以外层 p2p 尺寸）与 `max_seqlen_per_dp_cp_rank`。默认的 `p2p` 即 Ring Attention，zigzag 切分成 $2 \times cp\_size$ 块（rank $k$ 拿块 $k$ 与 $2cp-1-k$），用双 CUDA stream 做计算与通信重叠，与 FlashAttention-2 深度集成，并以 LSE 合并部分结果。`a2a` 即 Ulysses，`all_gather` 为 AllGather KV，`a2a+p2p` 为层级混合（节点内 a2a、节点间 p2p），适合 CP 度超过 head 数的多节点场景。NVIDIA 文档给出的经验是，能调 TP 使 `CP ≤ num_kv_heads / TP` 时优先使用纯 a2a；KV head 很少或需要最大 CP 灵活性时使用 p2p。
 
-- 入口参数：`--context-parallel-size`、`--cp-comm-type`（`p2p` / `all_gather` / `a2a` / `a2a+p2p`）、`hierarchical_context_parallel_sizes`（内层 a2a 尺寸 × 外层 p2p 尺寸）、`max_seqlen_per_dp_cp_rank`；
-- **p2p（默认）**即 Ring Attention，zigzag 切分成 $2 \times cp\_size$ 块（rank $k$ 拿块 $k$ 与 $2cp-1-k$），双 CUDA stream 做计算-通信重叠，与 FlashAttention-2 深度集成，LSE 合并部分结果；
-- **a2a** 即 Ulysses；**all_gather** 为 AllGather KV；**a2a+p2p** 为层级混合（节点内 a2a、节点间 p2p），适合 CP 度超过 head 数的多节点场景。NVIDIA 文档的经验是能调 TP 使 `CP ≤ num_kv_heads / TP` 时优先纯 a2a；KV head 很少或要最大 CP 灵活性时用 p2p；
-- 与 Megatron-SP（TP 内对 norm/dropout 的序列并行，Reduction/AllGather 零额外开销）区分，SP 先上，激活仍不够再上 CP；
-- MLA 注意力在 Megatron-Core 中有 explicit（训练用，per-head K/V 参与 a2a）与 absorbed（推理 decode 用，只 gather latent）两种实现，训练路径被 assert 禁用 absorbed（激活显存回归 20~34%），低通信训练方案见 LAGA 论文；
-- TorchTitan 侧：torch 原生 CP（序列切分 + RingAttention 或 AllGatherKV）对普通注意力可用；DSA 这类需要同时处理 KV 与 indexer key 的模型要自定义 CP（`CustomContextParallelContext`，在 forward 里加 KV AllGather）。
+使用中还需注意三点。其一，CP 应与 Megatron-SP 区分，后者是 TP 组内对 norm 与 dropout 的序列并行，Reduction 与 AllGather 几乎零额外开销，通常先启用 SP，激活仍不够时再叠加 CP。其二，MLA 注意力在 Megatron-Core 中有 explicit（训练用，per-head K/V 参与 a2a）与 absorbed（推理 decode 用，只 gather latent）两种实现，训练路径以 assert 禁用 absorbed（激活显存会回归 20~34%），低通信的训练方案见 LAGA 论文。其三，在 TorchTitan 侧，torch 原生 CP（序列切分加 RingAttention 或 AllGatherKV）对普通注意力可用；DSA 这类需要同时处理 KV 与 indexer key 的模型则要自定义 CP（`CustomContextParallelContext`，在 forward 中加入 KV AllGather）。
 
 # 6. 动态CP
 
-为了适应不同的上下文，动态调整CP的并行度也逐渐成为研究的热点。两个代表性方向中，NVIDIA Helix 在**执行时**于不同并行布局间动态切换同一组 GPU；北大与阿里的 Vertumnus 则在**调度时**按负载动态调整 CP 度与 worker 组成。
+固定 CP 配置难以同时适配长短悬殊的上下文负载，动态调整 CP 的并行度因此逐渐成为研究与工程的热点。在两个代表性方向中，NVIDIA Helix 在执行时让同一组 GPU 于不同并行布局之间动态切换，北大与阿里合作的 Vertumnus 则在调度时按负载动态调整 CP 度与 worker 组成。
 
 ## 6.1 Helix
 
-NVIDIA 在 Helix 论文（*Helix Parallelism: Rethinking Sharding Strategies for Interactive Multi-Million-Token LLM Decoding*，arXiv:2507.07120）中提出面向交互式百万级 token 解码的混合执行策略。
+NVIDIA 在论文《Helix Parallelism: Rethinking Sharding Strategies for Interactive Multi-Million-Token LLM Decoding》（arXiv:2507.07120）中提出了面向交互式百万级 token 解码的混合执行策略。
 
-**要解决的问题**：自回归 decode 有两大瓶颈——FFN 权重读取与长 KV Cache 读取。TP 能缓解 FFN 权重读取，但对注意力扩展很差：TP 宽度超过 KV head 数后 KV Cache 被低效复制，锁死并行度与 batch 上限；同时长 KV 的 DRAM 读取随 batch 线性增长。
+Helix 针对的是自回归 decode 的两大瓶颈，即 FFN 权重读取与长 KV Cache 读取。TP 能缓解 FFN 权重读取，但对注意力扩展很差，TP 宽度超过 KV head 数后 KV Cache 被低效复制，并行度与 batch 上限都被锁死；与此同时，长 KV 的 DRAM 读取随 batch 线性增长。
 
-**核心做法**：把 Attention 与 FFN 的并行映射在**时间维度**上解耦（对比传统 AFD 把两者空分到不同 GPU）。
+Helix 的核心做法是把注意力与 FFN 的并行映射在时间维上解耦，而不是像 AFD 那样把两者空分到不同 GPU。整个过程分六步。第一，Attention 阶段使用 KV Parallelism（KVP），KV Cache 沿序列维分片到 CP rank，每个 rank 对本地 KV 分片计算 partial attention。第二，一次轻量通信步对 partial 结果做 LSE 式合并与校正，保证注意力结果精确。第三，FFN 阶段同一组 GPU 被重配置为 TP（dense 模型）或 TP×EP（MoE 模型）来计算 FFN/MoE，充分利用 GPU。第四，拓扑组织为 $N = KVP \times TP_A$，注意力 TP 度 $TP_A$ 不超过 KV head 数，QKV 投影冗余计算使每个 KV 分片可做完全本地的 FlashAttention。第五，Helix HOP-B 用 batchwise overlap 把上述通信开销隐藏起来，在保持低 TTL 的同时提高 GPU 效率。第六，KV 块按 rank 轮转（交错）分配，保证 KVP 组内所有 GPU 的显存均匀增长。这一交错分片方案也是 vLLM DCP 交错分片的出处，由 Moonshot 的 Chao Hong 提出。
 
-1. **Attention 阶段用 KV Parallelism（KVP）**：KV Cache 沿 T 维分片到 CP rank，每 rank 对本地 KV 分片计算 partial attention；
-2. **轻量通信步**合并/校正 partial 结果（LSE 式合并），保证注意力结果精确；
-3. **FFN 阶段同一组 GPU 重配置**为 TP（dense 模型）或 TP×EP（MoE）去算 FFN/MoE，充分利用 GPU；
-4. 拓扑为 $N = KVP \times TP_A$（注意力 TP 度 $TP_A$ ≤ KV head 数），QKV 投影冗余计算使每个 KV 分片可做完全本地的 FlashAttention；
-5. **Helix HOP-B**：用 batchwise overlap 把上述通信开销藏起来，保持低 TTL 的同时提高 GPU 效率；
-6. KV 块按 rank 轮转（交错）分配，保证 KVP 组内所有 GPU 显存均匀增长——这也是 vLLM DCP 交错分片的出处（由 Moonshot 的 Chao Hong 提出）。
+进一步拆解其动态机制。Helix 的动态并不体现在运行时修改 CP 度，而体现在同一组 GPU 在每个 decoder layer 内被重配置两次，Attention 与 FFN 各用最优的并行映射，时分复用同一批卡。其布局基座为 $N$ 块 GPU 按 $N = KVP \times TP_A$ 组织，KV Cache 沿序列维交错分片常驻各 rank（显存均匀增长），整个生成过程保持不变。每个 layer 的执行按一拍进行。在 Attention 段（KVP 布局），每 rank 对本地 KV 分片做完整 FlashAttention（QKV 投影冗余计算换取本地性），得到 partial 输出 $(O_j, L_j)$；在轻量合并步，沿 KVP 组做一次 LSE 式合并与校正（只传 $O$ 与 LSE，通信量很小），注意力结果与单卡精确等价；在 FFN/MoE 段（TP/EP 布局），同一批 GPU 立刻切换映射，dense 模型走 TP，MoE 走 TP×EP，伴随权重 AllReduce 或路由 All-to-All；随后回到 Attention 段进入下一个 layer，逐层重复 KVP、合并、TP/EP 这一拍。HOP-B（Helix Overlapped P2P-Batch）进一步把合并通信与其余计算在 batch 维交错，请求 A 通信时请求 B 正在做 Attention 或 FFN 计算，通信被完全藏进计算，既保低 TTL 又保 GPU 利用率。
 
-**动态 CP 怎么并行起来（机制拆解）**：Helix 的"动态"不是运行时改 CP 度，而是**同一组 GPU 在每个 decoder layer 内被重配置两次**，Attention 与 FFN 各用各的最优并行映射，时分复用同一块卡：
-
-1. **布局基座**：$N$ 块 GPU 按 $N = KVP \times TP_A$ 组织；KV Cache 沿 T 维交错分片常驻各 rank（显存均匀增长），**整个生成过程不动**；
-2. **Attention 段（KVP 布局）**：每 rank 对本地 KV 分片做完整 FlashAttention（QKV 投影冗余计算换本地性），得到 partial 输出 $(O_j, L_j)$；
-3. **轻量合并步**：沿 KVP 组做一次 LSE 式合并/校正（只传 $O$ 与 LSE，量很小），注意力结果精确等价；
-4. **FFN/MoE 段（TP/EP 布局）**：**同一批 GPU** 立刻换映射——dense 模型走 TP，MoE 走 TP×EP，权重 AllReduce / 路由 All-to-All；
-5. 回到 2，进入下一个 decoder layer——每个 layer 都重复"KVP → 合并 → TP/EP"这一拍；
-6. **HOP-B（Helix Overlapped P2P-Batch）**：第 3 步的合并通信与第 2/4 步的计算在 **batch 维**交错——请求 A 通信时，请求 B 正在做 Attention/FFN 计算，通信被完全藏进计算，既保低 TTL 又保 GPU 利用率。
-
-与传统做法相比，AFD 把 Attention 与 FFN **空分**到不同 GPU（各干各的，但卡有一半时间闲），Helix 把两者**时分**到同一组 GPU；TP 单独用则 KV Cache 随 KV head 复制、batch 上限被锁死。Helix 等于"Attention 时是 CP、FFN 时是 TP/EP"，通信只有每层一次轻量 LSE 合并。
+与传统做法相比，AFD 把注意力与 FFN 空分到不同 GPU（各干各的，但卡约有一半时间空闲），Helix 把两者时分到同一组 GPU；TP 单独使用时 KV Cache 随 KV head 复制，batch 上限被锁死。形象地说，Helix 等于在 Attention 时是 CP、在 FFN 时是 TP/EP，每层只有一次轻量 LSE 合并通信。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="400" fill="#ffffff"/>
@@ -1505,25 +1415,19 @@ NVIDIA 在 Helix 论文（*Helix Parallelism: Rethinking Sharding Strategies for
 <text x="340" y="380" text-anchor="middle" font-size="10" fill="#64748b">通信方式：KVP 组内 LSE 合并 + TP AllReduce；HOP-B 让两者都被另一个 batch 的计算覆盖</text>
 </svg>
 
-▲ Helix 动态 CP 机制：每层一拍的 KVP→合并→TP/EP 时序、HOP-B 的 batch 交错、两种映射下的分片形态
+▲ Helix 动态 CP 机制：每层一拍的 KVP、合并、TP/EP 时序，HOP-B 的 batch 交错，两种映射下的分片形态
 
-**效果**（DeepSeek-R1、Blackwell NVL72、FP4、1M token 上下文的模拟）：固定 batch 下 TTL 最多降低 1.5 倍；同等延迟预算下 batch 最多放大 32 倍。目标场景是 PD 分离架构的 generation 服务器、输入 >64K、低 batch、延迟敏感（高 tokens/s/user）的负载。
+效果方面，在 DeepSeek-R1、Blackwell NVL72、FP4、1M token 上下文的模拟中，固定 batch 下 TTL 最多降低 1.5 倍，同等延迟预算下 batch 最多放大 32 倍。其目标场景是 PD 分离架构中的 generation 服务器，以及输入超过 64K、低 batch、延迟敏感（高 tokens/s/user）的负载。
 
-**实现**：TensorRT-LLM 已支持（`context_parallel_size ≥ 2`、`cp_config.cp_type = "HELIX"`、`cp_config.tokens_per_block` 与 KV cache 配置一致），目前支持 Blackwell 上的 MLA 模型（DeepSeek-V3 / V3-Lite），有 MLA Helix 单测与分离式服务精度测试。
+实现方面，TensorRT-LLM 已支持 Helix（`context_parallel_size ≥ 2`、`cp_config.cp_type = "HELIX"`，`cp_config.tokens_per_block` 需与 KV cache 配置一致），目前支持 Blackwell 上的 MLA 模型（DeepSeek-V3、V3-Lite），并配有 MLA Helix 单测与分离式服务精度测试。
 
 ## 6.2 Adaptive Context Parallelism
 
-北大与阿里联合发表 *Adaptive Context Parallelism for Production LLM Serving*（系统名 **Vertumnus**，arXiv:2609.04774，2026-09），把 CP 度变成生产调度的一等公民。
+北大与阿里联合发表的《Adaptive Context Parallelism for Production LLM Serving》（系统名 Vertumnus，arXiv:2609.04774，2026-09）把 CP 度变成生产调度的一等公民。
 
-**背景——生产负载的三个特征**：① 请求长度高度异构（几百 token 的问答到几十万 token 的文档分析/Agent 请求）；② 负载随时间动态变化（到达率与长短请求占比数倍波动）；③ 前缀复用普遍（系统提示、多轮对话、Agent 工作流），前缀缓存必不可少。CP 的收益与输入长度强相关：长请求从高 CP 度明显获益，短请求却会因通信开销反而变慢——静态 CP 配置注定顾此失彼。
+其出发点在于生产负载的三个特征。第一，请求长度高度异构，从几百 token 的问答到几十万 token 的文档分析与 Agent 请求并存。第二，负载随时间动态变化，到达率与长短请求占比有数倍波动。第三，前缀复用普遍（系统提示、多轮对话、Agent 工作流），前缀缓存必不可少。CP 的收益与输入长度强相关，长请求从高 CP 度明显获益，短请求却因通信开销反而变慢，静态 CP 配置注定顾此失彼。已有方案的不足也相应分为三类。有的完全不把 CP 度当作调度维度；有的采用静态 CP 配置（部署时定死，最多按长度路由，不考虑缓存命中与 worker 负载）；还有的虽能动态调整 CP 度，但只针对活跃请求或批次，没有稳定的持久化 worker 集群，前缀缓存无法跨请求复用。
 
-**现有方案的不足**：① 完全不把 CP 度当调度维度；② 静态 CP 配置（部署时定死，最多按长度路由，不考虑缓存命中与 worker 负载）；③ 虽能动态调 CP 度，但只针对活跃请求/批次，没有稳定的持久化 worker 集群，前缀缓存无法跨请求复用。
-
-**Vertumnus 的三层设计**：
-
-1. **请求级路由**：用 placement cost 在不同 CP 度的 worker 之间路由请求，代价函数 = 预测排队延迟 + cache-aware 的 prefill 时间 + GPU-time 成本；
-2. **集群级重组**：随负载变化以**秒级** split/merge 调整 worker 组成——短请求潮来了把大 CP worker 拆成多个小 worker，长请求潮来了把小 worker 合并成大 worker，无需重启进程或重新加载模型；
-3. **全局前缀缓存管理**：跨 worker（无论 CP 度相同与否）协调缓存的放置与复制，worker 重组、请求改派时保持缓存局部性——缺的缓存块可以从别的 worker（甚至是不同 CP 度的 worker）按需复制过来。
+Vertumnus 的设计相应分为三层。第一层是请求级路由，用 placement cost 在不同 CP 度的 worker 之间路由请求，代价函数由预测排队延迟、cache-aware 的 prefill 时间与 GPU-time 成本构成。第二层是集群级重组，随负载变化以秒级 split/merge 调整 worker 组成，短请求潮到来时把大 CP worker 拆成多个小 worker，长请求潮到来时把小 worker 合并成大 worker，全程无须重启进程或重新加载模型。第三层是全局前缀缓存管理，跨 worker（无论 CP 度是否相同）协调缓存的放置与复制，在 worker 重组、请求改派时保持缓存局部性，缺失的缓存块可以从其他 worker（甚至是不同 CP 度的 worker）按需复制。
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 380" style="width:100%;height:auto">
 <rect x="0" y="0" width="680" height="380" fill="#ffffff"/>
@@ -1583,7 +1487,7 @@ NVIDIA 在 Helix 论文（*Helix Parallelism: Rethinking Sharding Strategies for
 
 ▲ Vertumnus 三层机制：请求级路由（左）、集群级 split/merge（中）、全局前缀缓存（右）
 
-**效果**：64 GPU 集群、公开 + 生产负载，最高负载下平均 TTFT 最多降低 **28.1%**，token 加权 SLO 达成率最多提升 **13.3 个百分点**（对比最强基线）。
+效果方面，在 64 GPU 集群、公开与生产混合负载下，最高负载时平均 TTFT 最多降低 28.1%，token 加权 SLO 达成率最多提升 13.3 个百分点（对比最强基线）。
 
 # 参考文献
 
