@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<line x1="96.0" y1="315.3" x2="744.0" y2="315.3" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="86.0" y="319.3" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">1</text>
+<line x1="96.0" y1="220.0" x2="744.0" y2="220.0" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="86.0" y="224.0" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">10</text>
+<line x1="96.0" y1="124.6" x2="744.0" y2="124.6" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="86.0" y="128.6" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">100</text>
+<line x1="96.0" y1="248.7" x2="744.0" y2="248.7" stroke="#e8e9eb" stroke-width="0.8" opacity="1.00" stroke-dasharray="3 3"/>
+<text x="86.0" y="252.7" font-size="10" fill="#b0b4ba" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">5</text>
+<line x1="96.0" y1="153.3" x2="744.0" y2="153.3" stroke="#e8e9eb" stroke-width="0.8" opacity="1.00" stroke-dasharray="3 3"/>
+<text x="86.0" y="157.3" font-size="10" fill="#b0b4ba" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">50</text>
+<line x1="96.0" y1="58.0" x2="744.0" y2="58.0" stroke="#e8e9eb" stroke-width="0.8" opacity="1.00" stroke-dasharray="3 3"/>
+<text x="86.0" y="62.0" font-size="10" fill="#b0b4ba" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">500</text>
+<line x1="96.0" y1="344.0" x2="744.0" y2="344.0" stroke="#3c4043" stroke-width="1.2" opacity="1.00"/>
+<line x1="96.0" y1="58.0" x2="96.0" y2="344.0" stroke="#3c4043" stroke-width="1.2" opacity="1.00"/>
+<text x="30.0" y="201.0" font-size="12" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal" transform="rotate(-90 30 201)">KV cache 占用（GB，对数轴）</text>
+<rect x="139.7" y="82.9" width="74.5" height="261.1" rx="2" fill="#9aa4b2" stroke="none" stroke-width="1.0" opacity="1.00"/>
+<text x="177.0" y="73.9" font-size="12" fill="#9aa4b2" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="bold">274</text>
+<text x="177.0" y="366.0" font-size="11" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">Llama-3.1-405B</text>
+<text x="177.0" y="384.0" font-size="9" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">1M token</text>
+<rect x="301.7" y="145.8" width="74.5" height="198.2" rx="2" fill="#8298ad" stroke="none" stroke-width="1.0" opacity="1.00"/>
+<text x="339.0" y="136.8" font-size="12" fill="#8298ad" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="bold">60</text>
+<text x="339.0" y="366.0" font-size="11" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">GLM-5</text>
+<text x="339.0" y="384.0" font-size="9" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">1M token</text>
+<rect x="463.7" y="244.9" width="74.5" height="99.1" rx="2" fill="#2f5d8a" stroke="none" stroke-width="1.0" opacity="1.00"/>
+<text x="501.0" y="235.9" font-size="12" fill="#2f5d8a" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="bold">5.48</text>
+<text x="501.0" y="366.0" font-size="11" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">DeepSeek-V4</text>
+<text x="501.0" y="384.0" font-size="9" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">1M token</text>
+<rect x="625.7" y="318.3" width="74.5" height="25.7" rx="2" fill="#2a7f7a" stroke="none" stroke-width="1.0" opacity="1.00"/>
+<text x="663.0" y="309.3" font-size="12" fill="#2a7f7a" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="bold">0.93</text>
+<text x="663.0" y="366.0" font-size="11" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">DeepSeek-V4.1</text>
+<text x="663.0" y="384.0" font-size="9" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">1M token</text>
+<text x="100.0" y="38.0" font-size="11" fill="#6b7280" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">同一 100 万 token 上下文下的 KV cache 占用对比</text>
+<text x="100.0" y="416.0" font-size="10" fill="#6b7280" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">V4 相对 GQA-8 基线约为 2%；V4.1 单 token 仅 890 B，等效约 0.9 GB</text>
+</svg>
