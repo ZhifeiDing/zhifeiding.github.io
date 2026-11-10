@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="400" fill="#ffffff"/>
+  <text x="340" y="28" text-anchor="middle" font-size="15" fill="#111">GLM-5 结构示意图（据官方发布信息绘制）</text>
+
+  <!-- input -->
+  <rect x="25" y="150" width="85" height="36" fill="#eef2f7" stroke="#555"/>
+  <text x="67" y="172" text-anchor="middle" font-size="11">文本 / 代码</text>
+  <line x1="110" y1="168" x2="155" y2="168" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- backbone -->
+  <rect x="155" y="55" width="330" height="250" fill="#f7f9fc" stroke="#333"/>
+  <text x="320" y="80" text-anchor="middle" font-size="12">更深更窄的 MoE 主干：约 80 层</text>
+
+  <rect x="185" y="98" width="270" height="44" fill="#dde7f5" stroke="#446084"/>
+  <text x="320" y="117" text-anchor="middle" font-size="11">MLA + DSA 稀疏注意力</text>
+  <text x="320" y="133" text-anchor="middle" font-size="9.5">Lightning Indexer 打分 → 每 query 取 top-k 历史 token</text>
+
+  <rect x="185" y="158" width="270" height="44" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="320" y="177" text-anchor="middle" font-size="11">MoE 前馈：256 个专家</text>
+  <text x="320" y="193" text-anchor="middle" font-size="9.5">细粒度路由 · 激活参数 40B</text>
+
+  <text x="320" y="232" text-anchor="middle" font-size="10.5" fill="#333">总参数 744B（GLM-4.5 的 355B → 744B）</text>
+  <text x="320" y="252" text-anchor="middle" font-size="10.5" fill="#333">预训练 28.5T tokens · 上下文 202K</text>
+  <text x="320" y="272" text-anchor="middle" font-size="10" fill="#666">Muon Split 使 MLA 匹配 GQA-8 性能 · slime 异步 RL</text>
+
+  <!-- output -->
+  <line x1="485" y1="168" x2="530" y2="168" stroke="#555" marker-end="url(#a)"/>
+  <rect x="530" y="150" width="85" height="36" fill="#eef2f7" stroke="#555"/>
+  <text x="572" y="172" text-anchor="middle" font-size="11">输出</text>
+
+  <text x="340" y="345" text-anchor="middle" font-size="10" fill="#666">注：GLM-5 将 DeepSeek 的 DSA 稀疏注意力直接引入产品线，以降低长上下文部署成本</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="400" fill="#ffffff"/>
+  <text x="340" y="28" text-anchor="middle" font-size="15" fill="#111">Kimi K2.5 结构示意图（据官方模型卡绘制）</text>
+
+  <!-- inputs -->
+  <rect x="20" y="60" width="80" height="32" fill="#eef2f7" stroke="#555"/>
+  <text x="60" y="80" text-anchor="middle" font-size="11">文本</text>
+  <rect x="20" y="108" width="80" height="32" fill="#eef2f7" stroke="#555"/>
+  <text x="60" y="128" text-anchor="middle" font-size="11">图像 / 视频</text>
+
+  <line x1="100" y1="124" x2="145" y2="124" stroke="#555" marker-end="url(#a)"/>
+  <rect x="145" y="106" width="110" height="36" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="200" y="128" text-anchor="middle" font-size="11">MoonViT（400M）</text>
+
+  <line x1="100" y1="76" x2="180" y2="76" stroke="#555" marker-end="url(#a)"/>
+  <line x1="255" y1="124" x2="290" y2="110" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- backbone -->
+  <rect x="290" y="50" width="250" height="230" fill="#f7f9fc" stroke="#333"/>
+  <text x="415" y="74" text-anchor="middle" font-size="12">语言主干：61 层（1 稠密 + 60 MoE）</text>
+
+  <rect x="315" y="92" width="200" height="40" fill="#dde7f5" stroke="#446084"/>
+  <text x="415" y="110" text-anchor="middle" font-size="11">MLA 多头潜注意力</text>
+  <text x="415" y="125" text-anchor="middle" font-size="9.5">隐藏维 7168 · 64 头</text>
+
+  <rect x="315" y="150" width="200" height="52" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="415" y="170" text-anchor="middle" font-size="11">MoE 前馈（SwiGLU）</text>
+  <text x="415" y="187" text-anchor="middle" font-size="9.5">384 路由专家（top-8）+ 1 共享专家</text>
+
+  <text x="415" y="228" text-anchor="middle" font-size="10.5" fill="#333">总参数 1T / 每 token 激活 32B</text>
+  <text x="415" y="248" text-anchor="middle" font-size="10.5" fill="#333">词表 160K · 上下文 256K</text>
+  <text x="415" y="266" text-anchor="middle" font-size="10" fill="#666">在 K2-Base 上约 15T 视觉+文本 token 继续预训练</text>
+
+  <!-- output -->
+  <line x1="540" y1="165" x2="585" y2="165" stroke="#555" marker-end="url(#a)"/>
+  <rect x="585" y="147" width="75" height="36" fill="#eef2f7" stroke="#555"/>
+  <text x="622" y="169" text-anchor="middle" font-size="11">输出</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
