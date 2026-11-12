@@ -4,7 +4,7 @@
 
 # 1. 概述
 
-自 2017 年提出至 2026 年，Transformer 已近十年。本文考察这十年间各组件的演化：哪些设计被反复修改，哪些保持稳定，以及推动改动的实际约束。预测未来模型的具体发展方向是个艰巨的任务，但是通过回顾过去的历史，可以把握全局大的方向。
+自 2017 年提出至 2026 年，Transformer 已近十年。本文考察这十年间各组件的演化，哪些设计被反复修改，哪些保持稳定，以及推动改动的实际约束。预测未来模型的具体发展方向是个艰巨的任务，但是通过回顾过去的历史，可以把握全局大的发展方向。
 
 按组件划分，本文讨论以下六个方面的改进：
 
@@ -25,7 +25,7 @@
 
 2017 年，Ashish Vaswani 等人发表《Attention Is All You Need》，提出完全基于注意力机制的 Transformer 架构，不再依赖循环神经网络（RNN）或卷积神经网络（CNN）。
 
-Transformer 由编码器（Encoder）与解码器（Decoder）组成，各含 6 层。编码器每层包括自注意力子层与前馈网络子层；解码器在此基础上另有掩码自注意力与编码器-解码器交叉注意力子层。自注意力使每个位置能够聚合序列中全部位置的信息，前馈网络则对每个位置的表示做逐点非线性变换。多头注意力把输入沿特征维度分成若干子空间，在各子空间内并行计算注意力。由于注意力本身对位置置换等变，论文另引入位置编码，向模型提供各 token 在序列中的次序信息。
+Transformer 由编码器（Encoder）与解码器（Decoder）组成，各含 6 层。编码器每层包括自注意力子层与前馈网络子层；解码器在此基础上另有掩码自注意力与编码器-解码器交叉注意力子层。自注意力使每个位置能够聚合序列中全部位置的信息，前馈网络则对每个位置的表示做逐点非线性变换。多头注意力把输入沿特征维度分成若干子空间，在各子空间内并行计算注意力。由于注意力本身对位置无感，论文另引入位置编码，向模型提供各 token 在序列中的次序信息。
 
 ![1.png](/assets/images/transformer/1.png)
 
@@ -40,7 +40,7 @@ Transformer 由编码器（Encoder）与解码器（Decoder）组成，各含 6 
 
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V \tag{2.1}$$
 
-其中 $Q, K, V \in \mathbb{R}^{n \times d_k}$，$d_k$ 是键向量的维度。除以 $\sqrt{d_k}$ 是为了抵消点积方差随 $d_k$ 线性增长带来的影响：若不缩放，softmax 会进入梯度很小的饱和区。
+其中 $Q, K, V \in \mathbb{R}^{n \times d_k}$，$d_k$ 是键向量的维度。除以 $\sqrt{d_k}$ 是为了抵消点积方差随 $d_k$ 线性增长带来的影响；若不缩放，softmax 会进入梯度很小的饱和区。
 
 多头注意力将输入序列的嵌入表示（原论文为 512 维）沿特征维度分割成多个子空间（即“头”），每个头在低维空间（如 64 维）中独立、并行地计算自注意力。多头注意力（Multi-Head Attention）的计算公式为：
 
@@ -100,7 +100,7 @@ class MultiHeadAttention(nn.Module):
 
 # 3. Attention的改进
 
-注意力机制的改进大体围绕一个矛盾展开：全局建模能力伴随 $O(N^2)$ 的计算与存储开销，而模型规模与序列长度仍在增长。本章按推理缓存、计算与 IO、稀疏化三条线索梳理这些工作，最后讨论线性注意力与门控注意力。
+注意力机制的改进始终围绕全局建模能力伴随 $O(N^2)$ 的计算与存储开销而展开。本章按推理缓存、计算与 IO、稀疏化三条线索梳理这些工作，最后讨论线性注意力与门控注意力。
 
 随着模型规模与序列长度增长，标准 MHA 的二次复杂度与 **KV Cache**（解码时缓存的键值对）成为主要瓶颈：
 
@@ -2111,7 +2111,7 @@ $$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right) \t
 
 位置信息的改进沿两条线索展开：一条让注意力分数随序列长度自适应缩放，抑制长上下文下的注意力衰退（5.1 节）；另一条改造位置编码的实现形式，使模型在训练长度之外仍能分辨位置（5.2 节）。
 
-## 5.1 SSMAX
+## 5.1 SSMax
 
 Softmax 归一化存在**注意力衰退**（attention fading）问题：被归一化的向量越长，最大元素的输出权重越小。设向量长度为 $n$，最大与最小元素为 $z_{\max}$、$z_{\min}$，则最大输出权重满足
 
@@ -2119,11 +2119,11 @@ $$\frac{e^{z_{\max}}}{\sum_{j=1}^{n} e^{z_j}} \le \frac{1}{(n-1)\, e^{-(z_{\max}
 
 右端随 $n$ 增大趋于 0。作用到注意力上，上下文越长，分布越平，关键 token 越难胜出，长上下文检索与长度外推都受此制约。
 
-**Scalable Softmax（SSMAX）** 让归一化基随长度增长。Nakanishi（2025）先做了一组实验，把注意力层的 Softmax 替换为带长度相关温度的形式：
+**Scalable Softmax（SSMax）** 让归一化基随长度增长。Nakanishi（2025）先做了一组实验，把注意力层的 Softmax 替换为带长度相关温度的形式：
 
 $$z_i \mapsto \frac{e^{(s\,p_n + b)\,z_i}}{\sum_{j=1}^{n} e^{(s\,p_n + b)\,z_j}} \tag{5.4}$$
 
-其中 $s$、$b$ 为逐层逐头的可学习标量，$p_n$ 由全体层与头共享、只依赖向量长度 $n$。训练结束后 $p_n$ 近似随 $\log n$ 线性变化，据此把 $p_n$ 替换为 $\log n$，得到 SSMAX：
+其中 $s$、$b$ 为逐层逐头的可学习标量，$p_n$ 由全体层与头共享、只依赖向量长度 $n$。训练结束后 $p_n$ 近似随 $\log n$ 线性变化，据此把 $p_n$ 替换为 $\log n$，得到 SSMax：
 
 $$z_i \mapsto \frac{e^{(s \log n + b)\,z_i}}{\sum_{j=1}^{n} e^{(s \log n + b)\,z_j}} = \frac{n^{s z_i}\, e^{b z_i}}{\sum_{j=1}^{n} n^{s z_j}\, e^{b z_j}} \tag{5.5}$$
 
@@ -2135,9 +2135,9 @@ $$\frac{n^{s z_{\max}}}{\sum_{j=1}^{n} n^{s z_j}} \le \frac{1}{(n-1)\, n^{-s(z_{
 
 ![22.png](/assets/images/transformer/22.png)
 
-> 图 5.1　Softmax 的注意力衰退与 SSMAX 的聚焦行为（依 Nakanishi, 2025, Figure 3 的设置重绘）。(a) 固定 logit 差 $\Delta$ 时，Softmax 的最大权重随 $n$ 衰减，SSMAX（$s=1$）保持不降；(b) SSMAX 的聚焦阈值在 $\Delta \approx 1/s$ 附近，与 $n$ 无关，Softmax 的阈值则随 $n$ 变大而右移。
+> 图 5.1　Softmax 的注意力衰退与 SSMax 的聚焦行为（依 Nakanishi, 2025, Figure 3 的设置重绘）。(a) 固定 logit 差 $\Delta$ 时，Softmax 的最大权重随 $n$ 衰减，SSMax（$s=1$）保持不降；(b) SSMax 的聚焦阈值在 $\Delta \approx 1/s$ 附近，与 $n$ 无关，Softmax 的阈值则随 $n$ 变大而右移。
 
-SSMAX 不编码位置信息，它与位置编码的长度外推互补。论文实验把 RoPE 的基频放大 50 倍后，使用 SSMAX 的模型在 10 倍于训练长度（约一万 token）的文本上保持较低的测试损失，大海捞针测试在 10 倍上下文内稳定检出目标；注意力分数分析显示，长上下文下 SSMAX 仍把权重集中在关键 token 上。从预训练开始就使用 SSMAX 效果最好；已经开训的模型在训练中或训练后替换，也能获得部分长度泛化能力。后续的理论分析（Chen et al., 2025）证明注意力缩放因子存在 $\log n$ 量级的临界值，与 SSMAX 以及 Qwen、SWAN-GPT 的实践一致；Llama 4 在推理期对注意力做温度缩放，是同一思路的轻量版本。
+SSMax 不编码位置信息，它与位置编码的长度外推互补。论文实验把 RoPE 的基频放大 50 倍后，使用 SSMax 的模型在 10 倍于训练长度（约一万 token）的文本上保持较低的测试损失，大海捞针测试在 10 倍上下文内稳定检出目标；注意力分数分析显示，长上下文下 SSMax 仍把权重集中在关键 token 上。从预训练开始就使用 SSMax 效果最好；已经开训的模型在训练中或训练后替换，也能获得部分长度泛化能力。后续的理论分析（Chen et al., 2025）证明注意力缩放因子存在 $\log n$ 量级的临界值，与 SSMax 以及 Qwen、SWAN-GPT 的实践一致；Llama 4 在推理期对注意力做温度缩放，是同一思路的轻量版本。
 
 代码：
 
@@ -2148,7 +2148,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class SSMAX(nn.Module):
+class SSMax(nn.Module):
     """Scalable Softmax：以 n^s 为基的注意力归一化，对应式(5.5)。"""
 
     def __init__(self, num_heads, use_bias=False):
@@ -2233,7 +2233,7 @@ q = torch.randn(2, 32, 128, 64)                    # (B, h, L, head_dim)
 q_pos = apply_rope(q, cos, sin)                    # 注入位置信息
 ```
 
-位置编码的演进为 sin-cos（2017，固定绝对）→ 可学习绝对（BERT/GPT）→ 相对位置偏置（T5/DeBERTa）→ RoPE（2021，旋转形式实现相对位置）→ RoPE 外推扩展（NTK/YaRN/LongRoPE）。注入次序信息的目标始终一致；注意力分数侧的 SSMAX 以随长度缩放的归一化基保持长上下文的聚焦，与位置编码的外推手段一起支撑更长的上下文。
+位置编码的演进为 sin-cos（2017，固定绝对）→ 可学习绝对（BERT/GPT）→ 相对位置偏置（T5/DeBERTa）→ RoPE（2021，旋转形式实现相对位置）→ RoPE 外推扩展（NTK/YaRN/LongRoPE）。注入次序信息的目标始终一致；注意力分数侧的 SSMax 以随长度缩放的归一化基保持长上下文的聚焦，与位置编码的外推手段一起支撑更长的上下文。
 
 # 6. 前馈神经网络 (Feed Forward)
 
@@ -2489,11 +2489,85 @@ class LatentMoE(nn.Module):
 
 Latent MoE 把调整对象从专家数与激活数转到专家的工作空间。它与 MLA 压缩 KV、CSA 压缩序列采用相同的做法：先把高维表示投影到低维完成选择性计算，仅在必要处还原。
 
+## 6.3 Shortcut MoE
+
+6.1 节改路由，6.2 节改专家的工作空间；Shortcut MoE（ScMoE，shortcut-connected MoE）改的是 MoE 与主干的连接方式，目标是把 All-to-All 通信从关键路径上移走。
+
+**通信瓶颈**。专家并行把专家分散到多卡，token 必须先经 All-to-All 发送到专家所在设备，算完再送回，通信与计算严格串行。实测单机 8×A30（PCIe 互联）上 All-to-All 占 MoE 总耗时约 60%，8×A800（NVLink）降到 15%，跨节点以太网又回到接近 50%。分层 All-to-All 与流水线只能部分重叠——只要 dispatch 还依赖当前层的输出，通信就无法提前开始。
+
+**关键观察**。相邻层的 token 表示高度相似。同一个 MoE 模块对当前层与前一层的表示分别做 top-1 路由，绝大多数 token 选中同一专家（训练中一致率一度达 98%）；前一层的表示因此足以替当前层做路由决策。
+
+**结构**。ScMoE 把一个 top-2 MoE 拆成两条独立支路：共享专家就地处理当前层表示；门选专家（top-1）经 **shortcut 连接**处理前一层表示。两路并行、结果相加，门控与 All-to-All 因输入来自前一层而得以提前执行。记 $\mathcal{H}^{MH}_{l}$ 为第 $l$ 层注意力子层的输出（shortcut 默认取自前一层注意力与 MLP 之间的中间表示）：
+
+$$\mathcal{H}_{l+1} = \mathcal{H}^{MH}_{l+1} + \mathrm{SE}(\mathcal{H}^{MH}_{l+1}) + \sum_{i=1}^{N} G(\mathcal{H}^{MH}_{l})_i\, E_i(\mathcal{H}^{MH}_{l}) \tag{6.8}$$
+
+其中 $G$ 为式 (6.5) 的路由器（此处取 top-1），$\mathrm{SE}$ 为共享专家，$E_i$ 为第 $i$ 个门选专家。共享专家与门选专家各激活一个，计算量与 top-2 MoE 相当。
+
+论文的中间形态 **DoubleGating MoE（DGMoE）** 用两个 top-1 门控分别处理当前层与前一层的表示：
+
+$$\mathcal{H}_{l+1} = \mathcal{H}^{MH}_{l+1} + \sum_{i=1}^{N}\Big( G(\mathcal{H}^{MH}_{l+1})_i\, E_i(\mathcal{H}^{MH}_{l+1}) + G(\mathcal{H}^{MH}_{l})_i\, E_i(\mathcal{H}^{MH}_{l})\Big) \tag{6.9}$$
+
+两次路由若选中同一专家则退化为 top-1，DGMoE 改选 top-2 中的次高分专家补齐。ScMoE 则天然分配不同专家：共享专家管当前层，门选专家管前一层，通信与计算彻底解耦。
+
+![27.png](/assets/images/transformer/27.png)
+
+> 图 6.4　ScMoE 的数据流与通信重叠（依 Cai et al., 2025 重绘）。(a) 标准 top-2 MoE 中 All-to-All 与计算串行；(b) ScMoE 的两条独立支路——共享专家处理当前层表示，门选专家经 shortcut 处理前一层表示；(c) 通信被夹进本地计算的执行窗口。
+
+**重叠执行**。两路运行在独立 CUDA stream 上：共享专家一路只做本地计算；门选专家一路走 gate routing → encode → All-to-All dispatch → 专家计算 → All-to-All combine → decode。调度上 dispatch 尽早、combine 尽晚，把通信夹进本地计算的窗口里。实测 PCIe 环境隐藏 70% 的通信时间，NVLink 单机与跨节点场景实现完全重叠。与 top-2 MoE 相比，训练加速 30%（PCIe）与 11%（NVLink），推理加速 40% 与 15%；GPT2-MoE-Medium 的 WikiText-103 PPL 从 19.18 降到 17.62，质量与 shared-expert MoE 相当，网络越深优势越大。
+
+**专家卸载**。路由提前一层确定还有一个副产品：被选中的专家可以从 CPU 异步换入 GPU，换入过程与前一层剩余的计算重叠。这是确定性的专家迁移，不依赖预测、不偏离预训练的计算逻辑；单卡 A30 上把 GPT3-MoE-XL 的峰值显存压低约 60%。
+
+代码：
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class ScMoE(nn.Module):
+    """Shortcut MoE：共享专家处理当前层表示，
+    top-1 门选专家经 shortcut 处理前一层表示。"""
+
+    def __init__(self, d_model, d_ff, n_experts=8):
+        super().__init__()
+        self.n_experts = n_experts
+        # 共享专家：就地处理当前层表示
+        self.shared = nn.Sequential(
+            nn.Linear(d_model, d_ff, bias=False),
+            nn.SiLU(),
+            nn.Linear(d_ff, d_model, bias=False),
+        )
+        # 门选专家：输入是前一层表示（shortcut）
+        self.gate = nn.Linear(d_model, n_experts, bias=False)
+        self.w_gate = nn.ModuleList([nn.Linear(d_model, d_ff, bias=False) for _ in range(n_experts)])
+        self.w_up = nn.ModuleList([nn.Linear(d_model, d_ff, bias=False) for _ in range(n_experts)])
+        self.w_down = nn.ModuleList([nn.Linear(d_ff, d_model, bias=False) for _ in range(n_experts)])
+
+    def forward(self, x_cur, x_prev):
+        # x_cur: 当前层表示 -> 共享专家（本地计算）
+        # x_prev: 前一层表示 -> top-1 路由（通信可提前启动）
+        se_out = self.shared(x_cur)
+
+        idx = self.gate(x_prev).argmax(dim=-1)                  # top-1 路由
+        routed = torch.zeros_like(x_cur)
+        for e in range(self.n_experts):
+            mask = (idx == e)
+            if not mask.any():
+                continue
+            xe = x_prev[mask]
+            ye = self.w_down[e](F.silu(self.w_gate[e](xe)) * self.w_up[e](xe))
+            routed[mask] = ye
+
+        return x_cur + se_out + routed                          # 式 (6.8)
+```
+
+Shortcut MoE 不动专家的计算方式，改的是专家层的输入来源与通信时序：用前一层的表示换通信的提前量，让 All-to-All 退出关键路径。这一改动已在生产模型落地——LongCat-Flash 系列采用 shortcut-connected MoE 架构（每个 shortcut 层含两个串联的注意力操作，见 3.5.6 节），与 MLA 配套使用。至此第 6 章的三条改动线索完整：6.1 节改路由与分工，6.2 节改专家的工作空间，6.3 节改连接方式与通信时序；FFN 的逐位置非线性变换本身始终未变。
+
 # 7. 激活函数
 
 Transformer中的激活函数几经更替，ReLU、GELU、现代模型普遍采用的 SiLU/Swish，以及面向数值稳定性的 SiTU-GLU。本章先按这一主线介绍，并增加Sigmoid 门（7.2 节）、Softplus（7.3 节）与 softcap（7.4 节）；7.5 节说明后两者如何组合成 SiTU-GLU。
 
-![27.png](/assets/images/transformer/27.png)
+![28.png](/assets/images/transformer/28.png)
 
 > 图 7.1　GELU、ReLU、ELU 曲线对比（Hendrycks & Gimpel, 2016, Figure 1）。
 
@@ -2519,7 +2593,7 @@ Transformer中的激活函数几经更替，ReLU、GELU、现代模型普遍采�
 
 **SiLU / Swish**。这一形式由 Ramachandran 等人于 2017 年经自动搜索发现并命名为 Swish，SiLU（Sigmoid-Linear Unit）即 $\beta=1$ 时的称呼。其定义为 $f(x)=x\,\sigma(x)$，其中 $\sigma(x)=1/(1+e^{-x})$，导数为 $f'(x)=\sigma(x)+x\sigma(x)\bigl(1-\sigma(x)\bigr)$。$\sigma(x)$ 充当软开关，控制 $x$ 的通过比例，形式上与 LSTM、GRU 的门控相近，故称自门控。曲线平滑且非单调：正半轴较大取值处导数趋近 1，梯度可在深层网络中稳定回传；负半轴不像 ReLU 那样直接置零，而是平滑趋近约 $-0.28$ 的下界，既避免了神经元死亡，也保留了部分负区信息（图 7.2）。Swish 的原始论文报告其在多个视觉与语言任务上优于 ReLU，代价是需计算一次 Sigmoid，开销高于 ReLU。LLaMA、Qwen 等现代模型将其用作默认激活，尤其常见于 SwiGLU 结构的 FFN（见 6.1 节）。
 
-![28.png](/assets/images/transformer/28.png)
+![29.png](/assets/images/transformer/29.png)
 
 > 图 7.2　Swish 激活函数及其一阶导数（Ramachandran et al., 2017, Figure 4 & 5）。负值区域呈平滑下探，导数非单调。
 
@@ -2566,7 +2640,7 @@ Sigmoid 是最早用于深度学习的激活函数之一。在现代 Transformer
 
 $$f(x) = \frac{1}{1+e^{-x}}, \qquad f'(x) = f(x)\left(1 - f(x)\right) \tag{7.1}$$
 
-![29.png](/assets/images/transformer/29.png)
+![30.png](/assets/images/transformer/30.png)
 
 > 图 7.3　Sigmoid 的函数形状（左）与导数（右）。左图对照零中心的 tanh：sigmoid 输出恒在 $(0,1)$，均值大于 0（非零中心）；右图导数峰值仅 0.25，且两侧饱和区梯度趋近 0，正是深层网络梯度消失的数学来源。
 
@@ -2615,7 +2689,7 @@ Sigmoid 作为逐元素激活让位于 ReLU，作为 SwiGLU 的门因子则多�
 
 Softplus 是 ReLU 的光滑近似，定义为 $\mathrm{softplus}(x) = \ln(1 + e^x)$。其导数恰为 7.2 节的 Sigmoid，因此它同时也是 Sigmoid 的原函数。
 
-![30.png](/assets/images/transformer/30.png)
+![31.png](/assets/images/transformer/31.png)
 
 > 图 7.4　Softplus 及其导数。左图对比 Softplus 与 ReLU，$x=0$ 处 Softplus 以 $\ln 2 \approx 0.693$ 平滑过渡、无折点；右图为 Softplus 的导数，即 Sigmoid，在 $[0,1]$ 内连续。
 
@@ -2692,7 +2766,7 @@ def softcap(x, beta):
 
 SiTU-GLU（Sigmoid Tanh Unit GLU）是 Kimi K3 提出的激活函数，用于解决 SwiGLU 在超大 MoE 规模下的**激活离群值与溢出**问题。其构造可看作 7.3 节 Softplus 与 7.4 节 softcap 两类元件的组合：Softplus 一支提供平滑且严格为正的增长，其导数正是 Sigmoid 门（$\sigma=\mathrm{softplus}'$），softcap 则把增长限制在有限上界之内。Kimi K3 的具体实现并未直接调用 Softplus，而是以 $\sigma(W_g x)$ 为门、以 $\beta\tanh(z/\beta)$ 为 softcap，两者相乘得到 SiTU（Sigmoid Tanh Unit）；再对上分支独立施加一次 softcap，即构成 SiTU-GLU。
 
-![31.png](/assets/images/transformer/31.png)
+![32.png](/assets/images/transformer/32.png)
 
 > 图 7.5　GLU / SwiGLU / SiTU-GLU 的门与上分支对比及标量响应曲线（Kimi K3 技术报告 Figure 4）。SiTU-GLU 逼近上界 $\beta_1\beta_2 = 100$，而 SwiGLU 继续无界增长。
 
@@ -2766,7 +2840,7 @@ $$y = F(x, \{W_i\}) + x \tag{8.1}$$
 
 其中 $F(x, \{W_i\})$ 是子层（注意力或 FFN）的输出。原始 Transformer 论文中的 “Add & Norm” 里的 **Add** 就是这个残差连接。
 
-![32.png](/assets/images/transformer/32.png)
+![33.png](/assets/images/transformer/33.png)
 
 > 图 8.1　ResNet 残差学习的 building block（He et al., 2015, Figure 2）——恒等映射 $x$ 与 $F(x)$ 相加。
 
@@ -2820,7 +2894,7 @@ print("input grad norm:", x.grad.norm().item())  # 梯度不会消失为 0
 
 mHC（Manifold-Constrained Hyper-Connections，流形约束超连接）是 DeepSeek 在 2025 年底发布的工作（arXiv:2512.24880），也是对残差连接改动最大的工作之一。
 
-![33.png](/assets/images/transformer/33.png)
+![34.png](/assets/images/transformer/34.png)
 
 > 图 8.2　三种残差连接范式的对比（mHC 论文 Figure 1）。(a) 标准残差；(b) Hyper-Connections（HC），残差流加宽并加多个映射算子；(c) mHC，把这些映射算子约束到 Birkhoff 流形上。
 
@@ -2903,17 +2977,51 @@ $$\text{Activation Memory Traffic}:\quad (4n + 4)\,d \;\longrightarrow\; (2n + 2
 
 其中 $n$ 为残差流宽度扩展因子，$d$ 为隐藏维度。
 
-![34.png](/assets/images/transformer/34.png)
+![35.png](/assets/images/transformer/35.png)
 
 > 图 8.3　Single-Pass mHC 结构示意（依据 DeepSeek-V4.1-Flash 技术报告 2.4.1 节整理）。(a) 原始 mHC 的三个 kernel 因数据依赖串行执行，$X_l$ 被反复读写；(b) 系数错开一个 Block 后依赖解除，Mega-mHC 内核把 Residual Update、Input Mixing 与 Coefficient Prediction 融合为一次读、一次写。
 
 部署侧再通过 **Mega-mHC Kernel** 把 Residual Update、Input Mixing、Coefficient Prediction 以及部分 Norm、FP8 转换全部融合进一个 memory-bound 内核，让 Residual Stream 接近“一次读取、一次写入”。DeepSeek 报告称系数错位带来的性能损失可以忽略。
 
+代码：
+
+```python
+import torch
+import torch.nn as nn
+
+class SinglePassMHC(nn.Module):
+    """Single-Pass mHC：输入混合的系数向前错开一个 Block，对应式(8.6)。
+    当前 Block 直接消费上一 Block 已算好的 A，内核间数据依赖解除，
+    残差流一次读入即可完成输入混合与系数累积，激活访存减半（式 8.7）。"""
+
+    def __init__(self, d_model, n_branches=4):
+        super().__init__()
+        self.n = n_branches
+        # 系数预测器 H：逐 token 预测 A_l(1×n)、B_l(n×n)、C_l(n×1)
+        self.H = nn.Linear(n_branches * d_model,
+                           n_branches + n_branches ** 2 + n_branches)
+
+    def forward(self, X, sublayer, A_prev):
+        # X: 当前残差流 (B, n, d)；A_prev: 上一 Block 的混合系数 (B, 1, n)
+        Bsz, n, d = X.shape
+        coeff = self.H(X.reshape(Bsz, n * d))
+        A = coeff[:, :n].unsqueeze(1)                    # A_l: (B, 1, n)
+        Bl = coeff[:, n:n + n * n].reshape(Bsz, n, n)    # B_l: (B, n, n)
+        Cl = coeff[:, n + n * n:].unsqueeze(2)           # C_l: (B, n, 1)
+
+        h = torch.bmm(A_prev, X).squeeze(1)              # 输入混合用 A_{l-1}
+        F_out = sublayer(h)                              # 子层 F_l
+        X_next = torch.bmm(Bl, X) + Cl * F_out.unsqueeze(1)  # 式 (8.6)
+        return X_next, A                                 # 当前 A 供下一 Block 使用
+```
+
+
+
 ## 8.4 Block Attention Residual
 
 Block Attention Residual 是 Kimi K3 提出的跨层信息流机制（AttnRes 的分块实现），把残差的顺序累加改为**可学习的跨层检索**。
 
-![35.png](/assets/images/transformer/35.png)
+![36.png](/assets/images/transformer/36.png)
 
 > 图 8.4　三种残差连接范式的结构对比（Attention Residuals 论文 Figure 1，arXiv:2603.15031）。(a) 标准残差：所有层输出以固定单位权重顺序累加；(b) Full AttnRes：每层通过可学习 pseudo-query $w$ 与注意力权重 $\alpha$ 检索全部前层输出；(c) Block AttnRes：层先分块、块内求和压缩，跨块再做注意力——显存从 $O(Ld)$ 降到 $O(Nd)$（$N$ 为块数）。
 
@@ -2935,13 +3043,50 @@ $$\text{显存/通信}: O(Ld) \;\longrightarrow\; O(Nd) \tag{8.9}$$
 
 **效果**：Kimi K3 相对 Kimi K2 的扩展效率提升约 2.5 倍，AttnRes 是四项架构改动之一（另三项为 KDA、Gated MLA、Stable LatentMoE）。mHC 加宽并约束残差流，AttnRes 则把残差流变为可检索的层索引，二者作用于同一对象。
 
+代码：
+
+```python
+import torch
+import torch.nn as nn
+
+class AttnRes(nn.Module):
+    """Attention Residual：每层以可学习 pseudo-query 检索前层输出，对应式(8.8)。
+    block_size>0 时启用 Block AttnRes：块内求和压缩、跨块做注意力，
+    显存由 O(Ld) 降至 O(Nd)（式 8.9）。"""
+
+    def __init__(self, d_model, block_size=0):
+        super().__init__()
+        self.block_size = block_size
+        self.q = nn.Parameter(torch.randn(d_model) * 0.02)   # 伪查询 w_l
+        self.k_proj = nn.Linear(d_model, d_model, bias=False)
+        self.v_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, states):
+        # states: 前层输出 (L, B, d)，L 为层数
+        if self.block_size > 0:
+            L, Bsz, d = states.shape
+            n_blk = (L + self.block_size - 1) // self.block_size
+            pad = n_blk * self.block_size - L
+            if pad:
+                states = torch.cat([states, states.new_zeros(pad, Bsz, d)])
+            states = states.view(n_blk, self.block_size, Bsz, d).sum(dim=1)
+
+        k = self.k_proj(states)
+        v = self.v_proj(states)
+        # φ(q, k) = exp(q^T RMSNorm(k))：RMSNorm 防止大范数层主导权重；
+        # 对 φ 归一化即对 q^T RMSNorm(k) 做 softmax
+        k = k * torch.rsqrt(k.pow(2).mean(-1, keepdim=True) + 1e-6)
+        alpha = torch.einsum('lbd,d->lb', k, self.q).softmax(dim=0)
+        return torch.einsum('lb,lbd->bd', alpha, v)      # 加权检索前层输出
+```
+
 残差连接的改动轨迹为：恒等映射（ResNet）→ 可学习映射（Hyper-Connections）→ 流形约束的可学习映射（mHC）→ 跨层注意力检索（AttnRes）。共同点是让深层信息流不再局限于顺序累加。
 
 ## 8.5 Gated Residual
 
 Gated Residual（GR）是 Qwen3.8-Flash-Next 采用的门控残差设计，结合了 Hyper-Connections 的多分支加宽与 GatedNorm 的逐元素门控。
 
-![36.png](/assets/images/transformer/36.png)
+![37.png](/assets/images/transformer/37.png)
 
 > 图 8.5　Qwen3.8-Flash-Next 架构（Qwen3.8-Next 架构论文 Figure 1）。左侧是 3×GDN + 1×QSA 的层堆叠，右侧展开显示每个子层如何通过 GR Read / GR Write 与加宽后的残差流交互。
 
@@ -2964,6 +3109,48 @@ $$\text{Read}: \quad h = \sum_{i=1}^{n} w_i \odot \mathrm{RMSNorm}(h_i), \qquad 
 2. 团队试过让每层**只读取门控值最高的两条分支**而非全部四条，以省下推理时的显存搬运。预训练阶段损失和基准分数几乎不受影响，但微调后生成质量明显下滑，最终未采用。这类优化的代价可能要到后期训练阶段才显现
 
 去掉 `Hres` 也有工程理由：`Hres` 需要额外读一遍完整的残差状态，在参数量固定的推理场景下这是主导性的内存搬运开销。
+
+代码：
+
+```python
+import torch
+import torch.nn as nn
+
+def rmsnorm(x):
+    """RMSNorm：均方根归一化。"""
+    return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + 1e-6)
+
+class GatedResidual(nn.Module):
+    """Gated Residual：残差流加宽为 n 条分支，对应式(8.10)。
+    读门为低秩逐通道 sigmoid（生产配置 rank 320），写门为每分支标量 sigmoid；
+    无 Hres 混合，每条分支是纯粹的历史累加器。"""
+
+    def __init__(self, d_model, n_branches=4, lowrank=320):
+        super().__init__()
+        self.n = n_branches
+        # 读门：低秩瓶颈产生逐通道权重 w
+        self.gate_down = nn.Linear(n_branches * d_model, lowrank, bias=False)
+        self.gate_up = nn.Linear(lowrank, n_branches * d_model, bias=False)
+        # 写门：每分支一个标量
+        self.write_gate = nn.Linear(d_model, n_branches)
+
+    def read(self, hs):
+        # hs: 各分支残差状态 (B, n, d)
+        Bsz, n, d = hs.shape
+        w_in = rmsnorm(hs.reshape(Bsz, n * d))
+        w = torch.sigmoid(self.gate_up(self.gate_down(w_in))).view(Bsz, n, d)
+        return (w * rmsnorm(hs)).sum(dim=1)      # h = Σ w_i ⊙ RMSNorm(h_i)
+
+    def write(self, hs, delta):
+        # delta: 子层输出 (B, d)；写门决定写回各分支的强度
+        g = torch.sigmoid(self.write_gate(delta)).unsqueeze(-1)  # (B, n, 1)
+        return hs + g * delta.unsqueeze(1)
+
+    def forward(self, hs, sublayer):
+        h = self.read(hs)                 # 门控读出
+        delta = sublayer(h)               # 子层计算
+        return self.write(hs, delta)      # 门控写回
+```
 
 Gated Residual 与 mHC 同属“加宽残差流 + 动态门控”，但 Qwen 用低秩门控（rank 320，远小于隐层维度）换取细粒度控制，并去掉分支混合以提高推理效率。残差结构在保留恒等映射之外，又增加了数据相关的阀门。
 
@@ -3017,7 +3204,7 @@ $$Y = \mathrm{SiLU}\big(\mathrm{Conv1D}(\mathrm{RMSNorm}(\tilde{V}))\big) + \til
 
 $$\alpha_t^{(m)} = \sigma\left(\frac{\mathrm{RMSNorm}(h_t^{(m)})^{\top}\ \mathrm{RMSNorm}(W_K^{(m)} e_t)}{\sqrt{d}}\right) \tag{9.7}$$
 
-![37.png](/assets/images/transformer/37.png)
+![38.png](/assets/images/transformer/38.png)
 
 > 图 9.1　Engram 条件记忆模块（依据 Engram 论文 Figure 1、Figure 2 重绘）。(a) 哈希 N-gram 查表与上下文门控的数据流；(b) 模块在骨干中的放置与系统实现——查找索引只依赖输入 token，预取与前置层计算可重叠。
 
@@ -3105,7 +3292,7 @@ $$\mathcal{I}^{(l)}_t = \mathcal{I}^{(l')}_t \tag{9.10}$$
 
 **LSA 的跨层索引（CLI）**。LSA 走的是“分组 + 蒸馏”路线：连续 $N$ 层编为一组，组首（owner）执行索引器，其余（reuse）层直接沿用选出的 token 集合（3.5.6 节）。缺少训练配合的纯复用会造成质量损失（$N = 2$ 时 128K 针检索准确率降到 70%），LSA 因而在训练时加入一项跨层蒸馏损失，把共享索引器的输出对齐到组内各层自己的注意力分布，准确率回到 96%，甚至优于无蒸馏的 $N = 4$。由此，跨层复用有两种实现：相邻层相似性足够强时可采用架构级的静态指派（CSA2）；相似性不足时，用蒸馏在训练中提高它（LSA）。
 
-![38.png](/assets/images/transformer/38.png)
+![39.png](/assets/images/transformer/39.png)
 
 > 图 9.2　跨层 index KV 与 KV 重用的层角色指派（CSA2 式）。Full 层写入共享资源；Reindex 层借索引键、用自己的查询重算 Top-K；Reuse 层全盘沿用。共享的是历史（K/V 与索引），不是 Q——每层保留自己的全局 Q 与 SWA KV。
 
@@ -3181,7 +3368,7 @@ FlashAttention（Dao et al., 2022）不改变注意力的数学形式，只调�
 
 FlashAttention 利用 GPU 的存储层级（SRAM 快但小，HBM 大但慢），用 tiling + online softmax 把注意力分块计算，避免将 $N \times N$ 的注意力矩阵写入 HBM。
 
-![39.png](/assets/images/transformer/39.png)
+![40.png](/assets/images/transformer/40.png)
 
 > 图 A.1　GPU 存储层级与 FlashAttention 的 tiling 策略（FlashAttention 论文 Figure 1）。
 
@@ -3261,5 +3448,6 @@ FA1 至 FA4 的演进体现了软硬件协同：FA1 指出 IO 是瓶颈，FA2 �
 48. Brandon, W., Mishra, M., Nrusimha, A., Panda, R., Ragan-Kelley, J. (2024). **Reducing Transformer Key-Value Cache Size with Cross-Layer Attention**. arXiv:2405.12981.（CLA / 跨层注意力）
 49. Sun, Y., Dong, L., Zhu, Y., et al. (2024). **You Only Cache Once: Decoder-Decoder Architectures for Language Models**. arXiv:2405.05254.（YOCO）
 50. Zhang, M., et al. (2023). **The Hedgehog & the Porcupine: Expressive Linear Attentions with Softmax Mimicry**. *NeurIPS 2023*. arXiv:2402.04347.（早期线性注意力的 PPL 差距）
-51. Nakanishi, K. M. (2025). **Scalable-Softmax Is Superior for Attention**. arXiv:2501.19399.（SSMAX）
+51. Nakanishi, K. M. (2025). **Scalable-Softmax Is Superior for Attention**. arXiv:2501.19399.（SSMax）
 52. Chen, S., Lin, Z., Polyanskiy, Y., Rigollet, P. (2025). **Critical Attention Scaling in Long-Context Transformers**. *ICLR 2026*. arXiv:2510.05554.（注意力缩放的临界阶 $\log n$）
+53. Cai, W., Jiang, J., Qin, L., Cui, J., Kim, S., Huang, J. (2025). **Shortcut-connected Expert Parallelism for Accelerating Mixture-of-Experts**. *ICML 2025*. arXiv:2404.05019.（ScMoE / DGMoE）

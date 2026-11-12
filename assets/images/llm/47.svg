@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="1180" height="806" fill="#ffffff"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">Muse Spark Open｜门控注意力与池化专家算子分解</text>
+<text x="24" y="62" font-size="11.2" fill="#4d5866">62 层（46 SWA 2048 + 16 全注意力）· 隐藏维 8192 · 词表 202,048（输入/输出解耦）· GQA 128 Q / 16 KV × 64 · 门控注意力 + 三明治归一化 · 256 专家 top-8、pooler/unpooler</text>
+<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
+<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
+<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
+<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
+<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
+<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E_in[t]</text>
+<text x="36" y="172" font-size="9.4" fill="#5d6878">202,048 × 8192（另设输出嵌入）</text>
+<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">块前归一化</text>
+<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">u = RMSNorm(x)</text>
+<text x="36" y="258" font-size="9.4" fill="#5d6878">三明治式：块前后各一次</text>
+<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">多模态接入</text>
+<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← [z_v ; z_a ; z_t ; x]</text>
+<text x="36" y="344" font-size="9.4" fill="#5d6878">视觉 1.8B；音频 12.5 token/s</text>
+<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① QKV 投影（GQA）</text>
+<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
+<text x="298" y="172" font-size="9.4" fill="#5d6878">128 Q / 16 KV，头维 64</text>
+<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② QK-norm</text>
+<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q̂ = q / ‖q‖,  k̂ = k / ‖k‖（逐头）</text>
+<text x="298" y="262" font-size="9.4" fill="#5d6878">与输出归一化配套</text>
+<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 掩码</text>
+<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">M_ij = 0 若 j ≥ i−2048（46 层）；16 层全因果</text>
+<text x="298" y="352" font-size="9.4" fill="#5d6878">1M 下 KV 约为全量 1/4</text>
+<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 打分与聚合</text>
+<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S = q̂ k̂ᵀ/√64 + M ;  o = softmax(S) v</text>
+<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,128,L,L]</text>
+<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 输出门与归一化</text>
+<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o ← RMSNorm(o ⊙ σ(x W_g))</text>
+<text x="298" y="532" font-size="9.4" fill="#5d6878">逐头门控</text>
+<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影与残差门</text>
+<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O ;  x ← x + λ ⊙ y</text>
+<text x="298" y="622" font-size="9.4" fill="#5d6878">λ 为可学习残差门</text>
+<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
+<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ),  i = 1…256</text>
+<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,256]</text>
+<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Top-k</text>
+<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = top8(s)</text>
+<text x="748" y="262" font-size="9.4" fill="#5d6878">8 / 256</text>
+<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ pooler 降维</text>
+<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">u = x W_pool</text>
+<text x="748" y="352" font-size="9.4" fill="#5d6878">8192 → 4096</text>
+<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 专家 FFN + 逐专家归一化</text>
+<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = RMSNorm_i(FFN_i(u))</text>
+<text x="748" y="442" font-size="9.4" fill="#5d6878">4096 → 4096 → 4096</text>
+<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ unpooler 升维与合并</text>
+<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = (Σ ŝ_i h_i) W_unpool</text>
+<text x="748" y="532" font-size="9.4" fill="#5d6878">4096 → 8192</text>
+<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
+<rect x="24.0" y="702" width="366.6666666666667" height="85" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV Cache / token</text>
+<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">GA：16 × 2 × 16 × 64 × 2 B</text>
+<text x="36.0" y="756" font-size="9.4" fill="#5d6878">≈ 64 KB（BF16），随 L 增长</text>
+<text x="36.0" y="771" font-size="9.4" fill="#5d6878">SWA：46 层窗口 2048，总量有界</text>
+<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">每 token 算力</text>
+<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">C = 2 × 42B</text>
+<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">≈ 84 GFLOP</text>
+<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
+<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">816B：BF16 ≈ 1.5 TB / NVFP4 ≈ 493 GB</text>
+<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">单节点 B200 可跑</text>
+</svg>

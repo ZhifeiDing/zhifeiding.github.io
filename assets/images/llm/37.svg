@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="1180" height="806" fill="#ffffff"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">MiniMax M3 / M3.1 Flash｜MSA 块稀疏注意力算子分解</text>
+<text x="24" y="62" font-size="11.2" fill="#4d5866">60 层（3 稠密 + 57 MoE）· 隐藏维 6144 · 128 专家 top-4 + 1 共享 · GQA 64 Q / 4 KV × 128 · MSA：4 索引头对 128 token 行块打分、每 KV 头取 top-16 块</text>
+<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
+<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
+<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
+<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
+<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
+<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
+<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,6144]</text>
+<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
+<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
+<text x="36" y="258" font-size="9.4" fill="#5d6878">6144</text>
+<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">块划分</text>
+<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">K 按 128 token 行块切分，块数 ⌈t/128⌉</text>
+<text x="36" y="344" font-size="9.4" fill="#5d6878">块为稀疏基本单位</text>
+<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① QKV 投影（GQA）</text>
+<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
+<text x="298" y="172" font-size="9.4" fill="#5d6878">64 Q / 4 KV，头维 128</text>
+<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 块打分</text>
+<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_{h,B} = max_{j∈B} q_h · k_j / √128</text>
+<text x="298" y="262" font-size="9.4" fill="#5d6878">4 索引头对齐 4 KV 头</text>
+<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 每头 Top-16 块</text>
+<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I_h = top16_B(s_{h,B})，含自身块</text>
+<text x="298" y="352" font-size="9.4" fill="#5d6878">2048 token 内退化为稠密</text>
+<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ KV outer gather Q</text>
+<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">以 KV 块为外层循环聚合命中查询</text>
+<text x="298" y="442" font-size="9.4" fill="#5d6878">每块只读一次，访存连续</text>
+<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 块内注意力</text>
+<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o_h = softmax(q_h k_{I_h}ᵀ/√128) v_{I_h}</text>
+<text x="298" y="532" font-size="9.4" fill="#5d6878">[B,4,L,16×128]</text>
+<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影</text>
+<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O ;  x ← x + y</text>
+<text x="298" y="622" font-size="9.4" fill="#5d6878">→ 6144</text>
+<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
+<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ) + b_i</text>
+<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,128]</text>
+<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Top-k</text>
+<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = top4(s) + 共享专家</text>
+<text x="748" y="262" font-size="9.4" fill="#5d6878">5 / 129</text>
+<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 专家 SwiGLU</text>
+<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
+<text x="748" y="352" font-size="9.4" fill="#5d6878">6144 → m → 6144</text>
+<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 合并</text>
+<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = Σ_{i∈I} ŝ_i h_i + E_s(x)</text>
+<text x="748" y="442" font-size="9.4" fill="#5d6878">→ 6144</text>
+<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 量化（M3.1）</text>
+<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">W: NVFP4 打包；A: MXFP8 动态</text>
+<text x="748" y="532" font-size="9.4" fill="#5d6878">QAT 训练</text>
+<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
+<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">注意力算力</text>
+<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">∝ 16 块 × 128 token，与 L 无关</text>
+<text x="36.0" y="756" font-size="9.4" fill="#5d6878">1M 上下文降至上一代 1/20</text>
+<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV 读取</text>
+<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">按块 gather，每块一次</text>
+<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">算术强度高于逐 token 稀疏</text>
+<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
+<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">428B（BF16）/ 约 214 GB（NVFP4）</text>
+<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">M3.1 为 4 bit 专家</text>
+</svg>

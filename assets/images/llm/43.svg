@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="1180" height="806" fill="#ffffff"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">Mistral Large 3｜稀疏 MoE 算子分解</text>
+<text x="24" y="62" font-size="11.2" fill="#4d5866">675B 总参 / 激活 41B · 上下文 256K · 支持图像输入 · 官方未披露层数与专家拓扑（图中维度以符号记）</text>
+<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
+<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
+<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
+<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
+<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
+<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
+<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,d]</text>
+<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">图像接入</text>
+<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← [z_vision ; x]</text>
+<text x="36" y="258" font-size="9.4" fill="#5d6878">视觉 token 与文本同流</text>
+<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
+<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
+<text x="36" y="344" font-size="9.4" fill="#5d6878">d（未披露）</text>
+<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① QKV 投影</text>
+<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
+<text x="298" y="172" font-size="9.4" fill="#5d6878">多头（拓扑未披露）</text>
+<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 位置编码</text>
+<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">RoPE(q, k, pos)</text>
+<text x="298" y="262" font-size="9.4" fill="#5d6878">支持 256K</text>
+<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 打分</text>
+<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S = q kᵀ/√d_h + mask</text>
+<text x="298" y="352" font-size="9.4" fill="#5d6878">[B,H,L,L]</text>
+<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ Softmax 与聚合</text>
+<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o = softmax(S) v</text>
+<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,H,L,d_h]</text>
+<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 输出投影</text>
+<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O</text>
+<text x="298" y="532" font-size="9.4" fill="#5d6878">→ d</text>
+<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 残差相加</text>
+<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← x + y</text>
+<text x="298" y="622" font-size="9.4" fill="#5d6878">d</text>
+<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
+<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ) 或 softmax(x W_r)</text>
+<text x="748" y="172" font-size="9.4" fill="#5d6878">E 个专家（未披露）</text>
+<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Top-k</text>
+<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = topk(s)</text>
+<text x="748" y="262" font-size="9.4" fill="#5d6878">激活 41B / 675B ≈ 6.1%</text>
+<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 专家 FFN</text>
+<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
+<text x="748" y="352" font-size="9.4" fill="#5d6878">SwiGLU</text>
+<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 合并</text>
+<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = Σ ŝ_i h_i（+ 共享专家）</text>
+<text x="748" y="442" font-size="9.4" fill="#5d6878">拓扑未披露</text>
+<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 残差相加</text>
+<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← x + y</text>
+<text x="748" y="532" font-size="9.4" fill="#5d6878">d</text>
+<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
+<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">激活比</text>
+<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">41B / 675B ≈ 6.1%</text>
+<text x="36.0" y="756" font-size="9.4" fill="#5d6878">同能力成本约为稠密一半</text>
+<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">部署</text>
+<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">NVFP4 检查点单节点 8 × A100/H100</text>
+<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">官方随权重发布</text>
+<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
+<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">675B：NVFP4 ≈ 340 GB</text>
+<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">BF16 ≈ 1.35 TB</text>
+</svg>

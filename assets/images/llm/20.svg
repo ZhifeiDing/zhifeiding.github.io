@@ -1,64 +1,93 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" font-family="Georgia, 'Times New Roman', serif">
-  <rect width="680" height="440" fill="#ffffff"/>
-  <text x="340" y="26" text-anchor="middle" font-size="15" fill="#111">Hunyuan Hy4 结构示意图（据官方模型卡绘制）</text>
-
-  <!-- inputs -->
-  <rect x="20" y="60" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="80" text-anchor="middle" font-size="11" fill="#111">文本</text>
-  <rect x="20" y="105" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="125" text-anchor="middle" font-size="10.5" fill="#111">图像 / 界面</text>
-
-  <line x1="106" y1="75" x2="292" y2="75" stroke="#555" marker-end="url(#a)"/>
-  <line x1="106" y1="120" x2="148" y2="120" stroke="#555" marker-end="url(#a)"/>
-  <rect x="148" y="102" width="112" height="36" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="204" y="118" text-anchor="middle" font-size="10.5" fill="#111">视觉通路</text>
-  <text x="204" y="131" text-anchor="middle" font-size="9" fill="#555">正式版新增</text>
-  <line x1="260" y1="120" x2="292" y2="106" stroke="#555" marker-end="url(#a)"/>
-
-  <!-- residual streams -->
-  <rect x="292" y="48" width="46" height="300" fill="#f0ecf6" stroke="#6a5486"/>
-  <text x="315" y="70" text-anchor="middle" font-size="10.5" fill="#111">4 路</text>
-  <text x="315" y="86" text-anchor="middle" font-size="10.5" fill="#111">iHC</text>
-  <text x="315" y="104" text-anchor="middle" font-size="9" fill="#555">残差流</text>
-  <line x1="315" y1="120" x2="315" y2="320" stroke="#6a5486" stroke-dasharray="3 3"/>
-  <text x="315" y="338" text-anchor="middle" font-size="9" fill="#555">恒等映射</text>
-
-  <!-- backbone -->
-  <rect x="346" y="48" width="234" height="300" fill="#f7f9fc" stroke="#333"/>
-  <text x="463" y="70" text-anchor="middle" font-size="12" fill="#111">主干 78 层 · 隐藏维 6144</text>
-
-  <rect x="362" y="84" width="202" height="60" fill="#dde7f5" stroke="#446084"/>
-  <text x="463" y="103" text-anchor="middle" font-size="11" fill="#111">Gated DSA（64 头）</text>
-  <text x="463" y="119" text-anchor="middle" font-size="9.5" fill="#333">q 压缩 2048 / kv 压缩 512</text>
-  <text x="463" y="135" text-anchor="middle" font-size="9.5" fill="#333">索引器 32 头 / 128 维 / top-2048</text>
-
-  <rect x="362" y="152" width="202" height="30" fill="#fff2dc" stroke="#a9742a"/>
-  <text x="463" y="172" text-anchor="middle" font-size="10.5" fill="#111">IndexCache：跨层复用稀疏索引</text>
-
-  <rect x="362" y="190" width="202" height="58" fill="#e8f0e2" stroke="#55702f"/>
-  <text x="463" y="209" text-anchor="middle" font-size="11" fill="#111">MoE 前馈（77 层）</text>
-  <text x="463" y="226" text-anchor="middle" font-size="9.5" fill="#333">256 路由专家 top-8 + 1 共享</text>
-  <text x="463" y="241" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 2048；首层 FFN 18432</text>
-
-  <rect x="362" y="256" width="202" height="34" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="463" y="277" text-anchor="middle" font-size="10.5" fill="#111">原生 MTP × 1（10B / 0.7B 激活）</text>
-
-  <text x="463" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 770B / 每 token 激活 49B</text>
-  <text x="463" y="330" text-anchor="middle" font-size="10" fill="#111">词表 120,832 · 上下文 1M</text>
-
-  <!-- output -->
-  <line x1="580" y1="190" x2="600" y2="190" stroke="#555" marker-end="url(#a)"/>
-  <rect x="600" y="172" width="60" height="36" fill="#eef2f7" stroke="#555"/>
-  <text x="630" y="194" text-anchor="middle" font-size="11" fill="#111">输出</text>
-
-  <!-- notes -->
-  <text x="340" y="382" text-anchor="middle" font-size="10.5" fill="#333">与 Hy3 相比：GQA 全注意力 → Gated DSA，常规残差 → 4 路 iHC，上下文 256K → 1M</text>
-  <text x="340" y="404" text-anchor="middle" font-size="10.5" fill="#333">结构规格以 Hy4 preview 模型卡为准；正式版增视觉理解与 Computer Use</text>
-  <text x="340" y="424" text-anchor="middle" font-size="9.5" fill="#666">数值格式 BF16 / FP8；许可 Apache 2.0</text>
-
-  <defs>
-    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
-    </marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="1180" height="806" fill="#ffffff"/>
+<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">Kimi K3｜KDA + Gated MLA 与 AttnRes 算子分解</text>
+<text x="24" y="62" font-size="11.2" fill="#4d5866">93 层 = 69 × KDA + 24 × Gated MLA · 2.8T 总参 / 激活 104B · 896 专家 top-16 + 2 共享 · AttnRes 跨层检索 · 上下文 1M</text>
+<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
+<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
+<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
+<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
+<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
+<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
+<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,d]</text>
+<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">AttnRes 伪查询</text>
+<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">α_l = softmax(q_l · [h_0 … h_{l-1}])</text>
+<text x="36" y="258" font-size="9.4" fill="#5d6878">检索前置层表征，&lt; 2% 额外算力</text>
+<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
+<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
+<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
+<text x="36" y="344" font-size="9.4" fill="#5d6878">d</text>
+<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① KDA 投影</text>
+<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
+<text x="298" y="172" font-size="9.4" fill="#5d6878">逐通道门控</text>
+<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 逐通道遗忘</text>
+<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">α_t ∈ (0,1)^{d_h},  β_t ∈ (0,1)</text>
+<text x="298" y="262" font-size="9.4" fill="#5d6878">d_h 维逐元素</text>
+<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ delta 递推</text>
+<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S_t = (I − β_t k_t k_tᵀ) diag(α_t) S_{t-1} + β_t k_t v_tᵀ</text>
+<text x="298" y="352" font-size="9.4" fill="#5d6878">S 定长，不随 L 增长</text>
+<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 读出</text>
+<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o_t = S_t q_t</text>
+<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,L,n_v,d_h]</text>
+<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ Gated MLA（24 层）</text>
+<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o = softmax(q kᵀ/√d_h) v ⊙ σ(x W_g)</text>
+<text x="298" y="532" font-size="9.4" fill="#5d6878">全注意力增量通道</text>
+<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影</text>
+<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O</text>
+<text x="298" y="622" font-size="9.4" fill="#5d6878">→ d</text>
+<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
+<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ),  i = 1…896</text>
+<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,896]</text>
+<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 分位数均衡 + Top-k</text>
+<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = top16(s)，按分位分配专家</text>
+<text x="748" y="262" font-size="9.4" fill="#5d6878">激活率约 1.8%</text>
+<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 潜空间降维</text>
+<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">u = x W_down</text>
+<text x="748" y="352" font-size="9.4" fill="#5d6878">d → 3584（LatentMoE）</text>
+<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 专家 SwiGLU（SiTU）</text>
+<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = SiTU(u W_g,i) ⊙ (u W_u,i) W_d,i</text>
+<text x="748" y="442" font-size="9.4" fill="#5d6878">3584 → 3072 → 3584</text>
+<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 合并 + 2 共享专家</text>
+<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = (Σ ŝ_i h_i + E_{s1} + E_{s2}) W_up</text>
+<text x="748" y="532" font-size="9.4" fill="#5d6878">→ d</text>
+<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
+<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
+<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
+<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV 状态 / token</text>
+<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">KDA 层定长状态；仅 24 层有 KV</text>
+<text x="36.0" y="756" font-size="9.4" fill="#5d6878">缓存随层数而非长度增长</text>
+<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">稀疏度</text>
+<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">896 选 16，约 56×</text>
+<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">专家并行成一阶问题</text>
+<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
+<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">2.8T × 0.5 B（MXFP4）</text>
+<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">≈ 1.4 TB</text>
 </svg>

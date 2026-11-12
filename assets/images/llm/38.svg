@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="440" fill="#ffffff"/>
+  <text x="340" y="26" text-anchor="middle" font-size="15" fill="#111">Hunyuan Hy4 结构示意图（据官方模型卡绘制）</text>
+
+  <!-- inputs -->
+  <rect x="20" y="60" width="86" height="30" fill="#eef2f7" stroke="#555"/>
+  <text x="63" y="80" text-anchor="middle" font-size="11" fill="#111">文本</text>
+  <rect x="20" y="105" width="86" height="30" fill="#eef2f7" stroke="#555"/>
+  <text x="63" y="125" text-anchor="middle" font-size="10.5" fill="#111">图像 / 界面</text>
+
+  <line x1="106" y1="75" x2="292" y2="75" stroke="#555" marker-end="url(#a)"/>
+  <line x1="106" y1="120" x2="148" y2="120" stroke="#555" marker-end="url(#a)"/>
+  <rect x="148" y="102" width="112" height="36" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="204" y="118" text-anchor="middle" font-size="10.5" fill="#111">视觉通路</text>
+  <text x="204" y="131" text-anchor="middle" font-size="9" fill="#555">正式版新增</text>
+  <line x1="260" y1="120" x2="292" y2="106" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- residual streams -->
+  <rect x="292" y="48" width="46" height="300" fill="#f0ecf6" stroke="#6a5486"/>
+  <text x="315" y="70" text-anchor="middle" font-size="10.5" fill="#111">4 路</text>
+  <text x="315" y="86" text-anchor="middle" font-size="10.5" fill="#111">iHC</text>
+  <text x="315" y="104" text-anchor="middle" font-size="9" fill="#555">残差流</text>
+  <line x1="315" y1="120" x2="315" y2="320" stroke="#6a5486" stroke-dasharray="3 3"/>
+  <text x="315" y="338" text-anchor="middle" font-size="9" fill="#555">恒等映射</text>
+
+  <!-- backbone -->
+  <rect x="346" y="48" width="234" height="300" fill="#f7f9fc" stroke="#333"/>
+  <text x="463" y="70" text-anchor="middle" font-size="12" fill="#111">主干 78 层 · 隐藏维 6144</text>
+
+  <rect x="362" y="84" width="202" height="60" fill="#dde7f5" stroke="#446084"/>
+  <text x="463" y="103" text-anchor="middle" font-size="11" fill="#111">Gated DSA（64 头）</text>
+  <text x="463" y="119" text-anchor="middle" font-size="9.5" fill="#333">q 压缩 2048 / kv 压缩 512</text>
+  <text x="463" y="135" text-anchor="middle" font-size="9.5" fill="#333">索引器 32 头 / 128 维 / top-2048</text>
+
+  <rect x="362" y="152" width="202" height="30" fill="#fff2dc" stroke="#a9742a"/>
+  <text x="463" y="172" text-anchor="middle" font-size="10.5" fill="#111">IndexCache：跨层复用稀疏索引</text>
+
+  <rect x="362" y="190" width="202" height="58" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="463" y="209" text-anchor="middle" font-size="11" fill="#111">MoE 前馈（77 层）</text>
+  <text x="463" y="226" text-anchor="middle" font-size="9.5" fill="#333">256 路由专家 top-8 + 1 共享</text>
+  <text x="463" y="241" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 2048；首层 FFN 18432</text>
+
+  <rect x="362" y="256" width="202" height="34" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="463" y="277" text-anchor="middle" font-size="10.5" fill="#111">原生 MTP × 1（10B / 0.7B 激活）</text>
+
+  <text x="463" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 770B / 每 token 激活 49B</text>
+  <text x="463" y="330" text-anchor="middle" font-size="10" fill="#111">词表 120,832 · 上下文 1M</text>
+
+  <!-- output -->
+  <line x1="580" y1="190" x2="600" y2="190" stroke="#555" marker-end="url(#a)"/>
+  <rect x="600" y="172" width="60" height="36" fill="#eef2f7" stroke="#555"/>
+  <text x="630" y="194" text-anchor="middle" font-size="11" fill="#111">输出</text>
+
+  <!-- notes -->
+  <text x="340" y="382" text-anchor="middle" font-size="10.5" fill="#333">与 Hy3 相比：GQA 全注意力 → Gated DSA，常规残差 → 4 路 iHC，上下文 256K → 1M</text>
+  <text x="340" y="404" text-anchor="middle" font-size="10.5" fill="#333">结构规格以 Hy4 preview 模型卡为准；正式版增视觉理解与 Computer Use</text>
+  <text x="340" y="424" text-anchor="middle" font-size="9.5" fill="#666">数值格式 BF16 / FP8；许可 Apache 2.0</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
