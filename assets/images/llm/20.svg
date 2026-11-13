@@ -1,93 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1180" height="806" fill="#ffffff"/>
-<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">Kimi K3｜KDA + Gated MLA 与 AttnRes 算子分解</text>
-<text x="24" y="62" font-size="11.2" fill="#4d5866">93 层 = 69 × KDA + 24 × Gated MLA · 2.8T 总参 / 激活 104B · 896 专家 top-16 + 2 共享 · AttnRes 跨层检索 · 上下文 1M</text>
-<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
-<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
-<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
-<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
-<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
-<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
-<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,d]</text>
-<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">AttnRes 伪查询</text>
-<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">α_l = softmax(q_l · [h_0 … h_{l-1}])</text>
-<text x="36" y="258" font-size="9.4" fill="#5d6878">检索前置层表征，&lt; 2% 额外算力</text>
-<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
-<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
-<text x="36" y="344" font-size="9.4" fill="#5d6878">d</text>
-<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① KDA 投影</text>
-<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
-<text x="298" y="172" font-size="9.4" fill="#5d6878">逐通道门控</text>
-<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 逐通道遗忘</text>
-<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">α_t ∈ (0,1)^{d_h},  β_t ∈ (0,1)</text>
-<text x="298" y="262" font-size="9.4" fill="#5d6878">d_h 维逐元素</text>
-<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ delta 递推</text>
-<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S_t = (I − β_t k_t k_tᵀ) diag(α_t) S_{t-1} + β_t k_t v_tᵀ</text>
-<text x="298" y="352" font-size="9.4" fill="#5d6878">S 定长，不随 L 增长</text>
-<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 读出</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o_t = S_t q_t</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,L,n_v,d_h]</text>
-<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ Gated MLA（24 层）</text>
-<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o = softmax(q kᵀ/√d_h) v ⊙ σ(x W_g)</text>
-<text x="298" y="532" font-size="9.4" fill="#5d6878">全注意力增量通道</text>
-<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影</text>
-<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O</text>
-<text x="298" y="622" font-size="9.4" fill="#5d6878">→ d</text>
-<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
-<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ),  i = 1…896</text>
-<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,896]</text>
-<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 分位数均衡 + Top-k</text>
-<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = top16(s)，按分位分配专家</text>
-<text x="748" y="262" font-size="9.4" fill="#5d6878">激活率约 1.8%</text>
-<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 潜空间降维</text>
-<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">u = x W_down</text>
-<text x="748" y="352" font-size="9.4" fill="#5d6878">d → 3584（LatentMoE）</text>
-<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 专家 SwiGLU（SiTU）</text>
-<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = SiTU(u W_g,i) ⊙ (u W_u,i) W_d,i</text>
-<text x="748" y="442" font-size="9.4" fill="#5d6878">3584 → 3072 → 3584</text>
-<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 合并 + 2 共享专家</text>
-<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = (Σ ŝ_i h_i + E_{s1} + E_{s2}) W_up</text>
-<text x="748" y="532" font-size="9.4" fill="#5d6878">→ d</text>
-<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
-<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV 状态 / token</text>
-<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">KDA 层定长状态；仅 24 层有 KV</text>
-<text x="36.0" y="756" font-size="9.4" fill="#5d6878">缓存随层数而非长度增长</text>
-<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">稀疏度</text>
-<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">896 选 16，约 56×</text>
-<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">专家并行成一阶问题</text>
-<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
-<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">2.8T × 0.5 B（MXFP4）</text>
-<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">≈ 1.4 TB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 788" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="788" fill="#ffffff"/>
+<text x="340.0" y="24" font-size="15" fill="#111111" text-anchor="middle">Qwen3.8-Max 的层组合、GDN 两种执行形态与缓存核算</text>
+<text x="340.0" y="44" font-size="9.2" fill="#5a6675" text-anchor="middle">2.4T 总参 / 约 95B 激活 / 1M 上下文：承 Qwen3.5 的三比一混合，前馈换为更稀疏的 MoE</text>
+<text x="340.0" y="60" font-size="9.2" fill="#5a6675" text-anchor="middle">层数、专家数与头配置官方未披露，图中以符号记；但既以 GDN 为骨架，两种执行形态与两段式缓存即随之确定</text>
+<line x1="12" y1="72" x2="668" y2="72" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（a）块内组合：同一前馈，两种注意力</text>
+<rect x="12" y="100" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="114" font-size="9.2" fill="#1b2430">输入 xˡ</text>
+<text x="324" y="114" font-size="8.4" fill="#5a6675" text-anchor="end">d 未披露</text>
+<line x1="172.0" y1="120" x2="172.0" y2="122" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,122 L172.0,127 L175.0,122 z" fill="#8a94a3"/>
+<rect x="12" y="127" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="141" font-size="9.2" fill="#1b2430">零中心 RMSNorm</text>
+<text x="324" y="141" font-size="8.4" fill="#5a6675" text-anchor="end">沿 3.5 同族</text>
+<line x1="172.0" y1="147" x2="172.0" y2="149" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,149 L172.0,154 L175.0,149 z" fill="#8a94a3"/>
+<rect x="12" y="154" width="320" height="56" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
+<text x="20" y="167" font-size="9.0" fill="#446084" font-weight="bold">注意力单元：按层型二选一</text>
+<rect x="20" y="172" width="304" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<text x="25" y="183.5" font-size="8.2" fill="#33414f">3/4 层：GDN，H_v 与 H_qk 未披露（3.5 为 64 / 16）</text>
+<rect x="20" y="190" width="304" height="16" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="25" y="201.5" font-size="8.2" fill="#33414f">1/4 层：门控全注意力，头数与头维未披露</text>
+<line x1="172.0" y1="210" x2="172.0" y2="212" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,212 L172.0,217 L175.0,212 z" fill="#8a94a3"/>
+<rect x="12" y="217" width="320" height="52" fill="#ffffff" stroke="#55702f" stroke-width="0.9"/>
+<text x="20" y="231" font-size="9.0" fill="#55702f" font-weight="bold">前馈单元：MoE，稀疏度高于 3.5</text>
+<text x="20" y="245" font-size="8.2" fill="#33414f">专家数与 top-k 未披露；激活约 95B，占总参 4%</text>
+<text x="20" y="258" font-size="8.2" fill="#33414f">对照 3.5：397B / 17B，激活比 4.3%</text>
+<line x1="172.0" y1="269" x2="172.0" y2="271" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,271 L172.0,276 L175.0,271 z" fill="#8a94a3"/>
+<text x="182.0" y="275" font-size="8.2" fill="#5a6675">× L 层</text>
+<text x="348" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（b）3 : 1 的循环单元（层数未披露）</text>
+<text x="348" y="112" font-size="7.8" fill="#5a6675">第 0 层起每 4 层一循环，组数 L/4 未定</text>
+<rect x="348.0" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="374.6666666666667" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="401.3333333333333" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="428.0" y="118" width="25.46666666666667" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="454.6666666666667" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="481.33333333333337" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="508.0" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="534.6666666666667" y="118" width="25.46666666666667" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="561.3333333333334" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="588.0" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="614.6666666666667" y="118" width="25.46666666666667" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<rect x="641.3333333333334" y="118" width="25.46666666666667" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="348" y="140" width="320" height="12" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.7" stroke-dasharray="4 3"/>
+<text x="508.0" y="149.5" font-size="7.6" fill="#5a6675" text-anchor="middle">其后 L − 12 层同构，L 未披露</text>
+<text x="348" y="172" font-size="8.4" fill="#1b2430" font-weight="bold">放大第 0–3 层</text>
+<rect x="348.0" y="178" width="76.0" height="26" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/><text x="386.0" y="193.7" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="386.0" y="218" font-size="7.4" fill="#5a6675" text-anchor="middle">层 0</text>
+<rect x="428.0" y="178" width="76.0" height="26" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/><text x="466.0" y="193.7" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="466.0" y="218" font-size="7.4" fill="#5a6675" text-anchor="middle">层 1</text>
+<rect x="508.0" y="178" width="76.0" height="26" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/><text x="546.0" y="193.7" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="546.0" y="218" font-size="7.4" fill="#5a6675" text-anchor="middle">层 2</text>
+<rect x="588.0" y="178" width="76.0" height="26" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/><text x="626.0" y="193.7" font-size="8.0" fill="#111111" text-anchor="middle">全注意力</text>
+<text x="626.0" y="218" font-size="7.4" fill="#5a6675" text-anchor="middle">层 3</text>
+<text x="348" y="238" font-size="8.0" fill="#33414f">与 3.5 同构：只此两种注意力，每层之后均接 MoE；</text>
+<text x="348" y="251" font-size="8.0" fill="#33414f">差别在专家侧更稀、容量更大，注意力侧未换配方。</text>
+<rect x="348" y="268" width="12" height="8" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<text x="364" y="276" font-size="7.8" fill="#33414f">GDN：3/4 层，定长状态</text>
+<rect x="508" y="268" width="12" height="8" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="524" y="276" font-size="7.8" fill="#33414f">全注意力：1/4 层，KV 随 token 增</text>
+<line x1="12" y1="290" x2="668" y2="290" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="308" font-size="10.2" fill="#1b2430" font-weight="bold">（c）GDN 的两种执行形态：同一递推，两套 kernel</text>
+<rect x="12" y="318" width="320" height="22" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/><text x="20" y="333" font-size="9.8" fill="#55702f" font-weight="bold">chunkwise：预填充走这条</text><text x="324" y="333" font-size="7.9" fill="#55702f" text-anchor="end">块内并行，块间串行</text><rect x="12" y="346" width="320" height="28" fill="#ffffff" stroke="#55702f" stroke-width="0.8"/><text x="20" y="359" font-size="8.5" fill="#1b2430" font-weight="bold">① 分块</text><text x="20" y="371" font-size="7.9" fill="#33414f">序列切成 C 个 token 一块，块长与 3.5 同为工程取值。</text><rect x="12" y="379" width="320" height="40" fill="#ffffff" stroke="#55702f" stroke-width="0.8"/><text x="20" y="392" font-size="8.5" fill="#1b2430" font-weight="bold">② 块内并行</text><text x="20" y="404" font-size="7.9" fill="#33414f">短卷积与门控之后构造下三角衰减矩阵 A，一次 GEMM</text><text x="20" y="416" font-size="7.9" fill="#33414f">覆盖 C × C，块内所有位置对并行算完。</text><rect x="12" y="424" width="320" height="40" fill="#ffffff" stroke="#55702f" stroke-width="0.8"/><text x="20" y="437" font-size="8.5" fill="#1b2430" font-weight="bold">③ 块状态递推</text><text x="20" y="449" font-size="7.9" fill="#33414f">S_c = γ_c S_{c-1} + K_cᵀ diag(β) (V_c − K_c S_{c-1})</text><text x="20" y="461" font-size="7.9" fill="#33414f">块间只传状态，不传历史条目——这正是 1M 上下文成立的前提。</text><rect x="12" y="469" width="320" height="28" fill="#ffffff" stroke="#55702f" stroke-width="0.8"/><text x="20" y="482" font-size="8.5" fill="#1b2430" font-weight="bold">④ 块输出</text><text x="20" y="494" font-size="7.9" fill="#33414f">O_c = A V_c + γ (Q_c S_{c-1})</text><rect x="12" y="502" width="320" height="40" fill="#ffffff" stroke="#55702f" stroke-width="0.8"/><text x="20" y="515" font-size="8.5" fill="#1b2430" font-weight="bold">⑤ 负载画像</text><text x="20" y="527" font-size="7.9" fill="#33414f">并行度 = 批 × 块数，算术强度随 C 上升；权重占比高，</text><text x="20" y="539" font-size="7.9" fill="#33414f">GEMM 形状受 2.4T 容量侧的访存支配。</text>
+<rect x="348" y="318" width="320" height="22" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/><text x="356" y="333" font-size="9.8" fill="#4a3212" font-weight="bold">recurrent：解码走这条</text><text x="660" y="333" font-size="7.9" fill="#6b4a1c" text-anchor="end">逐 token 递推，时间维不可分</text><rect x="348" y="346" width="320" height="28" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="356" y="359" font-size="8.5" fill="#1b2430" font-weight="bold">① 单 token 投影</text><text x="356" y="371" font-size="7.9" fill="#33414f">q_t, k_t, v_t 各一次矩阵乘；头数与头维未披露。</text><rect x="348" y="379" width="320" height="28" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="356" y="392" font-size="8.5" fill="#1b2430" font-weight="bold">② 门控</text><text x="356" y="404" font-size="7.9" fill="#33414f">α_t = σ(·) 逐通道衰减，β_t = σ(·) 控制写入强度。</text><rect x="348" y="412" width="320" height="28" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="356" y="425" font-size="8.5" fill="#1b2430" font-weight="bold">③ 状态更新</text><text x="356" y="437" font-size="7.9" fill="#33414f">S_t = S_{t-1}(diag α_t − β_t k_t k_tᵀ) + β_t k_t v_tᵀ</text><rect x="348" y="445" width="320" height="28" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="356" y="458" font-size="8.5" fill="#1b2430" font-weight="bold">④ 读出</text><text x="356" y="470" font-size="7.9" fill="#33414f">o_t = S_t q_t，每头一次向量乘矩阵。</text><rect x="348" y="478" width="320" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="356" y="491" font-size="8.5" fill="#1b2430" font-weight="bold">⑤ 负载画像</text><text x="356" y="503" font-size="7.9" fill="#33414f">批内并行、时间维串行；每步搬运的权重远大于状态，</text><text x="356" y="515" font-size="7.9" fill="#33414f">解码在这一档是权重带宽受限，而非算力受限。</text>
+<text x="12" y="563" font-size="8.4" fill="#33414f">两形态与 3.5 同构：chunkwise 求预填充吞吐，recurrent 求解码延迟，数学等价而舍入次序不同。</text>
+<text x="12" y="577" font-size="8.4" fill="#33414f">2.4T 这一档多出一层压力：无论哪种形态，每步都要跨节点取权重，专家并行的通信量与容量同阶。</text>
+<line x1="12" y1="589" x2="668" y2="589" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="605" font-size="10.2" fill="#1b2430" font-weight="bold">（d）门控全注意力：每四层出现一次的精确通路</text>
+<rect x="12" y="613" width="122" height="34" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="73.0" y="627" font-size="8.3" fill="#4a3212" text-anchor="middle" font-weight="bold">QKV 投影</text>
+<text x="73.0" y="639" font-size="7.4" fill="#33414f" text-anchor="middle">头数与头维未披露</text>
+<line x1="135" y1="630" x2="140" y2="630" stroke="#8a94a3" stroke-width="1"/><path d="M140,627 L145,630 L140,633 z" fill="#8a94a3"/>
+<rect x="146" y="613" width="122" height="34" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="207.0" y="627" font-size="8.3" fill="#4a3212" text-anchor="middle" font-weight="bold">Partial RoPE</text>
+<text x="207.0" y="639" font-size="7.4" fill="#33414f" text-anchor="middle">沿 3.5，仅部分维旋转</text>
+<line x1="269" y1="630" x2="274" y2="630" stroke="#8a94a3" stroke-width="1"/><path d="M274,627 L279,630 L274,633 z" fill="#8a94a3"/>
+<rect x="280" y="613" width="122" height="34" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="341.0" y="627" font-size="8.3" fill="#4a3212" text-anchor="middle" font-weight="bold">打分与 softmax</text>
+<text x="341.0" y="639" font-size="7.4" fill="#33414f" text-anchor="middle">q kᵀ / √d_h</text>
+<line x1="403" y1="630" x2="408" y2="630" stroke="#8a94a3" stroke-width="1"/><path d="M408,627 L413,630 L408,633 z" fill="#8a94a3"/>
+<rect x="414" y="613" width="122" height="34" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="475.0" y="627" font-size="8.3" fill="#4a3212" text-anchor="middle" font-weight="bold">输出门</text>
+<text x="475.0" y="639" font-size="7.4" fill="#33414f" text-anchor="middle">o ⊙ σ(x W_g)</text>
+<line x1="537" y1="630" x2="542" y2="630" stroke="#8a94a3" stroke-width="1"/><path d="M542,627 L547,630 L542,633 z" fill="#8a94a3"/>
+<rect x="548" y="613" width="122" height="34" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="609.0" y="627" font-size="8.3" fill="#4a3212" text-anchor="middle" font-weight="bold">输出投影</text>
+<text x="609.0" y="639" font-size="7.4" fill="#33414f" text-anchor="middle">分组输出回 d</text>
+<text x="12" y="663" font-size="10.2" fill="#1b2430" font-weight="bold">（e）缓存与权重的核算：定长、按 token 增长、以及容量侧</text>
+<rect x="12" y="671" width="656" height="17" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="18" y="683" font-size="8.0" fill="#1b2430" font-weight="bold">项目</text>
+<text x="156" y="683" font-size="8.0" fill="#1b2430" font-weight="bold">每层单元</text>
+<text x="312" y="683" font-size="8.0" fill="#1b2430" font-weight="bold">定长部分</text>
+<text x="458" y="683" font-size="8.0" fill="#1b2430" font-weight="bold">随长度增长</text>
+<line x1="12" y1="688" x2="668" y2="688" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="701" font-size="8.0" fill="#1b2430">GDN 层</text>
+<text x="156" y="701" font-size="8.0" fill="#33414f">H_v 头 × 128×128 状态</text>
+<text x="312" y="701" font-size="8.0" fill="#1b2430">H_v = 64 时 2 MB / 层</text>
+<text x="458" y="701" font-size="8.0" fill="#1b2430">不增长</text>
+<line x1="12" y1="705" x2="668" y2="705" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="718" font-size="8.0" fill="#1b2430">全注意力层</text>
+<text x="156" y="718" font-size="8.0" fill="#33414f">2 KV 头 × 256 维 × (K + V)</text>
+<text x="312" y="718" font-size="8.0" fill="#1b2430">—</text>
+<text x="458" y="718" font-size="8.0" fill="#1b2430">2 KB / token / 层</text>
+<line x1="12" y1="722" x2="668" y2="722" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="735" font-size="8.0" fill="#1b2430">权重</text>
+<text x="156" y="735" font-size="8.0" fill="#33414f">2.4T 参数，FP8 计</text>
+<text x="312" y="735" font-size="8.0" fill="#1b2430">约 2.4 TB</text>
+<text x="458" y="735" font-size="8.0" fill="#1b2430">跨节点分片</text>
+<text x="12" y="755" font-size="8.4" fill="#33414f">层数未披露，故只能按层核算：1M 上下文下每个全注意力层约 2 GB，每 4 层出现一次，全注意力 15 层即约 30 GB；</text>
+<text x="12" y="769" font-size="8.4" fill="#33414f">GDN 层合计不到百 MB。真正压住部署的是权重——2.4TB 须数十张卡分片，激活只有 95B，容量与算力在此彻底分家。</text>
 </svg>

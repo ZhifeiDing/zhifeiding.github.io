@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 430" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="430" fill="#ffffff"/>
+  <text x="340" y="26" text-anchor="middle" font-size="15" fill="#111">Kimi K3.1 Pro 结构示意图（据官方模型卡绘制）</text>
+
+  <!-- inputs -->
+  <rect x="20" y="60" width="80" height="30" fill="#eef2f7" stroke="#555"/>
+  <text x="60" y="80" text-anchor="middle" font-size="11" fill="#111">文本</text>
+  <rect x="20" y="105" width="80" height="30" fill="#eef2f7" stroke="#555"/>
+  <text x="60" y="125" text-anchor="middle" font-size="11" fill="#111">图像</text>
+
+  <line x1="100" y1="75" x2="290" y2="75" stroke="#555" marker-end="url(#a)"/>
+  <line x1="100" y1="120" x2="145" y2="120" stroke="#555" marker-end="url(#a)"/>
+  <rect x="145" y="102" width="108" height="36" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="199" y="124" text-anchor="middle" font-size="11" fill="#111">MoonViT-V2（401M）</text>
+  <line x1="253" y1="120" x2="290" y2="106" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- backbone -->
+  <rect x="292" y="48" width="278" height="302" fill="#f7f9fc" stroke="#333"/>
+  <text x="431" y="70" text-anchor="middle" font-size="12" fill="#111">语言主干：93 层（1 稠密 + 92）</text>
+
+  <rect x="312" y="84" width="238" height="50" fill="#dde7f5" stroke="#446084"/>
+  <text x="431" y="104" text-anchor="middle" font-size="11" fill="#111">KDA 线性注意力 × 69 层</text>
+  <text x="431" y="121" text-anchor="middle" font-size="9.5" fill="#333">固定大小循环状态，不随序列长度增长</text>
+
+  <rect x="312" y="146" width="238" height="56" fill="#fff2dc" stroke="#a9742a"/>
+  <text x="431" y="166" text-anchor="middle" font-size="11" fill="#111">Gated DSA × 24 层（替换 K3 的 Gated MLA）</text>
+  <text x="431" y="184" text-anchor="middle" font-size="9.5" fill="#333">索引器 32 头 / 头维 128 / top-2048</text>
+
+  <rect x="312" y="214" width="238" height="56" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="431" y="234" text-anchor="middle" font-size="11" fill="#111">Stable LatentMoE（SiTU-GLU）</text>
+  <text x="431" y="252" text-anchor="middle" font-size="9.5" fill="#333">896 专家 top-16 + 2 共享；潜维 3584 / 每专家 3072</text>
+
+  <text x="431" y="296" text-anchor="middle" font-size="10.5" fill="#111">总参数 2.8T / 每 token 激活 104B</text>
+  <text x="431" y="316" text-anchor="middle" font-size="10.5" fill="#111">词表 160K · 上下文 1,048,576</text>
+  <text x="431" y="336" text-anchor="middle" font-size="10" fill="#555">MXFP4 权重 / MXFP8 激活（量化感知训练）</text>
+
+  <!-- output -->
+  <line x1="570" y1="190" x2="600" y2="190" stroke="#555" marker-end="url(#a)"/>
+  <rect x="600" y="172" width="60" height="36" fill="#eef2f7" stroke="#555"/>
+  <text x="630" y="194" text-anchor="middle" font-size="11" fill="#111">输出</text>
+
+  <!-- notes -->
+  <text x="340" y="382" text-anchor="middle" font-size="10.5" fill="#333">相对 K3 的结构改动仅一处：24 层全注意力 Gated MLA 换为门控稀疏注意力 Gated DSA</text>
+  <text x="340" y="404" text-anchor="middle" font-size="10.5" fill="#333">能力提升主要来自数百个下游领域的大规模联合强化学习（后训练）</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

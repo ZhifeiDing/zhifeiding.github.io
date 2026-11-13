@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="666" viewBox="0 0 680 666" font-family="Georgia, 'Times New Roman', serif">
+<text x="340.0" y="24" font-size="14.5" fill="#111111" text-anchor="middle">DeepSeek-V4 的层组合与算子序列</text>
+<text x="340.0" y="43" font-size="8.9" fill="#5a6675" text-anchor="middle">Pro 61 层：2 层 HCA 开局，其后 30 层 CSA 与 29 层 HCA 逐层交替；Flash 43 层则以 2 层纯滑窗开局</text>
+<text x="340.0" y="58" font-size="8.9" fill="#5a6675" text-anchor="middle">所有层前馈一律为 MoE（384 选 6 + 1 共享，前 3 层路由改为哈希），块内残差取 mHC 的四路混合</text>
+<line x1="12" y1="70" x2="668" y2="70" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="9.8" fill="#1b2430" font-weight="bold">（a）块内组合：三种注意力、一种前馈</text>
+<text x="348" y="90" font-size="9.8" fill="#1b2430" font-weight="bold">（b）Pro 的逐层层型</text>
+<g transform="translate(0,98.0)"><rect x="12" y="0.0" width="320" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="12.5" font-size="9.0" fill="#1b2430">输入 xˡ</text></g>
+<g transform="translate(0,98.0)"><text x="324" y="12.5" font-size="8.2" fill="#5a6675" text-anchor="end">7168</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="18.0" x2="172.0" y2="20.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,20.0 L172.0,25.0 L175.0,20.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="25.0" width="320" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="37.0" font-size="8.8" fill="#1b2430">mHC 块前混合 + RMSNorm</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="47.0" font-size="7.4" fill="#5a6675">u = H_l^{pre} x，H 为双随机矩阵</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="51.0" x2="172.0" y2="53.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,53.0 L172.0,58.0 L175.0,53.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="58.0" width="320" height="73" fill="#ffffff" stroke="#446084" stroke-width="1.0"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="71.0" font-size="8.8" fill="#446084" font-weight="bold">注意力单元：按层型三选一</text></g>
+<g transform="translate(0,98.0)"><rect x="20" y="75.0" width="304" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="25" y="86.5" font-size="7.7" fill="#33414f">30 层 CSA：压缩率 4，索引器取 top-1024</text></g>
+<g transform="translate(0,98.0)"><rect x="20" y="92.0" width="304" height="16" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="25" y="103.5" font-size="7.7" fill="#33414f">31 层 HCA：压缩率 128，全部条目稠密参与</text></g>
+<g transform="translate(0,98.0)"><rect x="20" y="109.0" width="304" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="25" y="120.5" font-size="7.7" fill="#33414f">2 层纯滑窗：仅 128 条，见于 Flash 开局</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="131.0" x2="172.0" y2="133.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,133.0 L172.0,138.0 L175.0,133.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="138.0" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="151.5" font-size="8.8" fill="#1b2430">mHC 残差回写</text></g>
+<g transform="translate(0,98.0)"><text x="324" y="151.5" font-size="7.6" fill="#5a6675" text-anchor="end">x ← H^{res} x + H^{post} o</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="158.0" x2="172.0" y2="160.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,160.0 L172.0,165.0 L175.0,160.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="165.0" width="320" height="52" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="178.0" font-size="8.8" fill="#1b2430" font-weight="bold">前馈单元：MoE，无稠密 FFN</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="190.0" font-size="7.6" fill="#33414f">384 选 6 + 1 共享，专家 FP4；前 3 层哈希路由</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="202.0" font-size="7.6" fill="#33414f">专家中间维未披露，合成为一次 all-to-all</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="217.0" x2="172.0" y2="219.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,219.0 L172.0,224.0 L175.0,219.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><text x="182.0" y="223.0" font-size="8.2" fill="#5a6675">× 61 层</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="10.0" font-size="7.8" fill="#5a6675">第 1 层 → 第 61 层，左上为起始</text></g>
+<g transform="translate(0,98.0)"><rect x="348.0" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="353.24590163934425" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="358.4918032786885" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="363.73770491803276" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="368.9836065573771" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="374.2295081967213" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="379.4754098360656" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="384.72131147540983" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="389.9672131147541" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="395.21311475409834" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="400.4590163934426" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="405.70491803278685" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="410.95081967213116" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="416.1967213114754" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="421.44262295081967" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="426.6885245901639" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="431.9344262295082" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="437.1803278688525" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="442.4262295081967" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="447.672131147541" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="452.91803278688525" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="458.1639344262295" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="463.40983606557376" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="468.655737704918" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="473.9016393442623" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="479.1475409836065" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="484.39344262295083" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="489.6393442622951" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="494.88524590163934" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="500.1311475409836" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="505.37704918032784" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="510.62295081967216" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="515.8688524590164" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="521.1147540983607" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="526.360655737705" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="531.6065573770492" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="536.8524590163934" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="542.0983606557377" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="547.344262295082" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="552.5901639344262" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="557.8360655737705" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="563.0819672131147" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="568.327868852459" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="573.5737704918033" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="578.8196721311475" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="584.0655737704918" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="589.311475409836" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="594.5573770491803" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="599.8032786885246" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="605.0491803278688" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="610.295081967213" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="615.5409836065573" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="620.7868852459017" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="626.0327868852459" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="631.2786885245902" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="636.5245901639344" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="641.7704918032787" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="647.016393442623" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="652.2622950819672" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="657.5081967213114" y="14.0" width="4.895901639344262" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="662.7540983606557" y="14.0" width="4.895901639344262" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><text x="348" y="44.0" font-size="8.4" fill="#1b2430" font-weight="bold">放大第 1–4 层</text></g>
+<g transform="translate(0,98.0)"><rect x="348.0" y="50.0" width="76.0" height="26" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="386.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">HCA</text></g>
+<g transform="translate(0,98.0)"><text x="386.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 1</text></g>
+<g transform="translate(0,98.0)"><rect x="428.0" y="50.0" width="76.0" height="26" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="466.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">HCA</text></g>
+<g transform="translate(0,98.0)"><text x="466.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 2</text></g>
+<g transform="translate(0,98.0)"><rect x="508.0" y="50.0" width="76.0" height="26" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="546.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">CSA</text></g>
+<g transform="translate(0,98.0)"><text x="546.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 3</text></g>
+<g transform="translate(0,98.0)"><rect x="588.0" y="50.0" width="76.0" height="26" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="626.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">HCA</text></g>
+<g transform="translate(0,98.0)"><text x="626.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 4</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="104.0" font-size="7.7" fill="#33414f">两类压缩层共用一套共享键值多查询注意力，差别在压缩率与是否作稀疏选择。</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="116.0" font-size="7.7" fill="#33414f">滑窗分支每层都有、定长 128 条，与压缩条目拼接后一次算完。</text></g>
+<g transform="translate(0,98.0)"><rect x="348" y="124.0" width="12" height="8" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="364" y="132.0" font-size="7.4" fill="#33414f">CSA：30 层，压缩率 4</text></g>
+<g transform="translate(0,98.0)"><rect x="508" y="124.0" width="12" height="8" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="524" y="132.0" font-size="7.4" fill="#33414f">HCA：31 层，压缩率 128</text></g>
+<line x1="12" y1="333.0" x2="668" y2="333.0" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12.0" y="351.0" font-size="9.6" fill="#1b2430" font-weight="bold">（c）CSA 通路</text>
+<text x="226.66666666666666" y="351.0" font-size="7.6" fill="#5a6675" text-anchor="end">压缩率 4，top-1024</text>
+<rect x="12.0" y="359.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="19.0" y="371.0" font-size="8.0" fill="#446084" font-weight="bold">① 门控池化压缩</text>
+<text x="19.0" y="382.0" font-size="7.2" fill="#33414f">c_m = Σ_i w_{m,i} v_i / Σ_i w_{m,i}</text>
+<text x="19.0" y="393.5" font-size="7.2" fill="#33414f">相邻源窗口重叠，⌈t/4⌉ 条</text>
+<rect x="12.0" y="402.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="19.0" y="414.0" font-size="8.0" fill="#446084" font-weight="bold">② 索引器打分</text>
+<text x="19.0" y="425.0" font-size="7.2" fill="#33414f">s_m = Σ_h w_h ReLU(q_I · k_I,m)</text>
+<text x="19.0" y="436.5" font-size="7.2" fill="#33414f">Lightning Indexer，FP8</text>
+<rect x="12.0" y="445.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="19.0" y="457.0" font-size="8.0" fill="#446084" font-weight="bold">③ Top-k 选择</text>
+<text x="19.0" y="468.0" font-size="7.2" fill="#33414f">I = argtop_k(s_m)，Pro 取 1024</text>
+<text x="19.0" y="479.5" font-size="7.2" fill="#33414f">1M 上下文取约 0.4%</text>
+<rect x="12.0" y="488.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="19.0" y="500.0" font-size="8.0" fill="#446084" font-weight="bold">④ 与滑窗拼接</text>
+<text x="19.0" y="511.0" font-size="7.2" fill="#33414f">K' = [ KV_I ; KV_win ]，|KV_win| = 128</text>
+<text x="19.0" y="522.5" font-size="7.2" fill="#33414f">两种粒度同一次注意力</text>
+<rect x="12.0" y="531.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="19.0" y="543.0" font-size="8.0" fill="#446084" font-weight="bold">⑤ 共享 KV 注意力</text>
+<text x="19.0" y="554.0" font-size="7.2" fill="#33414f">o = softmax(q K'ᵀ/√d) V'</text>
+<text x="19.0" y="565.5" font-size="7.2" fill="#33414f">MQA，V4 共享一份 KV</text>
+<text x="232.66666666666666" y="351.0" font-size="9.6" fill="#1b2430" font-weight="bold">（d）HCA 通路</text>
+<text x="447.3333333333333" y="351.0" font-size="7.6" fill="#5a6675" text-anchor="end">压缩率 128，稠密</text>
+<rect x="232.66666666666666" y="359.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#a9742a" stroke-width="0.85"/>
+<text x="239.66666666666666" y="371.0" font-size="8.0" fill="#a9742a" font-weight="bold">① 重度压缩</text>
+<text x="239.66666666666666" y="382.0" font-size="7.2" fill="#33414f">c_m = Pool(v ; 128)</text>
+<text x="239.66666666666666" y="393.5" font-size="7.2" fill="#33414f">⌈t/128⌉ 条，与 CSA 相差 32 倍</text>
+<rect x="232.66666666666666" y="402.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#a9742a" stroke-width="0.85"/>
+<text x="239.66666666666666" y="414.0" font-size="8.0" fill="#a9742a" font-weight="bold">② 不设索引器</text>
+<text x="239.66666666666666" y="425.0" font-size="7.2" fill="#33414f">全部已完成条目参与</text>
+<text x="239.66666666666666" y="436.5" font-size="7.2" fill="#33414f">省掉打分与 top-k 两段</text>
+<rect x="232.66666666666666" y="445.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#a9742a" stroke-width="0.85"/>
+<text x="239.66666666666666" y="457.0" font-size="8.0" fill="#a9742a" font-weight="bold">③ 与滑窗拼接</text>
+<text x="239.66666666666666" y="468.0" font-size="7.2" fill="#33414f">K' = [ KV_HCA ; KV_win ]</text>
+<text x="239.66666666666666" y="479.5" font-size="7.2" fill="#33414f">128 + 1~2 条</text>
+<rect x="232.66666666666666" y="488.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#a9742a" stroke-width="0.85"/>
+<text x="239.66666666666666" y="500.0" font-size="8.0" fill="#a9742a" font-weight="bold">④ 稠密注意力</text>
+<text x="239.66666666666666" y="511.0" font-size="7.2" fill="#33414f">o = softmax(q K'ᵀ/√d) V'</text>
+<text x="239.66666666666666" y="522.5" font-size="7.2" fill="#33414f">条目数少，聚合近似线性</text>
+<rect x="232.66666666666666" y="531.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#a9742a" stroke-width="0.85"/>
+<text x="239.66666666666666" y="543.0" font-size="8.0" fill="#a9742a" font-weight="bold">⑤ 与 CSA 的分工</text>
+<text x="239.66666666666666" y="554.0" font-size="7.2" fill="#33414f">CSA 保精度，HCA 保长度</text>
+<text x="239.66666666666666" y="565.5" font-size="7.2" fill="#33414f">两者交替，兼顾局部与远程</text>
+<text x="453.3333333333333" y="351.0" font-size="9.6" fill="#1b2430" font-weight="bold">（e）MoE 前馈与 mHC</text>
+<text x="668.0" y="351.0" font-size="7.6" fill="#5a6675" text-anchor="end">384 选 6 + 1 共享</text>
+<rect x="453.3333333333333" y="359.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="371.0" font-size="8.0" fill="#55702f" font-weight="bold">① 路由（前 3 层哈希）</text>
+<text x="460.3333333333333" y="382.0" font-size="7.2" fill="#33414f">s_i = σ(x e_iᵀ) 或 哈希桶</text>
+<text x="460.3333333333333" y="393.5" font-size="7.2" fill="#33414f">[B,L,384]</text>
+<rect x="453.3333333333333" y="402.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="414.0" font-size="8.0" fill="#55702f" font-weight="bold">② Top-k</text>
+<text x="460.3333333333333" y="425.0" font-size="7.2" fill="#33414f">I = top6(s) + 共享专家</text>
+<text x="460.3333333333333" y="436.5" font-size="7.2" fill="#33414f">384 选 7，专家 FP4</text>
+<rect x="453.3333333333333" y="445.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="457.0" font-size="8.0" fill="#55702f" font-weight="bold">③ 专家 SwiGLU</text>
+<text x="460.3333333333333" y="468.0" font-size="7.2" fill="#33414f">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
+<text x="460.3333333333333" y="479.5" font-size="7.2" fill="#33414f">FP4 权重、FP8 激活</text>
+<rect x="453.3333333333333" y="488.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="500.0" font-size="8.0" fill="#55702f" font-weight="bold">④ 合并</text>
+<text x="460.3333333333333" y="511.0" font-size="7.2" fill="#33414f">y = Σ_{i∈I} ŝ_i h_i + E_s(x)</text>
+<text x="460.3333333333333" y="522.5" font-size="7.2" fill="#33414f">一次 all-to-all</text>
+<rect x="453.3333333333333" y="531.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="543.0" font-size="8.0" fill="#55702f" font-weight="bold">⑤ mHC 回写</text>
+<text x="460.3333333333333" y="554.0" font-size="7.2" fill="#33414f">x ← H^{res} x + H^{post} y</text>
+<text x="460.3333333333333" y="565.5" font-size="7.2" fill="#33414f">4 路混合，约束在 Birkhoff 多面体</text>
+<line x1="12" y1="580.0" x2="668" y2="580.0" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="594.0" font-size="9.8" fill="#1b2430" font-weight="bold">核算：缓存、算力与权重</text>
+<rect x="12.0" y="602.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="19.0" y="616.0" font-size="8.2" fill="#1b2430" font-weight="bold">KV / token（Pro）</text>
+<text x="19.0" y="629.0" font-size="7.0" fill="#33414f">30 层 CSA 177 B + 31 层 HCA 4.5 B</text>
+<text x="19.0" y="641.0" font-size="7.0" fill="#5a6675">≈ 5.3 KB，1M ≈ 5.5 GB</text>
+<rect x="177.5" y="602.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="184.5" y="616.0" font-size="8.2" fill="#1b2430" font-weight="bold">滑窗段</text>
+<text x="184.5" y="629.0" font-size="7.0" fill="#33414f">61 层 × 128 条 × 576 B</text>
+<text x="184.5" y="641.0" font-size="7.0" fill="#5a6675">≈ 4.4 MB，与长度无关</text>
+<rect x="343.0" y="602.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="350.0" y="616.0" font-size="8.2" fill="#1b2430" font-weight="bold">相对 V3.2</text>
+<text x="350.0" y="629.0" font-size="7.0" fill="#33414f">48 KB → 5.3 KB 每 token</text>
+<text x="350.0" y="641.0" font-size="7.0" fill="#5a6675">约 11%，官方称 10%</text>
+<rect x="508.5" y="602.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="515.5" y="616.0" font-size="8.2" fill="#1b2430" font-weight="bold">权重与格式</text>
+<text x="515.5" y="629.0" font-size="7.0" fill="#33414f">1.6T，专家 FP4 + 其余 FP8</text>
+<text x="515.5" y="641.0" font-size="7.0" fill="#5a6675">≈ 1.0 TB</text>
+</svg>

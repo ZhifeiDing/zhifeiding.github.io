@@ -1,52 +1,116 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="900" height="520" fill="#ffffff"/>
-<text x="24" y="34" font-size="16" fill="#16202c" text-anchor="start" font-weight="700">Qwen3.8-Max 结构示意：稀疏 MoE 与三比一混合注意力</text>
-<text x="24" y="56" font-size="11" fill="#4d5866" text-anchor="start">总参 2.4T / 激活约 95B · 上下文 1M · 原生多模态 · 以 Qwen3.5 为基座（官方未披露层数、专家数与头配置）</text>
-<line x1="24" y1="70" x2="876" y2="70" stroke="#dfe4ea"/>
-<rect x="24" y="86" width="250" height="58" rx="7" fill="#eef2f7" stroke="#5b6b7d" stroke-width="1.2"/>
-<text x="36" y="106" font-size="12.2" fill="#1b2430" text-anchor="start" font-weight="700">输入</text>
-<text x="36" y="125" font-size="10.2" fill="#4d5866" text-anchor="start">文本 / 图像 / 视频</text>
-<rect x="24" y="170" width="250" height="58" rx="7" fill="#eef2f7" stroke="#5b6b7d" stroke-width="1.2"/>
-<text x="36" y="190" font-size="12.2" fill="#1b2430" text-anchor="start" font-weight="700">多模态前端</text>
-<text x="36" y="209" font-size="10.2" fill="#4d5866" text-anchor="start">视觉 token 与文本同一序列</text>
-<rect x="24" y="254" width="250" height="82" rx="7" fill="#dde7f5" stroke="#446084" stroke-width="1.2"/>
-<text x="36" y="274" font-size="12.2" fill="#1b2430" text-anchor="start" font-weight="700">语言主干</text>
-<text x="36" y="293" font-size="10.2" fill="#4d5866" text-anchor="start">循环块 × N（层数未披露）</text>
-<rect x="24" y="362" width="250" height="58" rx="7" fill="#eef2f7" stroke="#5b6b7d" stroke-width="1.2"/>
-<text x="36" y="382" font-size="12.2" fill="#1b2430" text-anchor="start" font-weight="700">输出头</text>
-<text x="36" y="401" font-size="10.2" fill="#4d5866" text-anchor="start">logits</text>
-<line x1="149.0" y1="144" x2="149.0" y2="164" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="149.0" y1="228" x2="149.0" y2="248" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="149.0" y1="336" x2="149.0" y2="356" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<rect x="316" y="86" width="560" height="334" rx="7" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1.2" stroke-dasharray="5 4"/>
-<text x="330" y="108" font-size="11.6" fill="#3f6fa8" text-anchor="start" font-weight="700">循环块内部：每 4 层一组，3 份线性注意力配 1 份全注意力</text>
-<rect x="330" y="124" width="214" height="66" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="342" y="145" font-size="11.2" fill="#1b2430" text-anchor="start" font-weight="700">Gated DeltaNet 块（线性注意力）</text>
-<text x="342" y="164" font-size="9.6" fill="#4d5866" text-anchor="start">定长循环状态压缩历史</text>
-<text x="342" y="179" font-size="9.6" fill="#4d5866" text-anchor="start">头配置未披露</text>
-<line x1="544" y1="157" x2="572" y2="157" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<rect x="578" y="124" width="200" height="66" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="590" y="145" font-size="11.2" fill="#1b2430" text-anchor="start" font-weight="700">MoE 前馈</text>
-<text x="590" y="164" font-size="9.6" fill="#4d5866" text-anchor="start">256 选 8（专家数未披露）</text>
-<text x="590" y="180" font-size="9.6" fill="#4d5866" text-anchor="start">共享专家 1 个</text>
-<text x="864" y="148" font-size="13" fill="#8a6d1f" text-anchor="end" font-weight="700">× 3</text>
-<rect x="330" y="212" width="214" height="66" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="342" y="233" font-size="11.2" fill="#1b2430" text-anchor="start" font-weight="700">门控全注意力块（Softmax）</text>
-<text x="342" y="252" font-size="9.6" fill="#4d5866" text-anchor="start">精确检索，KV 头少于 Q</text>
-<text x="342" y="267" font-size="9.6" fill="#4d5866" text-anchor="start">头配置未披露</text>
-<line x1="544" y1="245" x2="572" y2="245" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<rect x="578" y="212" width="200" height="66" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="590" y="233" font-size="11.2" fill="#1b2430" text-anchor="start" font-weight="700">MoE 前馈</text>
-<text x="590" y="252" font-size="9.6" fill="#4d5866" text-anchor="start">256 选 8（专家数未披露）</text>
-<text x="590" y="268" font-size="9.6" fill="#4d5866" text-anchor="start">共享专家 1 个</text>
-<text x="864" y="236" font-size="13" fill="#8a6d1f" text-anchor="end" font-weight="700">× 1</text>
-<text x="330" y="310" font-size="10.4" fill="#243447" text-anchor="start">容量与激活：2.4T 总参 / 约 95B 激活，激活比约 4%；</text>
-<text x="330" y="328" font-size="10.4" fill="#243447" text-anchor="start">容量由专家承担，每 token 计算量与百 B 级稠密模型同量级。</text>
-<text x="330" y="352" font-size="10.4" fill="#3f6fa8" text-anchor="start">KV Cache 仅由 1/4 的全注意力层产生，1M 上下文由此可行。</text>
-<text x="330" y="376" font-size="10.2" fill="#8a6d1f" text-anchor="start">注：N-gram 查表与 QSA 微块稀疏属 Qwen3.8-Flash-Next（Qwen4 预览），</text>
-<text x="330" y="394" font-size="10.2" fill="#8a6d1f" text-anchor="start">     本档未采用，故图中不列。</text>
-<line x1="24" y1="442" x2="876" y2="442" stroke="#dfe4ea"/>
-<text x="24" y="464" font-size="10.6" fill="#8a6d1f" text-anchor="start" font-weight="700">官方通稿只交代：以 Qwen3.5 为基础、稀疏 MoE 结合混合注意力、2.4T/95B、上下文 1M。</text>
-<text x="24" y="484" font-size="10.4" fill="#5d6878" text-anchor="start">层数、专家数、头配置与数值格式均未公开；图中标「未披露」处按符号记，不作推定。</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 700" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="700" fill="#ffffff"/>
+<text x="340.0" y="24" font-size="15" fill="#111111" text-anchor="middle">DeepSeek-V4.1-Flash 的层组合与三种 CSA2 模式</text>
+<text x="340.0" y="44" font-size="9.0" fill="#5a6675" text-anchor="middle">40 层 = 20 层因果编码器 + 20 层解码器：编码器 2 层纯滑窗加 3 组（每组 1 Full + 5 Reuse，m = 2），解码器 5 组（1 Full 或 Reindex + 3 Reuse，m = 1）</text>
+<text x="340.0" y="60" font-size="9.0" fill="#5a6675" text-anchor="middle">全 40 层中只有 4 层产生全局 KV、4 层只重新打分、30 层连 Top-k 索引一并复用、2 层不存全局 KV；前馈全部为 MoE</text>
+<line x1="12" y1="72" x2="668" y2="72" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（a）单个 Transformer 块：一种前馈，注意力按模式取数</text>
+<rect x="12" y="100" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="114" font-size="9.2" fill="#1b2430">输入 xˡ</text>
+<text x="324" y="114" font-size="8.4" fill="#5a6675" text-anchor="end">隐藏维 5120</text>
+<line x1="172.0" y1="120" x2="172.0" y2="122" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,122 L172.0,127 L175.0,122 z" fill="#8a94a3"/>
+<rect x="12" y="127" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="141" font-size="9.2" fill="#1b2430">Single-Pass mHC 块前混合</text>
+<text x="324" y="141" font-size="8.4" fill="#5a6675" text-anchor="end">n_hc = 4</text>
+<line x1="172.0" y1="147" x2="172.0" y2="149" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,149 L172.0,154 L175.0,149 z" fill="#8a94a3"/>
+<rect x="12" y="154" width="320" height="88" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
+<text x="20" y="168" font-size="9.2" fill="#446084" font-weight="bold">注意力单元</text>
+<text x="324" y="168" font-size="8.2" fill="#5a6675" text-anchor="end">每层的模式在编译期静态指定</text>
+<rect x="20" y="173" width="304" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="25" y="186.5" font-size="8.2" fill="#33414f">主 Q：本层投影，64 头 × 512 维，压缩维 1280</text>
+<rect x="20" y="195" width="304" height="20" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<text x="25" y="208.5" font-size="8.2" fill="#33414f">滑窗 KV：本层生成，128 条，FP8</text>
+<rect x="20" y="217" width="304" height="21" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="25" y="224.5" font-size="8.2" fill="#33414f">全局 KV 与索引器键：Full 生成本层，Reindex、</text>
+<text x="25" y="234.5" font-size="8.2" fill="#33414f">Reuse 取最近一次；Top-k 索引同理</text>
+<line x1="172.0" y1="242" x2="172.0" y2="244" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,244 L172.0,249 L175.0,244 z" fill="#8a94a3"/>
+<rect x="12" y="249" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="263" font-size="9.2" fill="#1b2430">Single-Pass mHC 残差混合</text>
+<text x="324" y="263" font-size="8.4" fill="#5a6675" text-anchor="end">Mega-mHC 单核融合</text>
+<line x1="172.0" y1="269" x2="172.0" y2="271" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,271 L172.0,276 L175.0,271 z" fill="#8a94a3"/>
+<rect x="12" y="276" width="320" height="52" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="20" y="290" font-size="9.2" fill="#55702f" font-weight="bold">前馈单元：MoE，无稠密 FFN</text>
+<text x="324" y="290" font-size="8.4" fill="#55702f" text-anchor="end">× 40 层</text>
+<text x="20" y="304" font-size="8.3" fill="#33414f">1 共享 + 384 路由，每 token 激活 6 个</text>
+<text x="20" y="317" font-size="8.3" fill="#33414f">专家中间维 2304，SwiGLU 激活截断于 10</text>
+<text x="348" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（b）40 层的模式分布</text>
+<text x="348" y="112" font-size="7.8" fill="#5a6675">第 0 层 → 第 39 层</text>
+<text x="668" y="112" font-size="7.8" fill="#5a6675" text-anchor="end">编码器 20 层｜解码器 20 层</text>
+<rect x="348.0" y="118" width="7.2" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<rect x="356.0" y="118" width="7.2" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<rect x="364.0" y="118" width="7.2" height="20" fill="#446084" stroke="#446084" stroke-width="0.8"/>
+<rect x="372.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="380.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="388.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="396.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="404.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="412.0" y="118" width="7.2" height="20" fill="#446084" stroke="#446084" stroke-width="0.8"/>
+<rect x="420.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="428.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="436.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="444.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="452.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="460.0" y="118" width="7.2" height="20" fill="#446084" stroke="#446084" stroke-width="0.8"/>
+<rect x="468.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="476.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="484.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="492.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="500.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="508.0" y="118" width="7.2" height="20" fill="#446084" stroke="#446084" stroke-width="0.8"/>
+<line x1="507.0" y1="114" x2="507.0" y2="142" stroke="#1b2430" stroke-width="1.2"/>
+<rect x="516.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="524.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="532.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="540.0" y="118" width="7.2" height="20" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="548.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="556.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="564.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="572.0" y="118" width="7.2" height="20" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="580.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="588.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="596.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="604.0" y="118" width="7.2" height="20" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="612.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="620.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="628.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="636.0" y="118" width="7.2" height="20" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="644.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="652.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="660.0" y="118" width="7.2" height="20" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="348" y="158" font-size="8.0" fill="#33414f">编码器 0–19：2 层纯滑窗 + 18 层 CSA2（m = 2），分 3 组、每组 6 层</text>
+<text x="348" y="172" font-size="8.0" fill="#33414f">解码器 20–39：20 层 CSA2（m = 1），分 5 组、每组 4 层</text>
+<text x="348" y="194" font-size="8.6" fill="#1b2430" font-weight="bold">组内结构</text>
+<text x="348" y="211" font-size="7.9" fill="#33414f">编码器每组 6 层</text>
+<rect x="444.0" y="202" width="35.333333333333336" height="16" fill="#446084" stroke="#446084" stroke-width="0.8"/><text x="461.6666666666667" y="212.7" font-size="7.4" fill="#ffffff" text-anchor="middle">Full</text>
+<rect x="481.3333333333333" y="202" width="35.333333333333336" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="499.0" y="212.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="518.6666666666666" y="202" width="35.333333333333336" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="536.3333333333333" y="212.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="556.0" y="202" width="35.333333333333336" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="573.6666666666666" y="212.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="593.3333333333334" y="202" width="35.333333333333336" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="611.0" y="212.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="630.6666666666667" y="202" width="35.333333333333336" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="648.3333333333334" y="212.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<text x="348" y="237" font-size="7.9" fill="#33414f">解码器首组 4 层</text>
+<rect x="444.0" y="228" width="54.0" height="16" fill="#446084" stroke="#446084" stroke-width="0.8"/><text x="471.0" y="238.7" font-size="7.4" fill="#ffffff" text-anchor="middle">Full</text>
+<rect x="500.0" y="228" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="527.0" y="238.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="556.0" y="228" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="583.0" y="238.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="612.0" y="228" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="639.0" y="238.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<text x="348" y="263" font-size="7.9" fill="#33414f">解码器其余四组</text>
+<rect x="444.0" y="254" width="54.0" height="16" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/><text x="471.0" y="264.7" font-size="7.4" fill="#111111" text-anchor="middle">Reindex</text>
+<rect x="500.0" y="254" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="527.0" y="264.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="556.0" y="254" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="583.0" y="264.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="612.0" y="254" width="54.0" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="639.0" y="264.7" font-size="7.4" fill="#111111" text-anchor="middle">Reuse</text>
+<rect x="348" y="284" width="12" height="8" fill="#446084" stroke="#446084" stroke-width="0.8"/>
+<text x="364" y="292" font-size="7.8" fill="#33414f">Full：生成本层全局 KV</text>
+<rect x="508" y="284" width="12" height="8" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="524" y="292" font-size="7.8" fill="#33414f">Reindex：复用键，重打分</text>
+<rect x="348" y="299" width="12" height="8" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="364" y="307" font-size="7.8" fill="#33414f">Reuse：复用 KV 与索引</text>
+<rect x="508" y="299" width="12" height="8" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="524" y="307" font-size="7.8" fill="#33414f">纯滑窗：不存全局 KV</text>
+<line x1="12" y1="340" x2="668" y2="340" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="358" font-size="10.2" fill="#1b2430" font-weight="bold">（c）三种模式：谁算、谁存、谁选</text>
+<rect x="12" y="368" width="210" height="22" fill="#446084" stroke="#446084" stroke-width="0.9"/><text x="20" y="383" font-size="10.0" fill="#ffffff" font-weight="bold">Full</text><text x="214" y="383" font-size="8.0" fill="#c6d4e6" text-anchor="end">4 层</text><rect x="12" y="394" width="210" height="44" fill="#ffffff" stroke="#446084" stroke-width="0.8"/><text x="20" y="408" font-size="8.6" fill="#1b2430" font-weight="bold">主 Q 与滑窗 KV</text><text x="20" y="421" font-size="8.0" fill="#33414f">本层计算，不入共享</text><line x1="117.0" y1="438" x2="117.0" y2="439" stroke="#8a94a3" stroke-width="1"/><path d="M114.0,439 L117.0,444 L120.0,439 z" fill="#8a94a3"/><rect x="12" y="444" width="210" height="44" fill="#ffffff" stroke="#446084" stroke-width="0.8"/><text x="20" y="458" font-size="8.6" fill="#1b2430" font-weight="bold">全局 KV</text><text x="20" y="471" font-size="8.0" fill="#33414f">本层压缩生成并写出</text><line x1="117.0" y1="488" x2="117.0" y2="489" stroke="#8a94a3" stroke-width="1"/><path d="M114.0,489 L117.0,494 L120.0,489 z" fill="#8a94a3"/><rect x="12" y="494" width="210" height="44" fill="#ffffff" stroke="#446084" stroke-width="0.8"/><text x="20" y="508" font-size="8.6" fill="#1b2430" font-weight="bold">索引器键</text><text x="20" y="521" font-size="8.0" fill="#33414f">由主 KV 投影，不另起一路</text><line x1="117.0" y1="538" x2="117.0" y2="539" stroke="#8a94a3" stroke-width="1"/><path d="M114.0,539 L117.0,544 L120.0,539 z" fill="#8a94a3"/><rect x="12" y="544" width="210" height="44" fill="#ffffff" stroke="#446084" stroke-width="0.8"/><text x="20" y="558" font-size="8.6" fill="#1b2430" font-weight="bold">Top-512 索引</text><text x="20" y="571" font-size="8.0" fill="#33414f">全可见域打分后现选</text><line x1="117.0" y1="588" x2="117.0" y2="589" stroke="#8a94a3" stroke-width="1"/><path d="M114.0,589 L117.0,594 L120.0,589 z" fill="#8a94a3"/><rect x="12" y="594" width="210" height="44" fill="#ffffff" stroke="#446084" stroke-width="0.8"/><text x="20" y="608" font-size="8.6" fill="#1b2430" font-weight="bold">解码器首个 Full 层</text><text x="20" y="621" font-size="8.0" fill="#33414f">另建 2,048 × 8 候选池</text>
+<rect x="234" y="368" width="210" height="22" fill="#a9742a" stroke="#a9742a" stroke-width="0.9"/><text x="242" y="383" font-size="10.0" fill="#4a3212" font-weight="bold">Reindex</text><text x="436" y="383" font-size="8.0" fill="#6b4a1c" text-anchor="end">4 层</text><rect x="234" y="394" width="210" height="44" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="242" y="408" font-size="8.6" fill="#1b2430" font-weight="bold">主 Q 与滑窗 KV</text><text x="242" y="421" font-size="8.0" fill="#33414f">本层计算，不入共享</text><line x1="339.0" y1="438" x2="339.0" y2="439" stroke="#8a94a3" stroke-width="1"/><path d="M336.0,439 L339.0,444 L342.0,439 z" fill="#8a94a3"/><rect x="234" y="444" width="210" height="44" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="242" y="458" font-size="8.6" fill="#1b2430" font-weight="bold">全局 KV</text><text x="242" y="471" font-size="8.0" fill="#33414f">取最近 Full 层的现有条目</text><line x1="339.0" y1="488" x2="339.0" y2="489" stroke="#8a94a3" stroke-width="1"/><path d="M336.0,489 L339.0,494 L342.0,489 z" fill="#8a94a3"/><rect x="234" y="494" width="210" height="44" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="242" y="508" font-size="8.6" fill="#1b2430" font-weight="bold">索引器键</text><text x="242" y="521" font-size="8.0" fill="#33414f">随主 KV 一并复用</text><line x1="339.0" y1="538" x2="339.0" y2="539" stroke="#8a94a3" stroke-width="1"/><path d="M336.0,539 L339.0,544 L342.0,539 z" fill="#8a94a3"/><rect x="234" y="544" width="210" height="44" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="242" y="558" font-size="8.6" fill="#1b2430" font-weight="bold">Top-512 索引</text><text x="242" y="571" font-size="8.0" fill="#33414f">本层索引 Q 重打分后重选</text><line x1="339.0" y1="588" x2="339.0" y2="589" stroke="#8a94a3" stroke-width="1"/><path d="M336.0,589 L339.0,594 L342.0,589 z" fill="#8a94a3"/><rect x="234" y="594" width="210" height="44" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/><text x="242" y="608" font-size="8.6" fill="#1b2430" font-weight="bold">打分域</text><text x="242" y="621" font-size="8.0" fill="#33414f">解码器内限于候选池，不随上下文增长</text>
+<rect x="456" y="368" width="212" height="22" fill="#446084" stroke="#dde7f5" stroke-width="0.9"/><text x="464" y="383" font-size="10.0" fill="#446084" font-weight="bold">Reuse</text><text x="660" y="383" font-size="8.0" fill="#c6d4e6" text-anchor="end">30 层</text><rect x="456" y="394" width="212" height="44" fill="#ffffff" stroke="#dde7f5" stroke-width="0.8"/><text x="464" y="408" font-size="8.6" fill="#1b2430" font-weight="bold">主 Q 与滑窗 KV</text><text x="464" y="421" font-size="8.0" fill="#33414f">本层计算，不入共享</text><line x1="562.0" y1="438" x2="562.0" y2="439" stroke="#8a94a3" stroke-width="1"/><path d="M559.0,439 L562.0,444 L565.0,439 z" fill="#8a94a3"/><rect x="456" y="444" width="212" height="44" fill="#ffffff" stroke="#dde7f5" stroke-width="0.8"/><text x="464" y="458" font-size="8.6" fill="#1b2430" font-weight="bold">全局 KV</text><text x="464" y="471" font-size="8.0" fill="#33414f">复用，不再生成</text><line x1="562.0" y1="488" x2="562.0" y2="489" stroke="#8a94a3" stroke-width="1"/><path d="M559.0,489 L562.0,494 L565.0,489 z" fill="#8a94a3"/><rect x="456" y="494" width="212" height="44" fill="#ffffff" stroke="#dde7f5" stroke-width="0.8"/><text x="464" y="508" font-size="8.6" fill="#1b2430" font-weight="bold">索引器键</text><text x="464" y="521" font-size="8.0" fill="#33414f">复用</text><line x1="562.0" y1="538" x2="562.0" y2="539" stroke="#8a94a3" stroke-width="1"/><path d="M559.0,539 L562.0,544 L565.0,539 z" fill="#8a94a3"/><rect x="456" y="544" width="212" height="44" fill="#ffffff" stroke="#dde7f5" stroke-width="0.8"/><text x="464" y="558" font-size="8.6" fill="#1b2430" font-weight="bold">Top-k 索引</text><text x="464" y="571" font-size="8.0" fill="#33414f">直接沿用最近一次选择</text><line x1="562.0" y1="588" x2="562.0" y2="589" stroke="#8a94a3" stroke-width="1"/><path d="M559.0,589 L562.0,594 L565.0,589 z" fill="#8a94a3"/><rect x="456" y="594" width="212" height="44" fill="#ffffff" stroke="#dde7f5" stroke-width="0.8"/><text x="464" y="608" font-size="8.6" fill="#1b2430" font-weight="bold">代价</text><text x="464" y="621" font-size="8.0" fill="#33414f">连读三层同一套选择，适应性下降</text>
+<line x1="12" y1="648" x2="668" y2="648" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="665" font-size="8.4" fill="#33414f">三种模式的共同点：主 Q 与滑窗 KV 一律本层计算，共享的只是远端全局记忆——一份档案，各层各用自己的问题去查。</text>
+<text x="12" y="679" font-size="8.4" fill="#33414f">因此全局 KV 的拷贝数从 38 份降到 4 份，而局部细粒度依赖不受影响；解码器每四层插一个 Reindex，让选择重新洗一次。</text>
 </svg>

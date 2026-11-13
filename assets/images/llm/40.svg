@@ -1,67 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 460" font-family="Georgia, 'Times New Roman', serif">
-  <rect width="680" height="460" fill="#ffffff"/>
-  <text x="340" y="24" text-anchor="middle" font-size="15" fill="#111">Step 5 Preview 结构示意图（据官方 config.json 与模型卡绘制）</text>
-
-  <!-- inputs -->
-  <rect x="14" y="58" width="78" height="26" fill="#eef2f7" stroke="#555"/>
-  <text x="53" y="76" text-anchor="middle" font-size="11" fill="#111">文本</text>
-  <rect x="14" y="92" width="78" height="26" fill="#eef2f7" stroke="#555"/>
-  <text x="53" y="110" text-anchor="middle" font-size="11" fill="#111">图像</text>
-  <rect x="14" y="126" width="78" height="26" fill="#eef2f7" stroke="#555"/>
-  <text x="53" y="144" text-anchor="middle" font-size="11" fill="#111">视频</text>
-
-  <!-- multimodal encoder -->
-  <rect x="108" y="52" width="100" height="108" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="158" y="74" text-anchor="middle" font-size="11" fill="#111">多模态编码器</text>
-  <text x="158" y="90" text-anchor="middle" font-size="9.5" fill="#333">47 层 · 宽 1536</text>
-  <text x="158" y="106" text-anchor="middle" font-size="9.5" fill="#333">728² · patch 14</text>
-  <text x="158" y="122" text-anchor="middle" font-size="9.5" fill="#333">16 头 · 169 token</text>
-  <text x="158" y="140" text-anchor="middle" font-size="9" fill="#555">projector stride 2</text>
-
-  <line x1="92" y1="71" x2="104" y2="71" stroke="#555" marker-end="url(#a)"/>
-  <line x1="92" y1="105" x2="104" y2="105" stroke="#555" marker-end="url(#a)"/>
-  <line x1="92" y1="139" x2="104" y2="139" stroke="#555" marker-end="url(#a)"/>
-  <line x1="208" y1="106" x2="218" y2="106" stroke="#555" marker-end="url(#a)"/>
-
-  <!-- backbone -->
-  <rect x="222" y="44" width="292" height="306" fill="#f7f9fc" stroke="#333"/>
-  <text x="368" y="66" text-anchor="middle" font-size="12" fill="#111">语言主干 92 层 · 隐藏维 4096</text>
-
-  <rect x="238" y="78" width="260" height="56" fill="#dde7f5" stroke="#446084"/>
-  <text x="368" y="97" text-anchor="middle" font-size="10.5" fill="#111">GQA 64 Q / 4 KV · 头维 192</text>
-  <text x="368" y="113" text-anchor="middle" font-size="9.5" fill="#333">69 层滑窗（窗口 512）/ 23 层全局</text>
-  <text x="368" y="128" text-anchor="middle" font-size="9.5" fill="#333">逐头注意力门控 · 全局层走稀疏索引</text>
-
-  <rect x="238" y="142" width="260" height="44" fill="#fff2dc" stroke="#a9742a"/>
-  <text x="368" y="160" text-anchor="middle" font-size="10.5" fill="#111">Sparse GQA + 块级 token 合并</text>
-  <text x="368" y="176" text-anchor="middle" font-size="9.5" fill="#333">索引器 16 头 · top-512 · 块 8 · proxy 256</text>
-
-  <rect x="238" y="194" width="260" height="58" fill="#e8f0e2" stroke="#55702f"/>
-  <text x="368" y="213" text-anchor="middle" font-size="10.5" fill="#111">MoE 前馈（第 3 至 90 层）</text>
-  <text x="368" y="229" text-anchor="middle" font-size="9.5" fill="#333">352 路由专家 top-8 加 1 共享</text>
-  <text x="368" y="244" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 1536；88 层 MoE 另 4 层稠密</text>
-
-  <rect x="238" y="260" width="260" height="30" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="368" y="280" text-anchor="middle" font-size="10.5" fill="#111">MTP × 3 层（投机解码）</text>
-
-  <text x="368" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 600B / 每 token 激活 27B</text>
-  <text x="368" y="328" text-anchor="middle" font-size="10" fill="#111">词表 128,896 · 上下文 1M</text>
-  <text x="368" y="344" text-anchor="middle" font-size="9" fill="#666">FP32 残差连接</text>
-
-  <!-- output -->
-  <line x1="514" y1="149" x2="520" y2="149" stroke="#555" marker-end="url(#a)"/>
-  <rect x="520" y="132" width="62" height="34" fill="#eef2f7" stroke="#555"/>
-  <text x="551" y="153" text-anchor="middle" font-size="11" fill="#111">输出</text>
-
-  <!-- notes -->
-  <text x="340" y="378" text-anchor="middle" font-size="10.5" fill="#333">69 层滑窗与 23 层全局稀疏注意力交替，KV Cache 只由滑窗窗口与全局层构成</text>
-  <text x="340" y="400" text-anchor="middle" font-size="10.5" fill="#333">索引与 top-k 选择成本约为稠密基线的八分之一；块压缩粒度 8</text>
-  <text x="340" y="422" text-anchor="middle" font-size="10.5" fill="#333">92 层窄深设计意在拉长信息传播路径，代价是解码逐层穿行的延迟</text>
-  <text x="340" y="442" text-anchor="middle" font-size="9.5" fill="#666">数值 BF16（约 1.2TB）/ FP8（约 600GB）；许可 StepFun Model License 1.0</text>
-
-  <defs>
-    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
-    </marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="700" viewBox="0 0 940 700" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="940" height="700" fill="#ffffff"/>
+<text x="24" y="34" font-size="16" fill="#16202c" text-anchor="start" font-weight="700">GLM-5.3 结构示意：与 GLM-5.2 同构的基座</text>
+<text x="24" y="56" font-size="10.8" fill="#4d5866" text-anchor="start">744B 总参 / 激活 40B · 78 层 · 隐藏维 6144 · 256 专家 top-8 + 1 共享 · MLA + DSA + IndexShare · 上下文 1M · MTP 1 层</text>
+<line x1="24" y1="70" x2="916" y2="70" stroke="#dfe4ea"/>
+<rect x="24" y="86" width="452" height="474" rx="7" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="38" y="108" font-size="11.6" fill="#3f6fa8" text-anchor="start" font-weight="700">基座：与 5.2 逐项相同（config 除量化项外无差异）</text>
+<rect x="38" y="124" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="144" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">层配置</text>
+<text x="128" y="144" font-size="9.6" fill="#33414f" text-anchor="start">78 层：前 3 层稠密 MLP（中间维 12288）</text>
+<text x="128" y="161" font-size="9.6" fill="#33414f" text-anchor="start">其余 75 层 MoE · 词表 154,880</text>
+<rect x="38" y="194" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="214" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">注意力</text>
+<text x="128" y="214" font-size="9.6" fill="#33414f" text-anchor="start">MLA：q 低秩 2048、kv 低秩 512、64 头（无 GQA）</text>
+<text x="128" y="231" font-size="9.6" fill="#33414f" text-anchor="start">qk 256 = 192 + RoPE 64 · v 头维 256</text>
+<rect x="38" y="264" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="284" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">稀疏化</text>
+<text x="128" y="284" font-size="9.6" fill="#33414f" text-anchor="start">DSA：索引器 32 头 × 128 维，FP8 打分</text>
+<text x="128" y="301" font-size="9.6" fill="#33414f" text-anchor="start">取 top-2048 因果 key</text>
+<rect x="38" y="334" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="354" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">索引复用</text>
+<text x="128" y="354" font-size="9.6" fill="#33414f" text-anchor="start">IndexShare：21 个 full 层持索引器</text>
+<text x="128" y="371" font-size="9.6" fill="#33414f" text-anchor="start">57 个 shared 层复用前一 full 层 top-k，降 2.9 倍</text>
+<rect x="38" y="404" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="424" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">专家混合</text>
+<text x="128" y="424" font-size="9.6" fill="#33414f" text-anchor="start">256 路由专家 top-8 + 1 共享，中间维 2048</text>
+<text x="128" y="441" font-size="9.6" fill="#33414f" text-anchor="start">sigmoid 无辅助损失偏置路由，缩放 2.5</text>
+<rect x="38" y="474" width="424" height="62" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="494" font-size="11" fill="#1b2430" text-anchor="start" font-weight="700">上下文与预测</text>
+<text x="128" y="494" font-size="9.6" fill="#33414f" text-anchor="start">RoPE θ = 8×10⁶，最大位置 1,048,576</text>
+<text x="128" y="511" font-size="9.6" fill="#33414f" text-anchor="start">MTP 1 层，同样应用索引与 KV 共享</text>
+<rect x="500" y="86" width="416" height="258" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="514" y="108" font-size="11.6" fill="#8a6d1f" text-anchor="start" font-weight="700">后训练：5.3 的全部增量都在这里</text>
+<rect x="514" y="124" width="388" height="62" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="526" y="144" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">IndexShare</text>
+<text x="600" y="144" font-size="9.4" fill="#5d6878" text-anchor="start">长上下文下的索引器复用，使 1M 序列的</text>
+<text x="600" y="160" font-size="9.4" fill="#5d6878" text-anchor="start">RL rollout 成本可承受</text>
+<rect x="514" y="194" width="388" height="62" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="526" y="214" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">SAO</text>
+<text x="600" y="214" font-size="9.4" fill="#5d6878" text-anchor="start">Single-rollout 异步优化：单条 rollout 采样</text>
+<text x="600" y="230" font-size="9.4" fill="#5d6878" text-anchor="start">配双侧裁剪，异步更新下稳定跑满千步</text>
+<rect x="514" y="264" width="388" height="62" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="526" y="284" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">slime</text>
+<text x="600" y="284" font-size="9.4" fill="#5d6878" text-anchor="start">Megatron 训练 + SGLang 采样同一数据流</text>
+<text x="600" y="300" font-size="9.4" fill="#5d6878" text-anchor="start">train / rollout logprob 对齐到 1e-7</text>
+<rect x="500" y="358" width="416" height="202" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="514" y="380" font-size="11.6" fill="#2f6b47" text-anchor="start" font-weight="700">发布形态：FP8 混合精度权重</text>
+<text x="514" y="404" font-size="9.6" fill="#3d4a56" text-anchor="start">· e4m3，128×128 分块尺度，激活动态量化</text>
+<text x="514" y="424" font-size="9.6" fill="#3d4a56" text-anchor="start">· 541 个模块保留 BF16 / FP32：各层归一化、</text>
+<text x="514" y="444" font-size="9.6" fill="#3d4a56" text-anchor="start">   路由 gate、索引器投影与路由偏置</text>
+<text x="514" y="464" font-size="9.6" fill="#3d4a56" text-anchor="start">· 141 个分片，合计约 756 GB</text>
+<text x="514" y="484" font-size="9.6" fill="#3d4a56" text-anchor="start">· KV Cache 约 90 KB/token（BF16）</text>
+<line x1="24" y1="586" x2="916" y2="586" stroke="#dfe4ea"/>
+<text x="24" y="608" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">对硬件的含义</text>
+<text x="24" y="630" font-size="10.4" fill="#243447" text-anchor="start">结构零改动，意味着 5.2 的部署形态（专家并行度、KV 布局、索引器 kernel）可整体沿用，5.3 不新增算子。</text>
+<text x="24" y="650" font-size="10.4" fill="#243447" text-anchor="start">增量只落在两点：权重以 FP8 发布，约 756 GB，八卡节点已可容纳而不必跨机；541 个高精度模块划定混合精度边界，</text>
+<text x="24" y="670" font-size="10.4" fill="#243447" text-anchor="start">反量化与精度回退点须在 kernel 内显式处理。</text>
 </svg>

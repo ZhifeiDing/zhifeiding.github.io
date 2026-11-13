@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 392" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="392" fill="#ffffff"/>
+  <text x="340" y="24" text-anchor="middle" font-size="15" fill="#111">DeepSeek-V3.2 的两份缓存布局（每 token 每层）</text>
+  <text x="340" y="44" text-anchor="middle" font-size="9.5" fill="#4d5866">条宽按字节等比；缩放因子为 FP32，KV 每 128 通道一个，索引键每 token 一个</text>
+
+  <!-- 列标题 -->
+  <text x="16" y="70" font-size="10.5" fill="#1b2430">KV Cache 记录</text>
+  <text x="266" y="70" font-size="10.5" fill="#1b2430">索引器缓存记录</text>
+  <text x="436" y="70" font-size="10.5" fill="#1b2430">寻址方式</text>
+
+  <!-- KV 条：512 / 16 / 128 B，比例 0.35 px/B -->
+  <rect x="16" y="78" width="179" height="42" fill="#dde7f5" stroke="#446084"/>
+  <text x="105" y="104" text-anchor="middle" font-size="9" fill="#111">潜向量 512 B（FP8）</text>
+  <rect x="195" y="78" width="7" height="42" fill="#f2eee4" stroke="#8a7340"/>
+  <rect x="202" y="78" width="44" height="42" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="224" y="103" text-anchor="middle" font-size="7.5" fill="#111">RoPE</text>
+
+  <line x1="198" y1="120" x2="198" y2="132" stroke="#8a94a3"/>
+  <text x="16" y="146" font-size="9" fill="#33414f">16 B 缩放（4 × FP32）　+　128 B RoPE（BF16，64 维）</text>
+  <text x="16" y="164" font-size="9" fill="#33414f">FP8 e4m3 合计 656 B；若全用 BF16 则为 1,152 B</text>
+  <text x="16" y="184" font-size="9" fill="#1b2430">61 层 × 656 B = 40 KB/token；128K 约 5.2 GB</text>
+
+  <!-- 索引键条：128 / 4 B -->
+  <rect x="266" y="78" width="44" height="42" fill="#fff2dc" stroke="#a9742a"/>
+  <text x="288" y="103" text-anchor="middle" font-size="7.5" fill="#111">128 B</text>
+  <rect x="310" y="78" width="3" height="42" fill="#f2eee4" stroke="#8a7340"/>
+
+  <line x1="311" y1="120" x2="311" y2="132" stroke="#8a94a3"/>
+  <text x="266" y="146" font-size="9" fill="#33414f">128 B 索引键（FP8）+ 4 B 缩放</text>
+  <text x="266" y="164" font-size="9" fill="#33414f">61 层 × 132 B = 8 KB/token</text>
+  <text x="266" y="184" font-size="9" fill="#1b2430">128K 约 1.1 GB，为 KV 的 1/5</text>
+
+  <!-- 寻址面板 -->
+  <rect x="436" y="76" width="228" height="122" fill="#fbfcfe" stroke="#b9c4d2" stroke-dasharray="5 4"/>
+  <text x="448" y="96" font-size="9" fill="#3d4a56">索引器读全部历史，顺序访问</text>
+  <text x="448" y="114" font-size="9" fill="#3d4a56">KV 只取 top-2,048 条，不连续 gather</text>
+  <text x="448" y="132" font-size="9" fill="#3d4a56">页粒度：索引键 64 token 一页</text>
+  <text x="448" y="150" font-size="9" fill="#3d4a56">KV 按单 token 寻址，两套页表</text>
+  <text x="448" y="168" font-size="9" fill="#3d4a56">故两份缓存分开分配，不能同页复用</text>
+  <text x="448" y="186" font-size="9" fill="#8a6d1f">索引器不复用 KV 的潜向量结构</text>
+
+  <!-- 流量核算 -->
+  <line x1="16" y1="212" x2="664" y2="212" stroke="#dfe4ea"/>
+  <text x="16" y="232" font-size="10.5" fill="#1b2430">解码一步的读取量（单序列，128K 上下文）</text>
+
+  <rect x="16" y="244" width="206" height="74" fill="#f4f6f9" stroke="#7d8794"/>
+  <text x="28" y="264" font-size="9.5" fill="#1b2430">稠密 MLA（V3 的读法）</text>
+  <text x="28" y="284" font-size="9" fill="#33414f">128K × 1,152 B × 61 层</text>
+  <text x="28" y="304" font-size="11" fill="#8a3b3b">9.2 GB</text>
+
+  <rect x="237" y="244" width="206" height="74" fill="#eef7f1" stroke="#3d8b5f"/>
+  <text x="249" y="264" font-size="9.5" fill="#1b2430">DSA 的 KV（top-2,048）</text>
+  <text x="249" y="284" font-size="9" fill="#33414f">2,048 × 656 B × 61 层</text>
+  <text x="249" y="304" font-size="11" fill="#2f6b47">82 MB</text>
+
+  <rect x="458" y="244" width="206" height="74" fill="#fff2dc" stroke="#a9742a"/>
+  <text x="470" y="264" font-size="9.5" fill="#1b2430">DSA 的索引键（全历史）</text>
+  <text x="470" y="284" font-size="9" fill="#33414f">128K × 132 B × 61 层</text>
+  <text x="470" y="304" font-size="11" fill="#8a6d1f">1.0 GB，成为新的大项</text>
+
+  <text x="16" y="342" font-size="9.5" fill="#3d4a56">稀疏化把 KV 的读取压低 112 倍，索引键的全量顺序读随即顶上：两项合计 1.1 GB，相对稠密的 9.2 GB 只降约 8 倍。</text>
+  <text x="16" y="362" font-size="9.5" fill="#3d4a56">容量则由 61 层的两份缓存叠加，与 V3 同量级；DSA 省下的是带宽，不是显存。</text>
+</svg>

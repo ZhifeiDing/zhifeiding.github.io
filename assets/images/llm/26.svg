@@ -1,93 +1,289 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1180" height="806" fill="#ffffff"/>
-<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">MiMo-V2.6｜SWA / GA 主干与 DFlash 算子分解</text>
-<text x="24" y="62" font-size="11.2" fill="#4d5866">Pro 70 层 = 60 SWA + 10 GA（1.02T/42B）· Flash 48 层 = 39 SWA + 9 GA（309B/15B）· 256 专家 top-8 · 滑窗 128 · DFlash 5 层滑窗 1024</text>
-<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
-<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
-<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
-<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
-<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
-<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
-<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,d]</text>
-<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">多模态接入</text>
-<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← [z_vit ; z_audio ; x]</text>
-<text x="36" y="258" font-size="9.4" fill="#5d6878">ViT 681M + 音频 308M/127M</text>
-<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
-<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
-<text x="36" y="344" font-size="9.4" fill="#5d6878">d</text>
-<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① QKV 投影</text>
-<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
-<text x="298" y="172" font-size="9.4" fill="#5d6878">GQA，头维 192 / 128</text>
-<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② slide 掩码</text>
-<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">M_ij = 0 若 j ≥ i−128（SWA）；GA 层取全因果</text>
-<text x="298" y="262" font-size="9.4" fill="#5d6878">128 token 窗口</text>
-<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 打分</text>
-<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S = q kᵀ/√192 + M + b_sink</text>
-<text x="298" y="352" font-size="9.4" fill="#5d6878">sink-augmented</text>
-<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 聚合</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o = softmax(S) v</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,H,L,128]</text>
-<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 输出投影</text>
-<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O ;  x ← x + y</text>
-<text x="298" y="532" font-size="9.4" fill="#5d6878">→ d</text>
-<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 视觉层交替</text>
-<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">行主序 / 列主序逐层交替</text>
-<text x="298" y="622" font-size="9.4" fill="#5d6878">28 层 = 24 SWA + 4 GA</text>
-<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
-<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ),  i = 1…256</text>
-<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,256]</text>
-<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Top-k</text>
-<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = top8(s)</text>
-<text x="748" y="262" font-size="9.4" fill="#5d6878">8 / 256</text>
-<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 专家 SwiGLU</text>
-<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
-<text x="748" y="352" font-size="9.4" fill="#5d6878">d → m → d</text>
-<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 合并与残差</text>
-<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← x + Σ ŝ_i h_i</text>
-<text x="748" y="442" font-size="9.4" fill="#5d6878">d</text>
-<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ DFlash 草稿块</text>
-<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">一次前向出 7 个 token，滑窗 1024</text>
-<text x="748" y="532" font-size="9.4" fill="#5d6878">并行验证，接受长度 +31.3%</text>
-<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
-<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV Cache / token</text>
-<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">SWA 层按 128 窗口、GA 层全量</text>
-<text x="36.0" y="756" font-size="9.4" fill="#5d6878">与 V2.5 同构，规模随层数</text>
-<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">RL 单步开销</text>
-<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">1568 prompt × 16 rollout × 11–15 万 token</text>
-<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">≈ 2.5 万条轨迹</text>
-<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
-<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">Pro 1.02T / Flash 309B</text>
-<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">FP8 约 1.0 TB / 309 GB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 906" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="906" fill="#ffffff"/>
+<text x="340.0" y="24" font-size="15" fill="#111111" text-anchor="middle">Kimi K3 的层组合、KDA 与 Gated MLA、AttnRes 检索</text>
+<text x="340.0" y="44" font-size="8.9" fill="#5a6675" text-anchor="middle">93 层 = 69 × KDA + 24 × Gated MLA，每块 3 KDA + 1 Gated MLA，末两层连续为 Gated MLA；第 1 层为稠密 FFN，其余 92 层接 Stable LatentMoE</text>
+<text x="340.0" y="60" font-size="8.9" fill="#5a6675" text-anchor="middle">AttnRes 每 12 层把当时的前缀累加值存为一份摘要，注意力与前馈之前各以伪查询对这 9 个候选作一次 softmax 检索</text>
+<line x1="12" y1="72" x2="668" y2="72" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="10.0" fill="#1b2430" font-weight="bold">（a）块内组合：两种注意力，一条被检索的残差带</text>
+<rect x="12" y="100" width="320" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="112.5" font-size="9.0" fill="#1b2430">输入 xˡ</text>
+<text x="324" y="112.5" font-size="8.2" fill="#5a6675" text-anchor="end">7168</text>
+<line x1="172.0" y1="118" x2="172.0" y2="120" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,120 L172.0,125 L175.0,120 z" fill="#8a94a3"/>
+<rect x="12" y="125" width="320" height="36" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="20" y="138" font-size="8.8" fill="#55702f" font-weight="bold">AttnRes ①：为注意力取输入</text>
+<text x="20" y="151" font-size="7.8" fill="#33414f">softmax 检索 8 份摘要 + 当前前缀，取加权和</text>
+<line x1="172.0" y1="161" x2="172.0" y2="163" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,163 L172.0,168 L175.0,163 z" fill="#8a94a3"/>
+<rect x="12" y="168" width="320" height="58" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
+<text x="20" y="181" font-size="8.8" fill="#446084" font-weight="bold">注意力单元：按层型二选一</text>
+<rect x="20" y="186" width="304" height="17" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="25" y="198" font-size="7.8" fill="#33414f">69 层：KDA，96 头 × 128，定长状态</text>
+<rect x="20" y="205" width="304" height="17" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="25" y="217" font-size="7.8" fill="#33414f">24 层：Gated MLA，q 1536 / kv 512+64，NoPE</text>
+<line x1="172.0" y1="226" x2="172.0" y2="228" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,228 L172.0,233 L175.0,228 z" fill="#8a94a3"/>
+<rect x="12" y="233" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="246.5" font-size="8.8" fill="#1b2430">残差并入前缀</text>
+<text x="324" y="246.5" font-size="7.8" fill="#5a6675" text-anchor="end">prefix ← prefix + o</text>
+<line x1="172.0" y1="253" x2="172.0" y2="255" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,255 L172.0,260 L175.0,255 z" fill="#8a94a3"/>
+<rect x="12" y="260" width="320" height="36" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="20" y="273" font-size="8.8" fill="#55702f" font-weight="bold">AttnRes ②：为前馈取输入</text>
+<text x="20" y="286" font-size="7.8" fill="#33414f">同一套伪查询与摘要库，重算一次权重</text>
+<line x1="172.0" y1="296" x2="172.0" y2="298" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,298 L172.0,303 L175.0,298 z" fill="#8a94a3"/>
+<rect x="12" y="303" width="320" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="316" font-size="8.8" fill="#1b2430" font-weight="bold">前馈：Stable LatentMoE</text>
+<text x="20" y="329" font-size="7.8" fill="#33414f">896 选 16 + 2 共享，潜维 3584，专家 3072</text>
+<text x="20" y="342" font-size="7.8" fill="#33414f">第 1 层例外：稠密 FFN，中间维 33792</text>
+<line x1="172.0" y1="355" x2="172.0" y2="357" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,357 L172.0,362 L175.0,357 z" fill="#8a94a3"/>
+<text x="182.0" y="361" font-size="8.2" fill="#5a6675">× 93 层</text>
+<text x="348" y="90" font-size="10.0" fill="#1b2430" font-weight="bold">（b）93 层的层型与 AttnRes 摘要边界</text>
+<text x="348" y="108" font-size="7.8" fill="#5a6675">第 1 层 → 第 93 层，左上为起始</text>
+<rect x="348.0" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="351.44086021505376" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="354.8817204301075" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="358.3225806451613" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="361.76344086021504" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="365.2043010752688" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="368.64516129032256" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="372.0860215053763" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="375.5268817204301" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="378.9677419354839" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="382.4086021505376" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="385.8494623655914" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="389.2903225806452" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="392.73118279569894" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="396.1720430107527" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="399.61290322580646" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="403.0537634408602" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="406.494623655914" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="409.93548387096774" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="413.3763440860215" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="416.81720430107526" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="420.258064516129" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="423.6989247311828" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="427.13978494623655" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="430.5806451612903" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="434.02150537634407" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="437.4623655913979" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="440.9032258064516" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="444.3440860215054" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="447.7849462365591" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="451.2258064516129" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="454.6666666666667" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="458.10752688172045" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="461.5483870967742" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="464.98924731182797" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="468.4301075268817" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="471.8709677419355" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="475.31182795698925" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="478.752688172043" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="482.19354838709677" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="485.63440860215053" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="489.0752688172043" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="492.51612903225805" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="495.95698924731187" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="499.39784946236557" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="502.8387096774194" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="506.2795698924731" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="509.7204301075269" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="513.1612903225806" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="516.6021505376344" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="520.0430107526881" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="523.483870967742" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="526.9247311827958" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="530.3655913978495" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="533.8064516129032" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="537.247311827957" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="540.6881720430108" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="544.1290322580645" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="547.5698924731182" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="551.010752688172" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="554.4516129032259" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="557.8924731182796" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="561.3333333333334" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="564.7741935483871" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="568.2150537634409" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="571.6559139784946" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="575.0967741935484" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="578.5376344086021" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="581.9784946236559" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="585.4193548387098" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="588.8602150537635" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="592.3010752688172" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="595.741935483871" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="599.1827956989248" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="602.6236559139785" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="606.0645161290322" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="609.505376344086" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="612.9462365591398" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="616.3870967741935" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="619.8279569892472" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="623.2688172043011" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="626.7096774193549" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="630.1505376344086" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="633.5913978494624" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="637.0322580645161" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="640.4731182795699" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="643.9139784946237" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="647.3548387096774" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="650.7956989247311" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="654.236559139785" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="657.6774193548388" y="114" width="3.0908602150537634" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="661.1182795698925" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="664.5591397849462" y="114" width="3.0908602150537634" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<line x1="348.0" y1="112" x2="348.0" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="368.64516129032256" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">0</text>
+<line x1="389.2903225806452" y1="112" x2="389.2903225806452" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="409.93548387096774" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">1</text>
+<line x1="430.5806451612903" y1="112" x2="430.5806451612903" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="451.2258064516129" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">2</text>
+<line x1="471.8709677419355" y1="112" x2="471.8709677419355" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="492.51612903225805" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">3</text>
+<line x1="513.1612903225806" y1="112" x2="513.1612903225806" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="533.8064516129032" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">4</text>
+<line x1="554.4516129032259" y1="112" x2="554.4516129032259" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="575.0967741935484" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">5</text>
+<line x1="595.741935483871" y1="112" x2="595.741935483871" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="616.3870967741935" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">6</text>
+<line x1="637.0322580645161" y1="112" x2="637.0322580645161" y2="140" stroke="#55702f" stroke-width="0.9" stroke-dasharray="2 2"/>
+<text x="657.6774193548388" y="152" font-size="6.8" fill="#55702f" text-anchor="middle">7</text>
+<text x="348" y="168" font-size="7.4" fill="#55702f">↑ 绿色虚线为 AttnRes 摘要边界，每 12 层一份，共 8 份（末组 9 层）</text>
+<text x="348" y="190" font-size="8.4" fill="#1b2430" font-weight="bold">放大第 1–4 层</text>
+<rect x="348.0" y="196" width="76.0" height="26" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="386.0" y="211.6" font-size="8.0" fill="#111111" text-anchor="middle">KDA</text>
+<text x="386.0" y="236" font-size="7.4" fill="#5a6675" text-anchor="middle">层 1</text>
+<rect x="428.0" y="196" width="76.0" height="26" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="466.0" y="211.6" font-size="8.0" fill="#111111" text-anchor="middle">KDA</text>
+<text x="466.0" y="236" font-size="7.4" fill="#5a6675" text-anchor="middle">层 2</text>
+<rect x="508.0" y="196" width="76.0" height="26" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/><text x="546.0" y="211.6" font-size="8.0" fill="#111111" text-anchor="middle">KDA</text>
+<text x="546.0" y="236" font-size="7.4" fill="#5a6675" text-anchor="middle">层 3</text>
+<rect x="588.0" y="196" width="76.0" height="26" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/><text x="626.0" y="211.6" font-size="8.0" fill="#111111" text-anchor="middle">Gated MLA</text>
+<text x="626.0" y="236" font-size="7.4" fill="#5a6675" text-anchor="middle">层 4</text>
+<text x="348" y="256" font-size="7.8" fill="#33414f">第 92、93 层连续两层为 Gated MLA，官方架构图以省略号略去；</text>
+<text x="348" y="269" font-size="7.8" fill="#33414f">23 个「3 + 1」块共 92 层，另 1 层 Gated MLA 收尾。</text>
+<rect x="348" y="282" width="12" height="8" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="364" y="290" font-size="7.6" fill="#33414f">KDA：69 层，定长状态</text>
+<rect x="508" y="282" width="12" height="8" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="524" y="290" font-size="7.6" fill="#33414f">Gated MLA：24 层，KV 按 token 增</text>
+<text x="348" y="314" font-size="7.8" fill="#33414f">KV 缓存只由 24 层 Gated MLA 产生；69 层 KDA 以 96 个定长状态</text>
+<text x="348" y="327" font-size="7.8" fill="#33414f">代替逐 token 缓存，状态大小与序列长度无关，只随批与层数增长。</text>
+<line x1="12" y1="362" x2="668" y2="362" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="380" font-size="10.0" fill="#1b2430" font-weight="bold">（c）AttnRes：残差不再逐层累加，而是按需检索</text>
+<text x="12" y="398" font-size="8.2" fill="#1b2430" font-weight="bold">候选源：9 个</text>
+<rect x="12" y="404" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="414" font-size="7.2" fill="#33414f">摘要 0：嵌入</text>
+<rect x="12" y="417.4" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="427.4" font-size="7.2" fill="#33414f">摘要 1：层 1–12</text>
+<rect x="12" y="430.79999999999995" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="440.79999999999995" font-size="7.2" fill="#33414f">摘要 2：层 13–24</text>
+<rect x="12" y="444.19999999999993" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="454.19999999999993" font-size="7.2" fill="#33414f">摘要 3：层 25–36</text>
+<rect x="12" y="457.5999999999999" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="467.5999999999999" font-size="7.2" fill="#33414f">摘要 4：层 37–48</text>
+<rect x="12" y="470.9999999999999" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="480.9999999999999" font-size="7.2" fill="#33414f">摘要 5：层 49–60</text>
+<rect x="12" y="484.39999999999986" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="494.39999999999986" font-size="7.2" fill="#33414f">摘要 6：层 61–72</text>
+<rect x="12" y="497.79999999999984" width="152" height="13" fill="#ffffff" stroke="#8b8f99" stroke-width="0.7"/>
+<text x="18" y="507.79999999999984" font-size="7.2" fill="#33414f">摘要 7：层 73–84</text>
+<rect x="12" y="511.1999999999998" width="152" height="13" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<text x="18" y="521.1999999999998" font-size="7.2" fill="#55702f" font-weight="bold">当前前缀：层 85–93</text>
+<line x1="164" y1="470" x2="173" y2="470" stroke="#8a94a3" stroke-width="1"/><path d="M173,467 L178,470 L173,473 z" fill="#8a94a3"/>
+<rect x="182" y="400" width="182" height="46" fill="#ffffff" stroke="#55702f" stroke-width="0.9"/>
+<text x="190" y="413" font-size="8.2" fill="#55702f" font-weight="bold">① 伪查询打分</text>
+<text x="190" y="428" font-size="7.6" fill="#1b2430">s_i = w_l · RMSNorm(v_i)</text>
+<text x="190" y="441" font-size="7.4" fill="#33414f">p = softmax(s)，9 选 1 组权重</text>
+<line x1="273.0" y1="446" x2="273.0" y2="451" stroke="#8a94a3" stroke-width="1"/><path d="M270.0,451 L273.0,456 L276.0,451 z" fill="#8a94a3"/>
+<rect x="182" y="458" width="182" height="44" fill="#ffffff" stroke="#55702f" stroke-width="0.9"/>
+<text x="190" y="471" font-size="8.2" fill="#55702f" font-weight="bold">② softmax 加权求和</text>
+<text x="190" y="486" font-size="7.6" fill="#1b2430">x_l = Σ_i p_i v_i，送入本层</text>
+<text x="190" y="498" font-size="7.2" fill="#33414f">注意力之后对 MoE 输入再检索一次</text>
+<text x="380" y="407" font-size="7.3" fill="#33414f">伪查询 w_l 是可学习向量（1 × 7168），与归一化后的候选逐通道相乘再求和，等价于单</text>
+<text x="380" y="418" font-size="7.3" fill="#33414f">头打分；权重取 softmax，输出为 9 个候选的凸组合。</text>
+<text x="380" y="434" font-size="7.3" fill="#33414f">每 12 层把当时的前缀累加值存入摘要库，库内至多 8 份；加当前前缀，每层最多 9 个候</text>
+<text x="380" y="445" font-size="7.3" fill="#33414f">选，检索只读这 9 条而非全部 93 层。</text>
+<text x="380" y="461" font-size="7.3" fill="#33414f">每层检索两次：注意力之前定注意力输入，注意力之后定前馈输入；模型末端再检索一</text>
+<text x="380" y="472" font-size="7.3" fill="#33414f">次，供最终归一化。</text>
+<text x="380" y="490" font-size="7.3" fill="#33414f">残差链因此由「逐层累加」变为「选择性读」，官方称额外计算不足 2%，训练效率提升</text>
+<text x="380" y="501" font-size="7.3" fill="#33414f">约 25%。</text>
+<line x1="12" y1="536" x2="668" y2="536" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="552" font-size="10.0" fill="#1b2430" font-weight="bold">（d）KDA 的两种执行形态</text>
+<text x="452" y="552" font-size="10.0" fill="#1b2430" font-weight="bold">（e）Gated MLA（24 层）</text>
+<text x="668" y="552" font-size="8.0" fill="#5a6675" text-anchor="end">NoPE，96 头</text>
+<rect x="12" y="574" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="19" y="586" font-size="8.1" fill="#446084" font-weight="bold">① 短卷积</text>
+<text x="19" y="598" font-size="7.2" fill="#33414f">q, k, v 各过核 4 短卷积（SiLU），</text>
+<text x="19" y="610" font-size="7.2" fill="#33414f">q/k 再作 L2 归一化</text>
+<rect x="12" y="620" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="19" y="632" font-size="8.1" fill="#446084" font-weight="bold">② 逐通道门</text>
+<text x="19" y="644" font-size="7.2" fill="#33414f">g_t = −exp(A_log) ⊙ softplus(a_t + dt_bias)</text>
+<text x="19" y="656" font-size="7.2" fill="#33414f">β_t = σ(W_β x_t)，门下界 −5</text>
+<rect x="12" y="666" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="19" y="678" font-size="8.1" fill="#446084" font-weight="bold">③ 块内并行</text>
+<text x="19" y="690" font-size="7.2" fill="#33414f">序列切块长 C，块内构造 (I−β k kᵀ) 的下三角</text>
+<text x="19" y="702" font-size="7.2" fill="#33414f">一次 GEMM 覆盖 C × C 全部位置对</text>
+<rect x="12" y="712" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="19" y="724" font-size="8.1" fill="#446084" font-weight="bold">④ 块间递推</text>
+<text x="19" y="736" font-size="7.2" fill="#33414f">S_c = diag(γ_c)(I−β_c k_c k_cᵀ) S_{c−1}</text>
+<text x="19" y="748" font-size="7.2" fill="#33414f">         + β_c k_c v_cᵀ；只传 128×128 状态</text>
+<rect x="12" y="758" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="19" y="770" font-size="8.1" fill="#446084" font-weight="bold">⑤ 读出与画像</text>
+<text x="19" y="782" font-size="7.2" fill="#33414f">o_t = S q_t ⊙ σ，经 o_norm 与 o_proj 回 7168</text>
+<text x="19" y="794" font-size="7.2" fill="#33414f">预填充用：并行度 = 批 × 块数</text>
+<text x="116" y="568" font-size="7.8" fill="#446084" text-anchor="middle">chunkwise，用于预填充</text>
+<rect x="232" y="574" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="239" y="586" font-size="8.1" fill="#446084" font-weight="bold">① 投影与卷积</text>
+<text x="239" y="598" font-size="7.2" fill="#33414f">逐 token 求 q, k, v，各过核 4 短卷积</text>
+<text x="239" y="610" font-size="7.2" fill="#33414f">q/k 作 L2 归一化</text>
+<rect x="232" y="620" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="239" y="632" font-size="8.1" fill="#446084" font-weight="bold">② 逐 token 门</text>
+<text x="239" y="644" font-size="7.2" fill="#33414f">g_t、β_t 逐 token 计算，门下界 −5</text>
+<text x="239" y="656" font-size="7.2" fill="#33414f">衰减按通道而异，不做块内近似</text>
+<rect x="232" y="666" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="239" y="678" font-size="8.1" fill="#446084" font-weight="bold">③ 状态更新</text>
+<text x="239" y="690" font-size="7.2" fill="#33414f">S_t = diag(α_t)(I − β_t k_t k_tᵀ) S_{t−1}</text>
+<text x="239" y="702" font-size="7.2" fill="#33414f">         + β_t k_t v_tᵀ</text>
+<rect x="232" y="712" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="239" y="724" font-size="8.1" fill="#446084" font-weight="bold">④ 读出</text>
+<text x="239" y="736" font-size="7.2" fill="#33414f">o_t = S_t q_t，96 头并行</text>
+<text x="239" y="748" font-size="7.2" fill="#33414f">逐头算 128 维向量乘 128×128 矩阵</text>
+<rect x="232" y="758" width="208" height="40" fill="#ffffff" stroke="#446084" stroke-width="0.8"/>
+<text x="239" y="770" font-size="8.1" fill="#446084" font-weight="bold">⑤ 状态常驻与画像</text>
+<text x="239" y="782" font-size="7.2" fill="#33414f">每步读写 96 × 128 × 128 状态（3.0 MiB/层）</text>
+<text x="239" y="794" font-size="7.2" fill="#33414f">解码用：批内并行、时间维串行</text>
+<text x="336" y="568" font-size="7.8" fill="#446084" text-anchor="middle">recurrent，用于解码</text>
+<rect x="452" y="574" width="216" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/>
+<text x="459" y="586" font-size="8.1" fill="#a9742a" font-weight="bold">① q 低秩</text>
+<text x="459" y="598" font-size="7.2" fill="#33414f">7168 → 1536（q_a），过 RMSNorm</text>
+<text x="459" y="610" font-size="7.2" fill="#33414f">低秩压缩只为省权重与带宽</text>
+<rect x="452" y="620" width="216" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/>
+<text x="459" y="632" font-size="8.1" fill="#a9742a" font-weight="bold">② q 升维</text>
+<text x="459" y="644" font-size="7.2" fill="#33414f">1536 → 96 × 192（128 nope + 64 rope）</text>
+<text x="459" y="656" font-size="7.2" fill="#33414f">rope 分支保留但不施加旋转</text>
+<rect x="452" y="666" width="216" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/>
+<text x="459" y="678" font-size="8.1" fill="#a9742a" font-weight="bold">③ KV 低秩</text>
+<text x="459" y="690" font-size="7.2" fill="#33414f">7168 → 512 + 64，96 头共享一份</text>
+<text x="459" y="702" font-size="7.2" fill="#33414f">全模型只有这一处产生 KV 缓存</text>
+<rect x="452" y="712" width="216" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/>
+<text x="459" y="724" font-size="8.1" fill="#a9742a" font-weight="bold">④ KV 升维</text>
+<text x="459" y="736" font-size="7.2" fill="#33414f">512 → 96 × (128 + 128)</text>
+<text x="459" y="748" font-size="7.2" fill="#33414f">k 128 维、v 128 维，按头展开</text>
+<rect x="452" y="758" width="216" height="40" fill="#ffffff" stroke="#a9742a" stroke-width="0.8"/>
+<text x="459" y="770" font-size="8.1" fill="#a9742a" font-weight="bold">⑤ 打分、门控与投影</text>
+<text x="459" y="782" font-size="7.2" fill="#33414f">softmax(q kᵀ/√192) v；o ⊙ σ(x W_g)</text>
+<text x="459" y="794" font-size="7.2" fill="#33414f">o_proj 回 7168；缓存 576 维/层</text>
+<line x1="12" y1="808" x2="668" y2="808" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="826" font-size="10.0" fill="#1b2430" font-weight="bold">（f）缓存、权重与稀疏度核算</text>
+<rect x="12.0" y="834" width="159.5" height="56" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="19.0" y="849" font-size="8.4" fill="#1b2430" font-weight="bold">KV Cache</text>
+<text x="19.0" y="865" font-size="7.0" fill="#33414f">24 层 × 576 维 × 2 B ≈ 27.6 KB/token</text>
+<text x="19.0" y="879" font-size="7.0" fill="#5a6675">1M 上下文 ≈ 27.6 GB，FP8 则折半</text>
+<rect x="177.5" y="834" width="159.5" height="56" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="184.5" y="849" font-size="8.4" fill="#1b2430" font-weight="bold">KDA 状态</text>
+<text x="184.5" y="865" font-size="7.0" fill="#33414f">69 层 × 96 头 × 128 × 128 × 2 B</text>
+<text x="184.5" y="879" font-size="7.0" fill="#5a6675">≈ 217 MB/序列，与长度无关</text>
+<rect x="343.0" y="834" width="159.5" height="56" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="350.0" y="849" font-size="8.4" fill="#1b2430" font-weight="bold">权重体积</text>
+<text x="350.0" y="865" font-size="7.0" fill="#33414f">2.8T × 0.5 B（MXFP4）≈ 1.4 TB</text>
+<text x="350.0" y="879" font-size="7.0" fill="#5a6675">激活 MXFP8，量化感知训练</text>
+<rect x="508.5" y="834" width="159.5" height="56" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="515.5" y="849" font-size="8.4" fill="#1b2430" font-weight="bold">稀疏与检索</text>
+<text x="515.5" y="865" font-size="7.0" fill="#33414f">896 选 16（+2 共享）约 56×</text>
+<text x="515.5" y="879" font-size="7.0" fill="#5a6675">AttnRes 额外计算不足 2%</text>
 </svg>

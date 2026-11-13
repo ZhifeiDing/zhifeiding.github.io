@@ -1,93 +1,160 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1180" height="806" fill="#ffffff"/>
-<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">Ling 2.0｜GQA + 高稀疏 MoE 算子分解</text>
-<text x="24" y="62" font-size="11.2" fill="#4d5866">Ling-flash-2.0：32 层（1 稠密 + 31 MoE）· 隐藏维 4096 · 32 Q / 4 KV × 128（Partial-RoPE 64 维、QK-Norm）· 256 专家 top-8 + 1 共享、中间维 1024 · 词表 157,184</text>
-<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
-<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
-<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
-<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
-<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
-<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t],  E ∈ R^{157184×4096}</text>
-<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,4096]</text>
-<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm（前归一）</text>
-<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²) + 1e-6) ⊙ γ</text>
-<text x="36" y="258" font-size="9.4" fill="#5d6878">[B,L,4096]</text>
-<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">层型</text>
-<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">第 1 层稠密 SwiGLU，其余 31 层 MoE</text>
-<text x="36" y="344" font-size="9.4" fill="#5d6878">中间维 9216 / 1024</text>
-<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① QKV 投影（GQA）</text>
-<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q, k, v = x W_q, x W_k, x W_v</text>
-<text x="298" y="172" font-size="9.4" fill="#5d6878">4096 → 32×128 / 4×128</text>
-<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② QK-Norm</text>
-<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q̂ = q / √(mean(q²)+ε) ⊙ γ_q（k 同理）</text>
-<text x="298" y="262" font-size="9.4" fill="#5d6878">逐头 128 维归一</text>
-<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ Partial-RoPE</text>
-<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">RoPE 仅作用于前 64 维，θ = 6×10⁵</text>
-<text x="298" y="352" font-size="9.4" fill="#5d6878">旋转 64 / 128 维</text>
-<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 打分</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S = q̂ k̂ᵀ/√128 + mask</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,32,L,L]</text>
-<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ Softmax 与聚合</text>
-<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">P = softmax(S) ;  o = P v</text>
-<text x="298" y="532" font-size="9.4" fill="#5d6878">32 头共享 4 组 KV</text>
-<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影与残差</text>
-<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O ;  x ← x + y</text>
-<text x="298" y="622" font-size="9.4" fill="#5d6878">4096 → 4096</text>
-<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分（FP32）</text>
-<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x · e_iᵀ) + b_i,  i = 1…256</text>
-<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,256]</text>
-<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 组限制与 Top-k</text>
-<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">g = top4(8 组) ;  I = top8(g),  ŝ = s_I/Σ s_I</text>
-<text x="748" y="262" font-size="9.4" fill="#5d6878">8 / 256，约 3.1%</text>
-<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 共享专家</text>
-<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_s = (SiLU(x W_g,s) ⊙ x W_u,s) W_d,s</text>
-<text x="748" y="352" font-size="9.4" fill="#5d6878">4096 → 1024 → 4096</text>
-<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 路由专家 SwiGLU</text>
-<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
-<text x="748" y="442" font-size="9.4" fill="#5d6878">4096 → 1024 → 4096</text>
-<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 加权合并</text>
-<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = 2.5 · Σ_{i∈I} ŝ_i h_i + h_s</text>
-<text x="748" y="532" font-size="9.4" fill="#5d6878">9 个专家参与</text>
-<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
-<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV Cache / token</text>
-<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">32 × 2 × 4 × 128 × 2 B（K 与 V 各一份）</text>
-<text x="36.0" y="756" font-size="9.4" fill="#5d6878">≈ 64 KB（BF16）</text>
-<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">每 token 算力</text>
-<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">C = 2 × 6.1B</text>
-<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">≈ 12 GFLOP</text>
-<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积</text>
-<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">103B：BF16 ≈ 206 GB / FP8 ≈ 103 GB</text>
-<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">6.1B 激活，4.8B 非嵌入</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="632" viewBox="0 0 680 632" font-family="Georgia, 'Times New Roman', serif">
+<text x="340.0" y="24" font-size="14.5" fill="#111111" text-anchor="middle">Mistral Large 3 的骨架与可核实项</text>
+<text x="340.0" y="43" font-size="8.9" fill="#5a6675" text-anchor="middle">675B 总参 / 41B 激活，稀疏 MoE；官方未披露层数、注意力类型与专家拓扑，图中以符号记</text>
+<text x="340.0" y="58" font-size="8.9" fill="#5a6675" text-anchor="middle">可核实项为激活比、上下文 256K、NVFP4 检查点与单节点 8 卡部署；结构细节待官方补充</text>
+<line x1="12" y1="70" x2="668" y2="70" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="9.8" fill="#1b2430" font-weight="bold">（a）块内组合：仅存骨架</text>
+<text x="348" y="90" font-size="9.8" fill="#1b2430" font-weight="bold">（b）层数与层型：未披露</text>
+<g transform="translate(0,98.0)"><rect x="12" y="0.0" width="320" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="12.5" font-size="9.0" fill="#1b2430">输入 xˡ</text></g>
+<g transform="translate(0,98.0)"><text x="324" y="12.5" font-size="8.2" fill="#5a6675" text-anchor="end">d 未披露</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="18.0" x2="172.0" y2="20.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,20.0 L172.0,25.0 L175.0,20.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="25.0" width="320" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="37.0" font-size="8.8" fill="#1b2430">RMSNorm（推断）</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="47.0" font-size="7.4" fill="#5a6675">按主流配置记为前归一</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="51.0" x2="172.0" y2="53.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,53.0 L172.0,58.0 L175.0,53.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="58.0" width="320" height="39" fill="#ffffff" stroke="#446084" stroke-width="1.0"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="71.0" font-size="8.8" fill="#446084" font-weight="bold">注意力单元：类型未披露</text></g>
+<g transform="translate(0,98.0)"><rect x="20" y="75.0" width="304" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="25" y="86.5" font-size="7.7" fill="#33414f">官方未说明为 MLA、GQA 或稀疏注意力</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="97.0" x2="172.0" y2="99.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,99.0 L172.0,104.0 L175.0,99.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="104.0" width="320" height="20" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="117.5" font-size="8.8" fill="#1b2430">残差相加</text></g>
+<g transform="translate(0,98.0)"><text x="324" y="117.5" font-size="7.6" fill="#5a6675" text-anchor="end">x ← x + y</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="124.0" x2="172.0" y2="126.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,126.0 L172.0,131.0 L175.0,126.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><rect x="12" y="131.0" width="320" height="52" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/></g>
+<g transform="translate(0,98.0)"><text x="20" y="144.0" font-size="8.8" fill="#1b2430" font-weight="bold">前馈单元：稀疏 MoE（拓扑未披露）</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="156.0" font-size="7.6" fill="#33414f">激活 41B / 总 675B，激活比约 6%</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="168.0" font-size="7.6" fill="#33414f">专家数与 top-k 未公布</text></g>
+<g transform="translate(0,98.0)"><line x1="172.0" y1="183.0" x2="172.0" y2="185.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,185.0 L172.0,190.0 L175.0,185.0 z" fill="#8a94a3"/></g>
+<g transform="translate(0,98.0)"><text x="182.0" y="189.0" font-size="8.2" fill="#5a6675">× 层数未披露</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="10.0" font-size="7.8" fill="#5a6675">层数未披露，图为 24 层示意，底色仅表示“未披露”</text></g>
+<g transform="translate(0,98.0)"><rect x="348.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="361.3333333333333" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="374.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="388.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="401.3333333333333" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="414.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="428.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="441.33333333333337" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="454.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="468.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="481.33333333333337" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="494.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="508.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="521.3333333333334" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="534.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="548.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="561.3333333333334" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="574.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="588.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="601.3333333333334" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="614.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="628.0" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="641.3333333333334" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><rect x="654.6666666666667" y="14.0" width="12.983333333333334" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.7"/></g>
+<g transform="translate(0,98.0)"><text x="348" y="44.0" font-size="8.4" fill="#1b2430" font-weight="bold">放大第 1–4 层</text></g>
+<g transform="translate(0,98.0)"><rect x="348.0" y="50.0" width="76.0" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="386.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">?</text></g>
+<g transform="translate(0,98.0)"><text x="386.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 1</text></g>
+<g transform="translate(0,98.0)"><rect x="428.0" y="50.0" width="76.0" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="466.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">?</text></g>
+<g transform="translate(0,98.0)"><text x="466.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 2</text></g>
+<g transform="translate(0,98.0)"><rect x="508.0" y="50.0" width="76.0" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="546.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">?</text></g>
+<g transform="translate(0,98.0)"><text x="546.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 3</text></g>
+<g transform="translate(0,98.0)"><rect x="588.0" y="50.0" width="76.0" height="26" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="626.0" y="66.5" font-size="7.6" fill="#111111" text-anchor="middle">?</text></g>
+<g transform="translate(0,98.0)"><text x="626.0" y="88.0" font-size="7.3" fill="#5a6675" text-anchor="middle">层 4</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="104.0" font-size="7.7" fill="#33414f">官方仅公布总量、激活量与上下文，未给出层数、头配置与专家拓扑。</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="116.0" font-size="7.7" fill="#33414f">本节按可核实项绘制，推断项一律标注，不与后续披露的规格混同。</text></g>
+<g transform="translate(0,98.0)"><rect x="348" y="124.0" width="12" height="8" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="364" y="132.0" font-size="7.4" fill="#33414f">未披露（示意）</text></g>
+<g transform="translate(0,98.0)"><rect x="508" y="124.0" width="12" height="8" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/></g>
+<g transform="translate(0,98.0)"><text x="524" y="132.0" font-size="7.4" fill="#33414f">MoE：已确认</text></g>
+<line x1="12" y1="299.0" x2="668" y2="299.0" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12.0" y="317.0" font-size="9.6" fill="#1b2430" font-weight="bold">（c）可核实的规模项</text>
+<text x="226.66666666666666" y="317.0" font-size="7.6" fill="#5a6675" text-anchor="end">官方公布</text>
+<rect x="12.0" y="325.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="19.0" y="337.0" font-size="8.0" fill="#8b8f99" font-weight="bold">① 总参数</text>
+<text x="19.0" y="348.0" font-size="7.2" fill="#33414f">675B</text>
+<text x="19.0" y="359.5" font-size="7.2" fill="#33414f">MoE 稀疏结构</text>
+<rect x="12.0" y="368.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="19.0" y="380.0" font-size="8.0" fill="#8b8f99" font-weight="bold">② 激活参数</text>
+<text x="19.0" y="391.0" font-size="7.2" fill="#33414f">41B</text>
+<text x="19.0" y="402.5" font-size="7.2" fill="#33414f">约为总量的 6%</text>
+<rect x="12.0" y="411.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="19.0" y="423.0" font-size="8.0" fill="#8b8f99" font-weight="bold">③ 上下文</text>
+<text x="19.0" y="434.0" font-size="7.2" fill="#33414f">256K token</text>
+<text x="19.0" y="445.5" font-size="7.2" fill="#33414f">未作 1M 扩展</text>
+<rect x="12.0" y="454.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="19.0" y="466.0" font-size="8.0" fill="#8b8f99" font-weight="bold">④ 模态</text>
+<text x="19.0" y="477.0" font-size="7.2" fill="#33414f">文本 + 图像输入</text>
+<text x="19.0" y="488.5" font-size="7.2" fill="#33414f">视觉前端未披露规模</text>
+<rect x="12.0" y="497.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="19.0" y="509.0" font-size="8.0" fill="#8b8f99" font-weight="bold">⑤ 训练</text>
+<text x="19.0" y="520.0" font-size="7.2" fill="#33414f">3000 × H200 从零训练</text>
+<text x="19.0" y="531.5" font-size="7.2" fill="#33414f">Apache 2.0 发布</text>
+<text x="232.66666666666666" y="317.0" font-size="9.6" fill="#1b2430" font-weight="bold">（d）部署形态</text>
+<text x="447.3333333333333" y="317.0" font-size="7.6" fill="#5a6675" text-anchor="end">单节点 8 卡</text>
+<rect x="232.66666666666666" y="325.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="239.66666666666666" y="337.0" font-size="8.0" fill="#446084" font-weight="bold">① NVFP4 检查点</text>
+<text x="239.66666666666666" y="348.0" font-size="7.2" fill="#33414f">由 llm-compressor 构建</text>
+<text x="239.66666666666666" y="359.5" font-size="7.2" fill="#33414f">随权重一同发布</text>
+<rect x="232.66666666666666" y="368.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="239.66666666666666" y="380.0" font-size="8.0" fill="#446084" font-weight="bold">② 单机可行性</text>
+<text x="239.66666666666666" y="391.0" font-size="7.2" fill="#33414f">8 × A100/H100 经 vLLM 运行</text>
+<text x="239.66666666666666" y="402.5" font-size="7.2" fill="#33414f">把旗舰门槛降到单节点</text>
+<rect x="232.66666666666666" y="411.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="239.66666666666666" y="423.0" font-size="8.0" fill="#446084" font-weight="bold">③ Blackwell kernel</text>
+<text x="239.66666666666666" y="434.0" font-size="7.2" fill="#33414f">NVIDIA 协同提供注意力与 MoE kernel</text>
+<text x="239.66666666666666" y="445.5" font-size="7.2" fill="#33414f">含 PD 分离</text>
+<rect x="232.66666666666666" y="454.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="239.66666666666666" y="466.0" font-size="8.0" fill="#446084" font-weight="bold">④ 投机解码</text>
+<text x="239.66666666666666" y="477.0" font-size="7.2" fill="#33414f">由推理框架提供</text>
+<text x="239.66666666666666" y="488.5" font-size="7.2" fill="#33414f">非模型自带</text>
+<rect x="232.66666666666666" y="497.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
+<text x="239.66666666666666" y="509.0" font-size="8.0" fill="#446084" font-weight="bold">⑤ 定价</text>
+<text x="239.66666666666666" y="520.0" font-size="7.2" fill="#33414f">约为同代闭源旗舰的一半</text>
+<text x="239.66666666666666" y="531.5" font-size="7.2" fill="#33414f">与 41B 激活相称</text>
+<text x="453.3333333333333" y="317.0" font-size="9.6" fill="#1b2430" font-weight="bold">（e）算子骨架（推断）</text>
+<text x="668.0" y="317.0" font-size="7.6" fill="#5a6675" text-anchor="end">随披露更新</text>
+<rect x="453.3333333333333" y="325.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="337.0" font-size="8.0" fill="#55702f" font-weight="bold">① 注意力</text>
+<text x="460.3333333333333" y="348.0" font-size="7.2" fill="#33414f">类型未披露</text>
+<text x="460.3333333333333" y="359.5" font-size="7.2" fill="#33414f">按激活比推断为注意力轻量或 GQA</text>
+<rect x="453.3333333333333" y="368.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="380.0" font-size="8.0" fill="#55702f" font-weight="bold">② 前馈</text>
+<text x="460.3333333333333" y="391.0" font-size="7.2" fill="#33414f">稀疏 MoE，top-k 未披露</text>
+<text x="460.3333333333333" y="402.5" font-size="7.2" fill="#33414f">专家中间维未披露</text>
+<rect x="453.3333333333333" y="411.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="423.0" font-size="8.0" fill="#55702f" font-weight="bold">③ 归一化</text>
+<text x="460.3333333333333" y="434.0" font-size="7.2" fill="#33414f">按主流配置推断为 RMSNorm</text>
+<text x="460.3333333333333" y="445.5" font-size="7.2" fill="#33414f">位置未披露</text>
+<rect x="453.3333333333333" y="454.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="466.0" font-size="8.0" fill="#55702f" font-weight="bold">④ 残差</text>
+<text x="460.3333333333333" y="477.0" font-size="7.2" fill="#33414f">常规单流（推断）</text>
+<text x="460.3333333333333" y="488.5" font-size="7.2" fill="#33414f">无超连接迹象</text>
+<rect x="453.3333333333333" y="497.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
+<text x="460.3333333333333" y="509.0" font-size="8.0" fill="#55702f" font-weight="bold">⑤ 待补</text>
+<text x="460.3333333333333" y="520.0" font-size="7.2" fill="#33414f">层数、头配置、专家数</text>
+<text x="460.3333333333333" y="531.5" font-size="7.2" fill="#33414f">需等官方技术报告</text>
+<line x1="12" y1="546.0" x2="668" y2="546.0" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="560.0" font-size="9.8" fill="#1b2430" font-weight="bold">核算：缓存、算力与权重</text>
+<rect x="12.0" y="568.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="19.0" y="582.0" font-size="8.2" fill="#1b2430" font-weight="bold">总参 / 激活</text>
+<text x="19.0" y="595.0" font-size="7.0" fill="#33414f">675B / 41B</text>
+<text x="19.0" y="607.0" font-size="7.0" fill="#5a6675">激活比约 6%</text>
+<rect x="177.5" y="568.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="184.5" y="582.0" font-size="8.2" fill="#1b2430" font-weight="bold">上下文</text>
+<text x="184.5" y="595.0" font-size="7.0" fill="#33414f">256K</text>
+<text x="184.5" y="607.0" font-size="7.0" fill="#5a6675">未扩至 1M</text>
+<rect x="343.0" y="568.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="350.0" y="582.0" font-size="8.2" fill="#1b2430" font-weight="bold">数值</text>
+<text x="350.0" y="595.0" font-size="7.0" fill="#33414f">NVFP4 检查点</text>
+<text x="350.0" y="607.0" font-size="7.0" fill="#5a6675">单节点 8 卡可运行</text>
+<rect x="508.5" y="568.0" width="159.5" height="52" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.8"/>
+<text x="515.5" y="582.0" font-size="8.2" fill="#1b2430" font-weight="bold">层数与拓扑</text>
+<text x="515.5" y="595.0" font-size="7.0" fill="#33414f">未披露</text>
+<text x="515.5" y="607.0" font-size="7.0" fill="#5a6675">图以符号记，不臆测</text>
 </svg>

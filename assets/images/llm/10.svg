@@ -1,93 +1,123 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1180" height="806" fill="#ffffff"/>
-<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">DeepSeek-V4.1-Flash｜CED 与 CSA2 三模式算子分解</text>
-<text x="24" y="62" font-size="11.2" fill="#4d5866">552B · 40 层 = 20 层因果编码器 + 20 层解码器 · CSA2：Full / Reindex / Reuse 三模式静态指定 · 预填充激活 8B / 解码 16B</text>
-<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
-<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
-<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
-<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
-<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
-<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t]</text>
-<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,d]</text>
-<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm</text>
-<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²)+ε) ⊙ γ</text>
-<text x="36" y="258" font-size="9.4" fill="#5d6878">d 未披露</text>
-<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">CED 层归属</text>
-<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">l ≤ 20 走编码器，l &gt; 20 走解码器</text>
-<text x="36" y="344" font-size="9.4" fill="#5d6878">同一权重栈，激活不同</text>
-<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 模式判定（静态）</text>
-<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">mode(l) ∈ {Full, Reindex, Reuse}</text>
-<text x="298" y="172" font-size="9.4" fill="#5d6878">编译期确定，运行期无分支</text>
-<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Full：主 KV 与索引键</text>
-<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">c_kv = x W_DKV ;  k_I = c_kv W_I</text>
-<text x="298" y="262" font-size="9.4" fill="#5d6878">压缩率取 1 时不压缩</text>
-<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ Reindex：复用主 KV</text>
-<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">c_kv ← c_kv^{(l-1)} ;  s = q_I k_Iᵀ</text>
-<text x="298" y="352" font-size="9.4" fill="#5d6878">只重算打分</text>
-<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ Reuse：复用 Top-k</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I ← I^{(l-1)}</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">不计算索引器</text>
-<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 分层索引池</text>
-<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">P = top512(s), 于首个 Full 层构造</text>
-<text x="298" y="532" font-size="9.4" fill="#5d6878">后续层在池内打分</text>
-<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 注意力与滑窗</text>
-<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">o = softmax(q K'ᵀ / √d) V' + SWA 重放</text>
-<text x="298" y="622" font-size="9.4" fill="#5d6878">128 条滑窗条目</text>
-<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
-<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x e_iᵀ)</text>
-<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,E]</text>
-<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② Top-k</text>
-<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">I = topk(s)</text>
-<text x="748" y="262" font-size="9.4" fill="#5d6878">与 V4 同族拓扑</text>
-<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 专家 FFN（FP4）</text>
-<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = SwiGLU(x ; W_i)</text>
-<text x="748" y="352" font-size="9.4" fill="#5d6878">中间维未披露</text>
-<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 合并 + 残差</text>
-<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← x + Σ ŝ_i h_i + E_s(x)</text>
-<text x="748" y="442" font-size="9.4" fill="#5d6878">d</text>
-<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 多 token 预测</text>
-<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">p(t+1…t+n) 并行头</text>
-<text x="748" y="532" font-size="9.4" fill="#5d6878">投机解码</text>
-<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
-<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV Cache</text>
-<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">全局 HBM 降至上一代 1/4</text>
-<text x="36.0" y="756" font-size="9.4" fill="#5d6878">落盘 SSD 降至 1/8</text>
-<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">相对 V3 初代</text>
-<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">累计缩小 437 倍</text>
-<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">压缩 + FP4 + SWA 重放</text>
-<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">算力画像</text>
-<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">预填充 20 层 / 解码 40 层</text>
-<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">8B 与 16B 激活</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 626" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="626" fill="#ffffff"/>
+<text x="340.0" y="24" font-size="15" fill="#111111" text-anchor="middle">DeepSeek-V4 的三类缓存与块划分</text>
+<text x="340.0" y="44" font-size="9.2" fill="#5a6675" text-anchor="middle">State Cache 存未压缩滑窗与压缩尾段，压缩 KV Cache 按 lcm(4, 128) = 128 token 分块，索引器键单列一段</text>
+<text x="340.0" y="60" font-size="9.2" fill="#5a6675" text-anchor="middle">一条 512 维条目的记录为 576 B：448 维 FP8 加 64 维 BF16 的 RoPE 分量</text>
+<line x1="12" y1="72" x2="668" y2="72" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（a）每层四类记录的字节构成</text>
+<text x="12" y="113" font-size="8.8" fill="#1b2430" font-weight="bold">SWA KV</text>
+<rect x="108" y="100" width="300" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9" stroke-dasharray="4 3"/>
+<text x="258.0" y="112.5" font-size="8.0" fill="#5a6675" text-anchor="middle">定长段，不按每 token 折算</text>
+<text x="420" y="112.5" font-size="8.2" fill="#33414f">环形覆盖，容量与序列长度无关</text>
+<text x="12" y="139" font-size="8.8" fill="#1b2430" font-weight="bold">CSA 主 KV</text>
+<rect x="108" y="126" width="300" height="18" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.7"/>
+<rect x="108" y="126" width="300.0" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.9"/>
+<text x="402.0" y="138.5" font-size="7.8" fill="#1b2430" text-anchor="end">每 4 token 1 条 × 576 B</text>
+<text x="420" y="138.5" font-size="8.2" fill="#33414f">≈ 144 B / token</text>
+<text x="12" y="165" font-size="8.8" fill="#1b2430" font-weight="bold">CSA 索引器 KV</text>
+<rect x="108" y="152" width="300" height="18" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.7"/>
+<rect x="108" y="152" width="68.75" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="420" y="164.5" font-size="8.2" fill="#33414f">128 B 键 + 4 B 缩放 ≈ 33 B / token</text>
+<text x="12" y="191" font-size="8.8" fill="#1b2430" font-weight="bold">HCA KV</text>
+<rect x="108" y="178" width="300" height="18" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.7"/>
+<rect x="108" y="178" width="9.375" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="420" y="190.5" font-size="8.2" fill="#33414f">≈ 4.5 B / token</text>
+<text x="12" y="210" font-size="8.2" fill="#5a6675">记录构成：</text>
+<text x="72" y="210" font-size="8.2" fill="#5a6675">64 维 RoPE 以 BF16 存（128 B），其余 448 维以 FP8 存（448 B）；索引器键 128 维 FP8 加一个逐 token 的 FP32 缩放。</text>
+<line x1="12" y1="236" x2="668" y2="236" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="254" font-size="10.2" fill="#1b2430" font-weight="bold">（b）一个 cache block 的划分：128 个原始 token</text>
+<text x="12" y="280" font-size="8.8" fill="#446084" font-weight="bold">CSA</text>
+<rect x="40.0" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="53.125" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="66.25" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="79.375" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="92.5" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="105.625" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="118.75" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="131.875" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="145.0" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="158.125" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="171.25" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="184.375" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="197.5" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="210.625" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="223.75" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="236.875" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="250.0" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="263.125" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="276.25" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="289.375" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="302.5" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="315.625" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="328.75" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="341.875" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="355.0" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="368.125" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="381.25" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="394.375" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="407.5" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="420.625" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="433.75" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<rect x="446.875" y="268" width="11.925" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.8"/>
+<text x="470" y="281" font-size="8.2" fill="#33414f">32 条 CSA 条目（每 4 token 一条）</text>
+<text x="12" y="306" font-size="8.8" fill="#a9742a" font-weight="bold">索引器</text>
+<rect x="40.0" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="53.125" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="66.25" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="79.375" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="92.5" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="105.625" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="118.75" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="131.875" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="145.0" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="158.125" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="171.25" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="184.375" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="197.5" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="210.625" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="223.75" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="236.875" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="250.0" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="263.125" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="276.25" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="289.375" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="302.5" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="315.625" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="328.75" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="341.875" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="355.0" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="368.125" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="381.25" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="394.375" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="407.5" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="420.625" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="433.75" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<rect x="446.875" y="294" width="11.925" height="18" fill="#fff2dc" stroke="#a9742a" stroke-width="0.8"/>
+<text x="470" y="307" font-size="8.2" fill="#33414f">32 条索引器键（128 维，与 CSA 条目一一对应）</text>
+<text x="12" y="332" font-size="8.8" fill="#55702f" font-weight="bold">HCA</text>
+<rect x="40" y="320" width="420" height="18" fill="#e8f0e2" stroke="#55702f" stroke-width="0.8"/>
+<text x="250.0" y="332.5" font-size="8.0" fill="#1b2430" text-anchor="middle">1 条 HCA 条目</text>
+<text x="470" y="333" font-size="8.2" fill="#33414f">覆盖整块 128 token</text>
+<text x="12" y="362" font-size="8.4" fill="#33414f">块长取两种压缩率的最小公倍数，令 CSA 与 HCA 的分块边界在每一层上重合：一次地址换算即可供所有层复用，</text>
+<text x="12" y="376" font-size="8.4" fill="#33414f">这是把 32 : 1 的条目粒度差收进同一套块表的前提；块还需补齐到缓存行的整数倍，供稀疏注意力核直接取用。</text>
+<line x1="12" y1="392" x2="668" y2="392" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="410" font-size="10.2" fill="#1b2430" font-weight="bold">（c）两处分配器：为何不并成一套页表</text>
+<rect x="12" y="420" width="316" height="88" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="20" y="437" font-size="9.0" fill="#1b2430" font-weight="bold">State Cache（固定容量池）</text>
+<text x="20" y="452" font-size="8.2" fill="#33414f">每请求一个定长块：滑窗 128 条 + 尚未凑满一个</text>
+<text x="20" y="465" font-size="8.2" fill="#33414f">压缩窗口的尾部 KV 与隐状态。</text>
+<text x="20" y="478" font-size="8.2" fill="#33414f">只依赖当前位置，按序列状态管理，不按页分配；</text>
+<text x="20" y="491" font-size="8.2" fill="#33414f">并发数决定池的大小，与上下文长度无关。</text>
+<rect x="348" y="420" width="320" height="88" fill="#dde7f5" stroke="#446084" stroke-width="0.9"/>
+<text x="356" y="437" font-size="9.0" fill="#446084" font-weight="bold">压缩 KV Cache（按块分配）</text>
+<text x="356" y="452" font-size="8.2" fill="#33414f">每块 128 token，只增不改的追加段。</text>
+<text x="356" y="465" font-size="8.2" fill="#33414f">各层条目数不同（CSA 32 条、HCA 1 条），故块表</text>
+<text x="356" y="478" font-size="8.2" fill="#33414f">按层维护：同一块号在两类层上换算到不同条目区间。</text>
+<text x="356" y="491" font-size="8.2" fill="#33414f">前缀复用只需对齐到最后一个完整压缩块。</text>
+<text x="12" y="526" font-size="8.4" fill="#33414f">合并的障碍有二：策略不同（定长状态与追加段），以及稀疏核要求每块固定 B 条条目、对应 B·m 与 B·m′ 个原始 token，</text>
+<text x="12" y="540" font-size="8.4" fill="#33414f">两者只有把块长锁在 lcm 上才能共用同一核。落盘同理：压缩条目整体写出，滑窗段则在全量、周期检查点、零缓存三策中选一。</text>
+<line x1="12" y1="554" x2="668" y2="554" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="572" font-size="9.0" fill="#1b2430" font-weight="bold">核算</text>
+<text x="52" y="572" font-size="8.4" fill="#33414f">Pro：30 层 CSA × 177 B + 31 层 HCA × 4.5 B ≈ 5.3 KB / token，1M 上下文单序列约 5.5 GB；Flash 约 3.7 KB / token，1M 约 3.8 GB。</text>
+<text x="52" y="588" font-size="8.4" fill="#33414f">对 V3.2 的 48 KB / token（1M 约 48 GB）约为 11%，与官方所报 10% 同量级；滑窗段另计 61 × 72 KB = 4.4 MB，短上下文与高并发下反成主项。</text>
 </svg>

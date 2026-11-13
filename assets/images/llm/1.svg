@@ -1,93 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="806" viewBox="0 0 1180 806" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1180" height="806" fill="#ffffff"/>
-<text x="24" y="40" font-size="19" font-weight="700" fill="#16202c">DeepSeek-V3｜MLA + DeepSeekMoE 算子分解</text>
-<text x="24" y="62" font-size="11.2" fill="#4d5866">61 层（3 稠密 + 58 MoE）· 隐藏维 7168 · 128 头 MLA（kv 潜秩 512 + RoPE 64）· 256 专家 top-8 + 1 共享 · 词表 129,280</text>
-<text x="24" y="80" font-size="10.2" fill="#8a94a2">算子级数据流：每框给出算子、计算公式与张量维度；B = batch，L = 序列长度，d_h = 头维</text>
-<line x1="24" y1="92" x2="1156" y2="92" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="110" font-size="10.6" font-weight="700" fill="#6b7280">输入与归一</text>
-<text x="286" y="110" font-size="10.6" font-weight="700" fill="#3f6fa8">注意力通路</text>
-<text x="736" y="110" font-size="10.6" font-weight="700" fill="#3d8b5f">前馈 / 专家通路</text>
-<rect x="24" y="118" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="135" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入查表</text>
-<text x="36" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x = E[t],  E ∈ R^{129280×7168}</text>
-<text x="36" y="172" font-size="9.4" fill="#5d6878">[B,L] → [B,L,7168]</text>
-<rect x="24" y="204" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="221" font-size="12.4" font-weight="700" fill="#1b2430">RMSNorm（前归一）</text>
-<text x="36" y="240" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x̂ = x / √(mean(x²) + 1e-6) ⊙ γ</text>
-<text x="36" y="258" font-size="9.4" fill="#5d6878">[B,L,7168] → [B,L,7168]</text>
-<rect x="24" y="290" width="236" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="307" font-size="12.4" font-weight="700" fill="#1b2430">残差主干</text>
-<text x="36" y="326" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x^{(l+1)} = x^{(l)} + Attn + MoE</text>
-<text x="36" y="344" font-size="9.4" fill="#5d6878">7168（全程不变）</text>
-<rect x="286" y="118" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① Q 低秩投影</text>
-<text x="298" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">c_q = x · W_DQ</text>
-<text x="298" y="172" font-size="9.4" fill="#5d6878">[B,L,7168] → [B,L,1536]</text>
-<rect x="286" y="208" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② KV 低秩压缩</text>
-<text x="298" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">c_kv = x · W_DKV ;  k_r = x · W_KR</text>
-<text x="298" y="262" font-size="9.4" fill="#5d6878">512 维潜向量 + 64 维 RoPE 分量</text>
-<rect x="286" y="298" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 上投影与位置编码</text>
-<text x="298" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q = c_q W_UQ ;  k = [c_kv W_UK ; RoPE(k_r)]</text>
-<text x="298" y="352" font-size="9.4" fill="#5d6878">[B,L,128,192]（128 头 × 192）</text>
-<rect x="286" y="388" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 打分</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">S = q kᵀ / √192 + mask</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,128,L,L]</text>
-<rect x="286" y="478" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ Softmax 与聚合</text>
-<text x="298" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">P = softmax(S) ;  o = P v</text>
-<text x="298" y="532" font-size="9.4" fill="#5d6878">v: [B,L,128,128]</text>
-<rect x="286" y="568" width="424" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="585" font-size="12.4" font-weight="700" fill="#1b2430">⑥ 输出投影与残差</text>
-<text x="298" y="604" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = o W_O ;  x ← x + y</text>
-<text x="298" y="622" font-size="9.4" fill="#5d6878">16384 → 7168</text>
-<rect x="736" y="118" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="135" font-size="12.4" font-weight="700" fill="#1b2430">① 路由打分</text>
-<text x="748" y="154" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x · e_iᵀ),  i = 1…256</text>
-<text x="748" y="172" font-size="9.4" fill="#5d6878">[B,L,256]（FP32 计算）</text>
-<rect x="736" y="208" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="225" font-size="12.4" font-weight="700" fill="#1b2430">② 组限制与 Top-k</text>
-<text x="748" y="244" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">g = top4(8 组) ;  I = top8(g)</text>
-<text x="748" y="262" font-size="9.4" fill="#5d6878">每 token 8 个专家，占比 3.1%</text>
-<rect x="736" y="298" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="315" font-size="12.4" font-weight="700" fill="#1b2430">③ 专家 SwiGLU</text>
-<text x="748" y="334" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
-<text x="748" y="352" font-size="9.4" fill="#5d6878">7168 → 2048 → 7168</text>
-<rect x="736" y="388" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="405" font-size="12.4" font-weight="700" fill="#1b2430">④ 共享专家与合并</text>
-<text x="748" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = Σ_{i∈I} ŝ_i h_i + E_s(x),  ŝ = 2.5·s</text>
-<text x="748" y="442" font-size="9.4" fill="#5d6878">9 个专家参与计算</text>
-<rect x="736" y="478" width="420" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="748" y="495" font-size="12.4" font-weight="700" fill="#1b2430">⑤ 残差相加</text>
-<text x="748" y="514" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">x ← x + y</text>
-<text x="748" y="532" font-size="9.4" fill="#5d6878">[B,L,7168]</text>
-<line x1="142.0" y1="189" x2="142.0" y2="198" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="142.0" y1="275" x2="142.0" y2="284" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="189" x2="498.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="279" x2="498.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="369" x2="498.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="459" x2="498.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="498.0" y1="549" x2="498.0" y2="562" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="189" x2="946.0" y2="202" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="279" x2="946.0" y2="292" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="369" x2="946.0" y2="382" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="946.0" y1="459" x2="946.0" y2="472" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="260" y1="146" x2="280" y2="146" stroke="#7c8794" stroke-width="1.3" marker-end="url(#a)"/>
-<line x1="24" y1="676" x2="1156" y2="676" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="692" font-size="10.6" font-weight="700" fill="#8a6d1f">核算：缓存、算力与权重</text>
-<rect x="24.0" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="719" font-size="12.4" font-weight="700" fill="#1b2430">KV Cache / token</text>
-<text x="36.0" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">N_kv = 61 × (512 + 64) × 1 B</text>
-<text x="36.0" y="756" font-size="9.4" fill="#5d6878">≈ 35 KB（FP8）；BF16 加倍</text>
-<rect x="406.6666666666667" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="418.6666666666667" y="719" font-size="12.4" font-weight="700" fill="#1b2430">每 token 算力</text>
-<text x="418.6666666666667" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">C = 2 · N_act = 2 × 37B</text>
-<text x="418.6666666666667" y="756" font-size="9.4" fill="#5d6878">≈ 74 GFLOP</text>
-<rect x="789.3333333333334" y="702" width="366.6666666666667" height="70" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="801.3333333333334" y="719" font-size="12.4" font-weight="700" fill="#1b2430">权重体积（专家占 97%）</text>
-<text x="801.3333333333334" y="738" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">671B × 1 B（FP8 分块）</text>
-<text x="801.3333333333334" y="756" font-size="9.4" fill="#5d6878">≈ 671 GB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 372" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="372" fill="#ffffff"/>
+  <text x="340" y="24" text-anchor="middle" font-size="15" fill="#111">DeepSeek-V3 的 MTP 模块（预测深度 D = 1）</text>
+
+  <!-- 主模型表示 -->
+  <rect x="16" y="64" width="128" height="42" fill="#dde7f5" stroke="#446084"/>
+  <text x="80" y="82" text-anchor="middle" font-size="10.5" fill="#111">主模型表示 hᵢ⁰</text>
+  <text x="80" y="98" text-anchor="middle" font-size="9" fill="#333">[B, L, 7168]</text>
+
+  <!-- 共享嵌入 -->
+  <rect x="16" y="126" width="128" height="42" fill="#f2eee4" stroke="#8a7340"/>
+  <text x="80" y="144" text-anchor="middle" font-size="10.5" fill="#111">共享嵌入 Emb(tᵢ₊₁)</text>
+  <text x="80" y="160" text-anchor="middle" font-size="9" fill="#333">与主模型共用，不另设</text>
+
+  <!-- RMSNorm ×2 -->
+  <rect x="158" y="72" width="66" height="26" fill="#eef2f7" stroke="#555"/>
+  <text x="191" y="89" text-anchor="middle" font-size="9.5" fill="#111">RMSNorm</text>
+  <rect x="158" y="134" width="66" height="26" fill="#eef2f7" stroke="#555"/>
+  <text x="191" y="151" text-anchor="middle" font-size="9.5" fill="#111">RMSNorm</text>
+
+  <line x1="146" y1="85" x2="156" y2="85" stroke="#555" marker-end="url(#a)"/>
+  <line x1="146" y1="147" x2="156" y2="147" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- 拼接 -->
+  <rect x="236" y="64" width="58" height="104" fill="#f7f9fc" stroke="#33475e"/>
+  <text x="265" y="106" text-anchor="middle" font-size="11" fill="#111">[ · ; · ]</text>
+  <text x="265" y="124" text-anchor="middle" font-size="8.5" fill="#333">2d = 14,336</text>
+  <line x1="226" y1="85" x2="234" y2="85" stroke="#555" marker-end="url(#a)"/>
+  <line x1="226" y1="147" x2="234" y2="147" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- M1 -->
+  <rect x="306" y="90" width="88" height="52" fill="#dde7f5" stroke="#446084"/>
+  <text x="350" y="110" text-anchor="middle" font-size="10.5" fill="#111">M₁（拼接降维）</text>
+  <text x="350" y="127" text-anchor="middle" font-size="9" fill="#333">14,336 → 7,168</text>
+  <line x1="296" y1="116" x2="304" y2="116" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- TRM1 -->
+  <rect x="406" y="76" width="104" height="80" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="458" y="96" text-anchor="middle" font-size="10.5" fill="#111">TRM₁（附加块）</text>
+  <text x="458" y="113" text-anchor="middle" font-size="9" fill="#333">与主干一个 MoE 层</text>
+  <text x="458" y="129" text-anchor="middle" font-size="9" fill="#333">同构：256 专家 top-8</text>
+  <text x="458" y="145" text-anchor="middle" font-size="9" fill="#555">+ MLA</text>
+  <line x1="396" y1="116" x2="404" y2="116" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- OutHead -->
+  <rect x="522" y="88" width="88" height="56" fill="#f2eee4" stroke="#8a7340"/>
+  <text x="566" y="108" text-anchor="middle" font-size="10.5" fill="#111">OutHead（共享）</text>
+  <text x="566" y="125" text-anchor="middle" font-size="9" fill="#333">logits 128K</text>
+  <line x1="512" y1="116" x2="520" y2="116" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- 输出 -->
+  <rect x="620" y="98" width="46" height="36" fill="#f7f9fc" stroke="#33475e"/>
+  <text x="643" y="113" text-anchor="middle" font-size="9" fill="#111">P(tᵢ₊₂)</text>
+  <text x="643" y="126" text-anchor="middle" font-size="8" fill="#333">[B, L, V]</text>
+  <line x1="612" y1="116" x2="618" y2="116" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- 分支虚线 -->
+  <path d="M566 146 V172 H172 V202" fill="none" stroke="#8a94a3" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <path d="M566 146 V172 H489 V202" fill="none" stroke="#8a94a3" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a)"/>
+
+  <!-- 训练分支 -->
+  <rect x="16" y="206" width="312" height="78" fill="#fbfcfe" stroke="#b9c4d2"/>
+  <text x="30" y="226" font-size="10.5" fill="#1b2430">训练：加权交叉熵，λ 分段衰减</text>
+  <text x="30" y="246" font-size="9.5" fill="#33414f">L = L_CE + (λ / D) Σ Lᵏ_MTP，D = 1</text>
+  <text x="30" y="264" font-size="9.5" fill="#33414f">λ = 0.3（前 10T token）→ 0.1（余下 4.8T）</text>
+
+  <!-- 推理分支 -->
+  <rect x="350" y="206" width="316" height="78" fill="#fbfcfe" stroke="#b9c4d2"/>
+  <text x="364" y="226" font-size="10.5" fill="#1b2430">推理：可整体丢弃，或复用为投机解码</text>
+  <text x="364" y="246" font-size="9.5" fill="#33414f">第二 token 接受率 85%–90%，吞吐 1.8×</text>
+  <text x="364" y="264" font-size="9.5" fill="#33414f">接受率下滑时，该次前向即转为纯开销</text>
+
+  <!-- 注记 -->
+  <line x1="16" y1="300" x2="664" y2="300" stroke="#dfe4ea"/>
+  <text x="16" y="320" font-size="9.5" fill="#3d4a56">参数量：M₁ 约 1.0 亿（2d × d ≈ 1.03×10⁸）；TRM₁ 与主干一个 MoE 层相当。嵌入层与输出头与主模型物理共享参数与梯度，只存一份。</text>
+  <text x="16" y="342" font-size="9.5" fill="#3d4a56">因果链：第 1 深度预测 tᵢ₊₂ 时，输入含 tᵢ₊₁ 的真实嵌入，而非第 0 深度的预测值；主干由此在训练中提前规划后一位置的表示。</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
 </svg>

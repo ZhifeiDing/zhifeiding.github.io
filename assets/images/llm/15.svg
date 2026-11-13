@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 600" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="600" fill="#ffffff"/>
+<text x="340.0" y="24" font-size="15" fill="#111111" text-anchor="middle">DeepSeek-V4.1-Flash 的全局 KV、索引器键与滑窗缓存</text>
+<text x="340.0" y="44" font-size="9.0" fill="#5a6675" text-anchor="middle">全局 KV 只在 4 个 Full 层生成并供 34 层 CSA2 复用，另 2 层纯滑窗不涉全局 KV；主 KV 与索引器键以 FP4 存</text>
+<text x="340.0" y="60" font-size="9.0" fill="#5a6675" text-anchor="middle">官方口径 890 B/token；按 512 维主 KV 记录与 128 维索引器键折算，4 个 Full 层合计约 900 B，差额来自分块与头维取整</text>
+<line x1="12" y1="72" x2="668" y2="72" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="90" font-size="10.2" fill="#1b2430" font-weight="bold">（a）三类记录的字节构成</text>
+<text x="12" y="112" font-size="8.8" fill="#1b2430" font-weight="bold">主 KV</text>
+<rect x="96" y="100" width="134.0" height="17" fill="#dde7f5" stroke="#446084" stroke-width="0.9"/>
+<text x="163.0" y="112" font-size="7.6" fill="#1b2430" text-anchor="middle">256 B</text>
+<rect x="230.0" y="100" width="16.75" height="17" fill="#ffffff" stroke="#446084" stroke-width="0.9" stroke-dasharray="3 2"/>
+<text x="420" y="112" font-size="8.2" fill="#1b2430" font-weight="bold">合计 288 B（数据 256 + 缩放 32）</text>
+<text x="12" y="133" font-size="8.0" fill="#5a6675">512 维 × 4 bit = 256 B，另加 32 个 E4M3 缩放 = 32 B</text>
+<text x="12" y="158" font-size="8.8" fill="#1b2430" font-weight="bold">索引器键</text>
+<rect x="96" y="146" width="33.5" height="17" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="142.5" y="158" font-size="7.4" fill="#5a6675">64 B</text>
+<rect x="129.5" y="146" width="7" height="17" fill="#ffffff" stroke="#a9742a" stroke-width="0.9" stroke-dasharray="3 2"/>
+<text x="420" y="158" font-size="8.2" fill="#1b2430" font-weight="bold">合计 72 B（数据 64 + 缩放 8）</text>
+<text x="12" y="179" font-size="8.0" fill="#5a6675">128 维 × 4 bit = 64 B，另加 8 个 E4M3 缩放 = 8 B</text>
+<text x="12" y="204" font-size="8.8" fill="#1b2430" font-weight="bold">滑窗 KV</text>
+<rect x="96" y="192" width="268.0" height="17" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="230.0" y="204" font-size="7.6" fill="#1b2430" text-anchor="middle">512 B</text>
+<text x="420" y="204" font-size="8.2" fill="#1b2430" font-weight="bold">合计 512 B</text>
+<text x="12" y="225" font-size="8.0" fill="#5a6675">512 维 × 8 bit = 512 B（FP8，对量化更敏感，故不进 FP4）</text>
+<text x="12" y="242" font-size="8.2" fill="#33414f">主 KV 的 512 通道全用 E2M1，唯按每 16 通道配一个 E4M3 缩放，即 NVFP4 去掉二级全局缩放；RoPE 之后量化，位置分量不单列。</text>
+<line x1="12" y1="256" x2="668" y2="256" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="274" font-size="10.2" fill="#1b2430" font-weight="bold">（b）每个 token 的折算与块划分</text>
+<rect x="12" y="282" width="420" height="18" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.9"/>
+<text x="18" y="295" font-size="8.0" fill="#1b2430" font-weight="bold">产生层</text>
+<text x="152" y="295" font-size="8.0" fill="#1b2430" font-weight="bold">主 KV</text>
+<text x="242" y="295" font-size="8.0" fill="#1b2430" font-weight="bold">索引器键</text>
+<text x="342" y="295" font-size="8.0" fill="#1b2430" font-weight="bold">小计</text>
+<line x1="12" y1="300" x2="432" y2="300" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="313" font-size="8.0" fill="#1b2430">编码器 3 个 Full（m = 2）</text>
+<text x="152" y="313" font-size="8.0" fill="#33414f">3 × 144 = 432 B</text>
+<text x="242" y="313" font-size="8.0" fill="#33414f">3 × 36 = 108 B</text>
+<text x="342" y="313" font-size="8.0" fill="#1b2430">540 B</text>
+<line x1="12" y1="318" x2="432" y2="318" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="331" font-size="8.0" fill="#1b2430">解码器 1 个 Full（m = 1）</text>
+<text x="152" y="331" font-size="8.0" fill="#33414f">1 × 288 = 288 B</text>
+<text x="242" y="331" font-size="8.0" fill="#33414f">1 × 72 = 72 B</text>
+<text x="342" y="331" font-size="8.0" fill="#1b2430">360 B</text>
+<line x1="12" y1="336" x2="432" y2="336" stroke="#c9cfd8" stroke-width="0.6"/>
+<text x="18" y="349" font-size="8.0" fill="#1b2430">合计（每 token）</text>
+<text x="152" y="349" font-size="8.0" fill="#33414f">720 B</text>
+<text x="242" y="349" font-size="8.0" fill="#33414f">180 B</text>
+<text x="342" y="349" font-size="8.0" fill="#1b2430">900 B</text>
+<text x="444" y="295" font-size="8.6" fill="#446084" font-weight="bold">官方口径 890 B</text>
+<text x="444" y="310" font-size="7.9" fill="#33414f">每 token 差 10 B，源于分块对齐</text>
+<text x="444" y="322" font-size="7.9" fill="#33414f">与头维取整，量级一致。</text>
+<text x="444" y="334" font-size="7.9" fill="#33414f">1M 上下文 ≈ 890 MB，</text>
+<text x="444" y="346" font-size="7.9" fill="#33414f">为 V4-Flash 3,560 B 的 1/4。</text>
+<text x="12" y="370" font-size="8.2" fill="#33414f">块粒度：编码器一条压缩条目覆盖 2 个 token，解码器覆盖 1 个；滑窗段每层恒定 128 条，与序列长度无关。</text>
+<text x="12" y="384" font-size="8.2" fill="#33414f">Top-k 下标只服务当前查询，同组 Reuse 层共用一份，用完即弃，不进持久缓存，故 890 B 口径只含主 KV 与索引器键。</text>
+<line x1="12" y1="396" x2="668" y2="396" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="414" font-size="10.2" fill="#1b2430" font-weight="bold">（c）缓存的四处去向：常驻、池化、持久、瞬态</text>
+<rect x="12" y="424" width="320" height="74" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="20" y="439" font-size="8.8" fill="#1b2430" font-weight="bold">HBM（常驻）</text>
+<text x="20" y="453" font-size="7.9" fill="#33414f">全局 KV 890 B/token，长度线性增长；</text>
+<text x="20" y="465" font-size="7.9" fill="#33414f">滑窗 KV 40 层 × 64 KB = 2.6 MB/序列，定长；</text>
+<text x="20" y="477" font-size="7.9" fill="#33414f">1M 上下文下前者约 890 MB，仍为单卡关键项。</text>
+<rect x="348" y="424" width="320" height="74" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="356" y="439" font-size="8.8" fill="#1b2430" font-weight="bold">主机 DRAM 池（约 10%）</text>
+<text x="356" y="453" font-size="7.9" fill="#33414f">只放滑窗 KV：复用窗口只在本轮会话内有效，</text>
+<text x="356" y="465" font-size="7.9" fill="#33414f">TTL 以分钟计，过期即回收给新会话；</text>
+<text x="356" y="477" font-size="7.9" fill="#33414f">未命中则回放最近 128 token 近似重建。</text>
+<rect x="12" y="510" width="320" height="74" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="20" y="525" font-size="8.8" fill="#1b2430" font-weight="bold">SSD（≥72 h）</text>
+<text x="20" y="539" font-size="7.9" fill="#33414f">只放全局 KV：前缀命中即整段复用，</text>
+<text x="20" y="551" font-size="7.9" fill="#33414f">滑窗段完全不落盘，持久占用降至 1/8；</text>
+<text x="20" y="563" font-size="7.9" fill="#33414f">全局 KV 本身再降至 1/4，两因子相乘。</text>
+<rect x="348" y="510" width="320" height="74" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="356" y="525" font-size="8.8" fill="#1b2430" font-weight="bold">瞬态（不入缓存）</text>
+<text x="356" y="539" font-size="7.9" fill="#33414f">Top-k 下标与候选池只服务当前批次；</text>
+<text x="356" y="551" font-size="7.9" fill="#33414f">2,048 块 × 8 = 16,384 个候选，按查询重建；</text>
+<text x="356" y="563" font-size="7.9" fill="#33414f">省下的是索引器重算，不是缓存容量。</text>
+<text x="12" y="612" font-size="8.2" fill="#33414f">四处去向的存续期不同，管理策略因此无法统一：常驻段按页分配与前缀对齐，池化段按会话 TTL 回收，持久段按 72 小时保留，瞬态段随批次释放。</text>
+</svg>
