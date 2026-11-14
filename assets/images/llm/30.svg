@@ -26,7 +26,7 @@
 <g transform="translate(0,98.0)"><line x1="172.0" y1="141.0" x2="172.0" y2="143.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,143.0 L172.0,148.0 L175.0,143.0 z" fill="#8a94a3"/></g>
 <g transform="translate(0,98.0)"><rect x="12" y="148.0" width="320" height="52" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/></g>
 <g transform="translate(0,98.0)"><text x="20" y="161.0" font-size="8.8" fill="#1b2430" font-weight="bold">前馈单元：第 0 层稠密，其后 69 层 MoE</text></g>
-<g transform="translate(0,98.0)"><text x="20" y="173.0" font-size="7.6" fill="#33414f">384 选 8，无共享专家，专家中间维未披露</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="173.0" font-size="7.6" fill="#33414f">384 选 8，无共享专家，专家中间维 2048</text></g>
 <g transform="translate(0,98.0)"><text x="20" y="185.0" font-size="7.6" fill="#33414f">第 0 层稠密 FFN 中间维 16384</text></g>
 <g transform="translate(0,98.0)"><line x1="172.0" y1="200.0" x2="172.0" y2="202.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,202.0 L172.0,207.0 L175.0,202.0 z" fill="#8a94a3"/></g>
 <g transform="translate(0,98.0)"><text x="182.0" y="206.0" font-size="8.2" fill="#5a6675">× 70 层</text></g>
@@ -183,7 +183,7 @@
 <rect x="453.3333333333333" y="428.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
 <text x="460.3333333333333" y="440.0" font-size="8.0" fill="#55702f" font-weight="bold">③ 专家 FFN</text>
 <text x="460.3333333333333" y="451.0" font-size="7.2" fill="#33414f">h_i = (SiLU(x W_g,i) ⊙ x W_u,i) W_d,i</text>
-<text x="460.3333333333333" y="462.5" font-size="7.2" fill="#33414f">中间维未披露</text>
+<text x="460.3333333333333" y="462.5" font-size="7.2" fill="#33414f">中间维 2048</text>
 <rect x="453.3333333333333" y="471.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#55702f" stroke-width="0.85"/>
 <text x="460.3333333333333" y="483.0" font-size="8.0" fill="#55702f" font-weight="bold">④ 合并</text>
 <text x="460.3333333333333" y="494.0" font-size="7.2" fill="#33414f">y = Σ ŝ_i h_i</text>

@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="402" viewBox="0 0 680 402" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="402" fill="#ffffff"/>
+<text x="12" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（a）92 层：23 个循环单元，每单元 3 层 GDN 接 1 层门控注意力</text>
+<rect x="12.0" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="15.478260869565217" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="18.956521739130434" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="22.434782608695652" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="25.913043478260867" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="29.391304347826086" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="32.869565217391305" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="36.347826086956516" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="39.826086956521735" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="43.30434782608695" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="46.78260869565217" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="50.26086956521739" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="53.73913043478261" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="57.21739130434783" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="60.69565217391304" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="64.17391304347825" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="67.65217391304347" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="71.13043478260869" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="74.6086956521739" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="78.08695652173913" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="81.56521739130434" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="85.04347826086956" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="88.52173913043478" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="92.0" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="95.47826086956522" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="98.95652173913044" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="102.43478260869566" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="105.91304347826086" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="109.39130434782608" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="112.8695652173913" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="116.34782608695652" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="119.82608695652173" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="123.30434782608695" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="126.78260869565217" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="130.26086956521738" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="133.73913043478262" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="137.2173913043478" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="140.69565217391303" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="144.17391304347825" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="147.65217391304347" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="151.1304347826087" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="154.6086956521739" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="158.08695652173913" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="161.56521739130434" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="165.04347826086956" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="168.52173913043478" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="172.0" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="175.47826086956522" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="178.95652173913044" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="182.43478260869566" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="185.91304347826087" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="189.3913043478261" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="192.8695652173913" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="196.34782608695653" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="199.82608695652172" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="203.30434782608694" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="206.78260869565216" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="210.26086956521738" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="213.7391304347826" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="217.2173913043478" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="220.69565217391303" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="224.17391304347825" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="227.65217391304347" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="231.1304347826087" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="234.6086956521739" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="238.08695652173913" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="241.56521739130434" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="245.04347826086956" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="248.52173913043478" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="252.0" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="255.47826086956522" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="258.95652173913044" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="262.4347826086956" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="265.9130434782609" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="269.39130434782606" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="272.8695652173913" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="276.3478260869565" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="279.82608695652175" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="283.30434782608694" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="286.7826086956522" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="290.2608695652174" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="293.7391304347826" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="297.2173913043478" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="300.69565217391306" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="304.17391304347825" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="307.6521739130435" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="311.1304347826087" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="314.6086956521739" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<rect x="318.0869565217391" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="321.5652173913043" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="325.04347826086956" y="26" width="3.1782608695652175" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="328.52173913043475" y="26" width="3.1782608695652175" height="16" fill="#dde7f5" stroke="#446084" stroke-width="0.6"/>
+<line x1="25.913043478260867" y1="42" x2="25.913043478260867" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="39.826086956521735" y1="42" x2="39.826086956521735" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="53.73913043478261" y1="42" x2="53.73913043478261" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="67.65217391304347" y1="42" x2="67.65217391304347" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="81.56521739130434" y1="42" x2="81.56521739130434" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="95.47826086956522" y1="42" x2="95.47826086956522" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="109.39130434782608" y1="42" x2="109.39130434782608" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="123.30434782608695" y1="42" x2="123.30434782608695" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="137.2173913043478" y1="42" x2="137.2173913043478" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="151.1304347826087" y1="42" x2="151.1304347826087" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="165.04347826086956" y1="42" x2="165.04347826086956" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="178.95652173913044" y1="42" x2="178.95652173913044" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="192.8695652173913" y1="42" x2="192.8695652173913" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="206.78260869565216" y1="42" x2="206.78260869565216" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="220.69565217391303" y1="42" x2="220.69565217391303" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="234.6086956521739" y1="42" x2="234.6086956521739" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="248.52173913043478" y1="42" x2="248.52173913043478" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="262.4347826086956" y1="42" x2="262.4347826086956" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="276.3478260869565" y1="42" x2="276.3478260869565" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="290.2608695652174" y1="42" x2="290.2608695652174" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="304.17391304347825" y1="42" x2="304.17391304347825" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<line x1="318.0869565217391" y1="42" x2="318.0869565217391" y2="48" stroke="#5a6675" stroke-width="0.8" stroke-dasharray="2 2"/>
+<text x="12" y="58" font-size="7.2" fill="#5a6675">1</text>
+<text x="332" y="58" font-size="7.2" fill="#5a6675" text-anchor="end">92</text>
+<text x="172.0" y="58" font-size="7.2" fill="#5a6675" text-anchor="middle">23 组，虚线为组界</text>
+<text x="12" y="74" font-size="7.6" fill="#33414f">绿：GDN + MoE，69 层；蓝：门控注意力 + MoE，23 层；每层都接 MoE，无稠密 FFN。</text>
+<text x="12" y="88" font-size="7.6" fill="#33414f">末层之后另挂 1 层 MTP，多步训练、无独立嵌入，不计入 92 层。</text>
+<text x="12" y="108" font-size="8.6" fill="#1b2430" font-weight="bold">放大一个循环单元</text>
+<rect x="12.0" y="114" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="50.125" y="127" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="50.125" y="138" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="50.125" y="156" font-size="7.2" fill="#5a6675" text-anchor="middle">层 1</text>
+<line x1="88.85" y1="129" x2="92.65" y2="129" stroke="#5a6675" stroke-width="0.9"/>
+<rect x="93.25" y="114" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="131.375" y="127" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="131.375" y="138" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="131.375" y="156" font-size="7.2" fill="#5a6675" text-anchor="middle">层 2</text>
+<line x1="170.1" y1="129" x2="173.9" y2="129" stroke="#5a6675" stroke-width="0.9"/>
+<rect x="174.5" y="114" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="212.625" y="127" font-size="8.0" fill="#111111" text-anchor="middle">GDN</text>
+<text x="212.625" y="138" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="212.625" y="156" font-size="7.2" fill="#5a6675" text-anchor="middle">层 3</text>
+<line x1="251.35" y1="129" x2="255.15" y2="129" stroke="#5a6675" stroke-width="0.9"/>
+<rect x="255.75" y="114" width="76.25" height="30" fill="#dde7f5" stroke="#446084" stroke-width="0.85"/>
+<text x="293.875" y="127" font-size="8.0" fill="#111111" text-anchor="middle">门控注意力</text>
+<text x="293.875" y="138" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="293.875" y="156" font-size="7.2" fill="#5a6675" text-anchor="middle">层 4</text>
+<text x="12" y="168" font-size="7.6" fill="#33414f">该单元重复 23 次；第 1 层即以 GDN 开头，门控注意力落在第 4、8、…、92 层。</text>
+<text x="12" y="184" font-size="7.6" fill="#33414f">3 : 1 之比决定了缓存的来源：KV 只由 23 层门控注意力产生，69 层 GDN</text>
+<text x="12" y="196" font-size="7.6" fill="#33414f">只存定长状态。全注意力按 BF16 计合计 92 KB/token，1M 上下文约 92 GB；</text>
+<text x="12" y="208" font-size="7.6" fill="#33414f">GDN 状态 69 层约 289 MB，与序列长度无关，属常驻开销。</text>
+<text x="348" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（b）两类块的内部：同一前馈，两种注意力</text>
+<rect x="348" y="26" width="320" height="99" fill="#ffffff" stroke="#55702f" stroke-width="1.0"/>
+<text x="356" y="40" font-size="9.0" fill="#55702f" font-weight="bold">GDN 块（69 层）</text>
+<text x="660" y="40" font-size="7.4" fill="#5a6675" text-anchor="end">线性注意力，定长状态</text>
+<text x="356" y="62" font-size="7.8" fill="#33414f">① 输入归一 + 投影</text>
+<text x="660" y="62" font-size="7.6" fill="#5a6675" text-anchor="end">q,k 16×128；v 128×128</text>
+<text x="356" y="75" font-size="7.8" fill="#33414f">② 因果短卷积（核 4）</text>
+<text x="660" y="75" font-size="7.6" fill="#5a6675" text-anchor="end">q,k,v 各一路，后接 SiLU</text>
+<text x="356" y="88" font-size="7.8" fill="#33414f">③ 门控</text>
+<text x="660" y="88" font-size="7.6" fill="#5a6675" text-anchor="end">α 逐通道衰减，β 写入强度</text>
+<text x="356" y="101" font-size="7.8" fill="#33414f">④ delta 状态更新</text>
+<text x="660" y="101" font-size="7.6" fill="#5a6675" text-anchor="end">S ← S(α − βkkᵀ) + βkvᵀ，128×128</text>
+<text x="356" y="114" font-size="7.8" fill="#33414f">⑤ 读出与输出投影</text>
+<text x="660" y="114" font-size="7.6" fill="#5a6675" text-anchor="end">o = Sq → 16384 → 8192</text>
+<rect x="348" y="133" width="320" height="99" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
+<text x="356" y="147" font-size="9.0" fill="#446084" font-weight="bold">门控注意力块（23 层）</text>
+<text x="660" y="147" font-size="7.4" fill="#5a6675" text-anchor="end">全注意力，KV 随序列增长</text>
+<text x="356" y="169" font-size="7.8" fill="#33414f">① 输入归一 + 投影</text>
+<text x="660" y="169" font-size="7.6" fill="#5a6675" text-anchor="end">Q 64×256；KV 4×256</text>
+<text x="356" y="182" font-size="7.8" fill="#33414f">② Partial-RoPE</text>
+<text x="660" y="182" font-size="7.6" fill="#5a6675" text-anchor="end">仅前 64 维（25%），θ = 1e7</text>
+<text x="356" y="195" font-size="7.8" fill="#33414f">③ 因果打分</text>
+<text x="660" y="195" font-size="7.6" fill="#5a6675" text-anchor="end">64 头共用 4 个 KV 头（16 : 1）</text>
+<text x="356" y="208" font-size="7.8" fill="#33414f">④ 输出门</text>
+<text x="660" y="208" font-size="7.6" fill="#5a6675" text-anchor="end">o W_O ⊙ swish(x W_g)</text>
+<text x="356" y="221" font-size="7.8" fill="#33414f">⑤ KV 缓存</text>
+<text x="660" y="221" font-size="7.6" fill="#5a6675" text-anchor="end">每层 2×4×256×2 B = 4 KB/token</text>
+<line x1="12" y1="246" x2="668" y2="246" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="262" font-size="9.8" fill="#1b2430" font-weight="bold">（c）官方配置：层型、头配置与专家</text>
+<rect x="12" y="270" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
+<rect x="13" y="274" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="285" font-size="7.6" fill="#33414f">总参数 / 激活</text>
+<text x="325" y="285" font-size="7.6" fill="#1b2430" text-anchor="end">2.4T / 95B</text>
+<text x="19" y="300" font-size="7.6" fill="#33414f">隐藏维 / 层数</text>
+<text x="325" y="300" font-size="7.6" fill="#1b2430" text-anchor="end">8192 / 92</text>
+<rect x="13" y="304" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="315" font-size="7.6" fill="#33414f">循环单元</text>
+<text x="325" y="315" font-size="7.6" fill="#1b2430" text-anchor="end">23 ×（3 GDN + 1 GA）</text>
+<text x="19" y="330" font-size="7.6" fill="#33414f">词表</text>
+<text x="325" y="330" font-size="7.6" fill="#1b2430" text-anchor="end">248,320（补齐）</text>
+<rect x="13" y="334" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="345" font-size="7.6" fill="#33414f">上下文</text>
+<text x="325" y="345" font-size="7.6" fill="#1b2430" text-anchor="end">262,144 原生</text>
+<text x="19" y="360" font-size="7.6" fill="#33414f">最远可扩</text>
+<text x="325" y="360" font-size="7.6" fill="#1b2430" text-anchor="end">1,010,000</text>
+<rect x="348" y="270" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
+<rect x="349" y="274" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="285" font-size="7.6" fill="#33414f">GDN 头配置</text>
+<text x="661" y="285" font-size="7.6" fill="#1b2430" text-anchor="end">128 V / 16 QK × 128</text>
+<text x="355" y="300" font-size="7.6" fill="#33414f">GA 头配置</text>
+<text x="661" y="300" font-size="7.6" fill="#1b2430" text-anchor="end">64 Q / 4 KV × 256</text>
+<rect x="349" y="304" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="315" font-size="7.6" fill="#33414f">GA 位置编码</text>
+<text x="661" y="315" font-size="7.6" fill="#1b2430" text-anchor="end">RoPE 64 维（25%）</text>
+<text x="355" y="330" font-size="7.6" fill="#33414f">MoE</text>
+<text x="661" y="330" font-size="7.6" fill="#1b2430" text-anchor="end">512 选 10 + 1 共享</text>
+<rect x="349" y="334" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="345" font-size="7.6" fill="#33414f">专家中间维</text>
+<text x="661" y="345" font-size="7.6" fill="#1b2430" text-anchor="end">2048</text>
+<text x="355" y="360" font-size="7.6" fill="#33414f">MTP</text>
+<text x="661" y="360" font-size="7.6" fill="#1b2430" text-anchor="end">1 层，多步训练</text>
+<text x="12" y="382" font-size="7.6" fill="#33414f">官方开源权重为 Qwen3.8-2.4T-A95B；Qwen3.8-Max 为同权重的 API 版，另加视觉输入、</text>
+<text x="12" y="394" font-size="7.6" fill="#33414f">非思考模式与默认 1M 上下文。上表据模型卡与 config.json，无推断项。</text>
+</svg>

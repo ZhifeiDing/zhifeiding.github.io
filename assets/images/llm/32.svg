@@ -26,7 +26,7 @@
 <g transform="translate(0,98.0)"><line x1="172.0" y1="141.0" x2="172.0" y2="143.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,143.0 L172.0,148.0 L175.0,143.0 z" fill="#8a94a3"/></g>
 <g transform="translate(0,98.0)"><rect x="12" y="148.0" width="320" height="52" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/></g>
 <g transform="translate(0,98.0)"><text x="20" y="161.0" font-size="8.8" fill="#1b2430" font-weight="bold">前馈单元：MoE（384 选 8）</text></g>
-<g transform="translate(0,98.0)"><text x="20" y="173.0" font-size="7.6" fill="#33414f">与 V2.5 同拓扑，专家中间维未披露</text></g>
+<g transform="translate(0,98.0)"><text x="20" y="173.0" font-size="7.6" fill="#33414f">与 V2.5 同拓扑，专家中间维 2048</text></g>
 <g transform="translate(0,98.0)"><text x="20" y="185.0" font-size="7.6" fill="#33414f">主干末端接 DFlash 草稿块，不占主干层</text></g>
 <g transform="translate(0,98.0)"><line x1="172.0" y1="200.0" x2="172.0" y2="202.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,202.0 L172.0,207.0 L175.0,202.0 z" fill="#8a94a3"/></g>
 <g transform="translate(0,98.0)"><text x="182.0" y="206.0" font-size="8.2" fill="#5a6675">× 70 层</text></g>
