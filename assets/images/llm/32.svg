@@ -30,7 +30,7 @@
 <g transform="translate(0,98.0)"><text x="20" y="185.0" font-size="7.6" fill="#33414f">主干末端接 DFlash 草稿块，不占主干层</text></g>
 <g transform="translate(0,98.0)"><line x1="172.0" y1="200.0" x2="172.0" y2="202.0" stroke="#8a94a3" stroke-width="1"/><path d="M169.0,202.0 L172.0,207.0 L175.0,202.0 z" fill="#8a94a3"/></g>
 <g transform="translate(0,98.0)"><text x="182.0" y="206.0" font-size="8.2" fill="#5a6675">× 70 层</text></g>
-<g transform="translate(0,98.0)"><text x="348" y="10.0" font-size="7.8" fill="#5a6675">第 1 层 → 第 70 层，每 6 层含 1 层全注意力</text></g>
+<g transform="translate(0,98.0)"><text x="348" y="10.0" font-size="7.8" fill="#5a6675">第 1 层 → 第 70 层，每 6 个 SWA 层配 1 层 GA</text></g>
 <g transform="translate(0,98.0)"><rect x="348.0" y="14.0" width="4.983333333333333" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
 <g transform="translate(0,98.0)"><rect x="353.3333333333333" y="14.0" width="4.983333333333333" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
 <g transform="translate(0,98.0)"><rect x="358.6666666666667" y="14.0" width="4.983333333333333" height="18" fill="#dde7f5" stroke="#446084" stroke-width="0.7"/></g>
@@ -138,7 +138,7 @@
 <text x="19.0" y="419.5" font-size="7.2" fill="#33414f">降采样后与文本同维</text>
 <rect x="12.0" y="428.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
 <text x="19.0" y="440.0" font-size="8.0" fill="#446084" font-weight="bold">③ 音频离散化</text>
-<text x="19.0" y="451.0" font-size="7.2" fill="#33414f">308M tokenizer，20 层 RVQ</text>
+<text x="19.0" y="451.0" font-size="7.2" fill="#33414f">308M tokenizer，24 层，20 码本</text>
 <text x="19.0" y="462.5" font-size="7.2" fill="#33414f">25 Hz → 20 个离散 token</text>
 <rect x="12.0" y="471.0" width="214.66666666666666" height="38.0" fill="#ffffff" stroke="#446084" stroke-width="0.85"/>
 <text x="19.0" y="483.0" font-size="8.0" fill="#446084" font-weight="bold">④ 音频 patch</text>
