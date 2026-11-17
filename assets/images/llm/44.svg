@@ -1,64 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" font-family="Georgia, 'Times New Roman', serif">
-  <rect width="680" height="440" fill="#ffffff"/>
-  <text x="340" y="26" text-anchor="middle" font-size="15" fill="#111">Hunyuan Hy4 结构示意图（据官方模型卡绘制）</text>
-
-  <!-- inputs -->
-  <rect x="20" y="60" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="80" text-anchor="middle" font-size="11" fill="#111">文本</text>
-  <rect x="20" y="105" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="125" text-anchor="middle" font-size="10.5" fill="#111">图像 / 界面</text>
-
-  <line x1="106" y1="75" x2="292" y2="75" stroke="#555" marker-end="url(#a)"/>
-  <line x1="106" y1="120" x2="148" y2="120" stroke="#555" marker-end="url(#a)"/>
-  <rect x="148" y="102" width="112" height="36" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="204" y="118" text-anchor="middle" font-size="10.5" fill="#111">视觉通路</text>
-  <text x="204" y="131" text-anchor="middle" font-size="9" fill="#555">正式版新增</text>
-  <line x1="260" y1="120" x2="292" y2="106" stroke="#555" marker-end="url(#a)"/>
-
-  <!-- residual streams -->
-  <rect x="292" y="48" width="46" height="300" fill="#f0ecf6" stroke="#6a5486"/>
-  <text x="315" y="70" text-anchor="middle" font-size="10.5" fill="#111">4 路</text>
-  <text x="315" y="86" text-anchor="middle" font-size="10.5" fill="#111">iHC</text>
-  <text x="315" y="104" text-anchor="middle" font-size="9" fill="#555">残差流</text>
-  <line x1="315" y1="120" x2="315" y2="320" stroke="#6a5486" stroke-dasharray="3 3"/>
-  <text x="315" y="338" text-anchor="middle" font-size="9" fill="#555">恒等映射</text>
-
-  <!-- backbone -->
-  <rect x="346" y="48" width="234" height="300" fill="#f7f9fc" stroke="#333"/>
-  <text x="463" y="70" text-anchor="middle" font-size="12" fill="#111">主干 78 层 · 隐藏维 6144</text>
-
-  <rect x="362" y="84" width="202" height="60" fill="#dde7f5" stroke="#446084"/>
-  <text x="463" y="103" text-anchor="middle" font-size="11" fill="#111">Gated DSA（64 头）</text>
-  <text x="463" y="119" text-anchor="middle" font-size="9.5" fill="#333">q 压缩 2048 / kv 压缩 512</text>
-  <text x="463" y="135" text-anchor="middle" font-size="9.5" fill="#333">索引器 32 头 / 128 维 / top-2048</text>
-
-  <rect x="362" y="152" width="202" height="30" fill="#fff2dc" stroke="#a9742a"/>
-  <text x="463" y="172" text-anchor="middle" font-size="10.5" fill="#111">IndexCache：跨层复用稀疏索引</text>
-
-  <rect x="362" y="190" width="202" height="58" fill="#e8f0e2" stroke="#55702f"/>
-  <text x="463" y="209" text-anchor="middle" font-size="11" fill="#111">MoE 前馈（77 层）</text>
-  <text x="463" y="226" text-anchor="middle" font-size="9.5" fill="#333">256 路由专家 top-8 + 1 共享</text>
-  <text x="463" y="241" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 2048；首层 FFN 18432</text>
-
-  <rect x="362" y="256" width="202" height="34" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="463" y="277" text-anchor="middle" font-size="10.5" fill="#111">原生 MTP × 1（10B / 0.7B 激活）</text>
-
-  <text x="463" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 770B / 每 token 激活 49B</text>
-  <text x="463" y="330" text-anchor="middle" font-size="10" fill="#111">词表 120,832 · 上下文 1M</text>
-
-  <!-- output -->
-  <line x1="580" y1="190" x2="600" y2="190" stroke="#555" marker-end="url(#a)"/>
-  <rect x="600" y="172" width="60" height="36" fill="#eef2f7" stroke="#555"/>
-  <text x="630" y="194" text-anchor="middle" font-size="11" fill="#111">输出</text>
-
-  <!-- notes -->
-  <text x="340" y="382" text-anchor="middle" font-size="10.5" fill="#333">与 Hy3 相比：GQA 全注意力 → Gated DSA，常规残差 → 4 路 iHC，上下文 256K → 1M</text>
-  <text x="340" y="404" text-anchor="middle" font-size="10.5" fill="#333">结构规格以 Hy4 preview 模型卡为准；正式版增视觉理解与 Computer Use</text>
-  <text x="340" y="424" text-anchor="middle" font-size="9.5" fill="#666">数值格式 BF16 / FP8；许可 Apache 2.0</text>
-
-  <defs>
-    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
-    </marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="716" viewBox="0 0 940 716" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<rect width="940" height="716" fill="#ffffff"/>
+<text x="24" y="34" font-size="16" fill="#16202c" font-weight="700">GLM-5.3-Flash 结构示意：线性递推与稀疏选择按 3 : 1 混合</text>
+<text x="24" y="56" font-size="10.8" fill="#4d5866">320B 总参 / 激活 18B · 45 层 · 隐藏维 4096 · 288 选 8 + 1 共享 · 34 层 KDA + 11 层 DSA · 1M 上下文 · mHC 四路</text>
+<line x1="24" y1="70" x2="916" y2="70" stroke="#dfe4ea"/>
+<rect x="24" y="86" width="452" height="492" rx="7" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="38" y="108" font-size="11.6" fill="#3f6fa8" font-weight="700">主干：新训底座，层数与激活同时下调</text>
+<rect x="38" y="124" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="144" font-size="11" fill="#1b2430" font-weight="700">规模</text>
+<text x="140" y="144" font-size="9.2" fill="#33414f">320B 总参，每 token 激活 18B；45 层，隐藏维 4096</text>
+<text x="140" y="161" font-size="9.2" fill="#33414f">词表 154,880；上下文 1,048,576；MTP 1 层</text>
+<rect x="38" y="190" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="210" font-size="11" fill="#1b2430" font-weight="700">层序</text>
+<text x="140" y="210" font-size="9.2" fill="#33414f">第 4、8、…、44 层为 DSA 稀疏层，共 11 层</text>
+<text x="140" y="227" font-size="9.2" fill="#33414f">其余 34 层为 KDA 线性层；前 3 层稠密 MLP（12288）</text>
+<rect x="38" y="256" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="276" font-size="11" fill="#1b2430" font-weight="700">稀疏层注意力</text>
+<text x="140" y="276" font-size="9.2" fill="#33414f">MLA：q 低秩 1536、kv 潜向量 512、64 头</text>
+<text x="140" y="293" font-size="9.2" fill="#33414f">qk 256、v 256；旋转维为 0，主干不含位置编码</text>
+<rect x="38" y="322" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="342" font-size="11" fill="#1b2430" font-weight="700">索引器</text>
+<text x="140" y="342" font-size="9.2" fill="#33414f">32 头 × 128，键经 LayerNorm，查询复用 q 残差</text>
+<text x="140" y="359" font-size="9.2" fill="#33414f">IndexPool：4 键池化为 1，取 512 池 → 2048 token</text>
+<rect x="38" y="388" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="408" font-size="11" fill="#1b2430" font-weight="700">KDA 层</text>
+<text x="140" y="408" font-size="9.2" fill="#33414f">64 头 × 128，深度短卷积核 4，遗忘门下界 −5</text>
+<text x="140" y="425" font-size="9.2" fill="#33414f">chunkwise 块长 64（预填）/ recurrent（解码）</text>
+<rect x="38" y="454" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="474" font-size="11" fill="#1b2430" font-weight="700">专家混合</text>
+<text x="140" y="474" font-size="9.2" fill="#33414f">288 选 8 + 1 共享，专家中间维 2048</text>
+<text x="140" y="491" font-size="9.2" fill="#33414f">sigmoid + noaux_tc 偏置，缩放 2.5；SwiGLU 截断 ±10</text>
+<rect x="38" y="520" width="424" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="50" y="540" font-size="11" fill="#1b2430" font-weight="700">残差与视觉</text>
+<text x="140" y="540" font-size="9.2" fill="#33414f">mHC 四路，Sinkhorn 20 次约束为双随机矩阵</text>
+<text x="140" y="557" font-size="9.2" fill="#33414f">视觉 24 层 ViT（patch 14，2×2 合并，输出 4096 维）</text>
+<rect x="500" y="86" width="416" height="222" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="514" y="108" font-size="11.6" fill="#8a6d1f" font-weight="700">层序：每 4 层 1 组，组首为稀疏层</text>
+<rect x="514.00" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="522.62" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="531.24" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="539.87" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="548.49" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="557.11" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="565.73" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="574.36" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="582.98" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="591.60" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="600.22" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="608.84" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="617.47" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="626.09" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="634.71" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="643.33" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="651.96" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="660.58" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="669.20" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="677.82" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="686.44" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="695.07" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="703.69" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="712.31" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="720.93" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="729.56" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="738.18" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="746.80" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="755.42" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="764.04" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="772.67" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="781.29" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="789.91" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="798.53" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="807.16" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="815.78" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="824.40" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="833.02" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="841.64" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="850.27" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="858.89" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="867.51" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="876.13" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="884.76" y="120" width="7.82" height="24" fill="#fff2dc" stroke="#a9742a" stroke-width="0.7"/>
+<rect x="893.38" y="120" width="7.82" height="24" fill="#e8f0e2" stroke="#55702f" stroke-width="0.7"/>
+<rect x="514.00" y="147" width="25.07" height="3" fill="#1b2430"/>
+<text x="514.00" y="162" font-size="8.2" fill="#33414f">↑ 前 3 层为稠密 MLP</text>
+<rect x="514" y="170" width="10" height="10" fill="#e8f0e2" stroke="#55702f" stroke-width="0.9"/>
+<text x="529" y="179" font-size="9.2" fill="#33414f">KDA 线性层 34</text>
+<rect x="630" y="170" width="10" height="10" fill="#fff2dc" stroke="#a9742a" stroke-width="0.9"/>
+<text x="645" y="179" font-size="9.2" fill="#33414f">DSA 稀疏层 11</text>
+<text x="760" y="179" font-size="9.2" fill="#5d6878">比例 3 : 1，共 45 层</text>
+<text x="514" y="200" font-size="9.6" fill="#8a6d1f" font-weight="700">放大第 1–4 层</text>
+<rect x="514" y="208" width="86" height="30" rx="3" fill="#e8f0e2" stroke="#55702f" stroke-width="1"/>
+<text x="522" y="221" font-size="8.4" fill="#5d6878">层 1</text>
+<text x="522" y="233" font-size="10.4" fill="#1b2430" font-weight="700">KDA</text>
+<rect x="606" y="208" width="86" height="30" rx="3" fill="#e8f0e2" stroke="#55702f" stroke-width="1"/>
+<text x="614" y="221" font-size="8.4" fill="#5d6878">层 2</text>
+<text x="614" y="233" font-size="10.4" fill="#1b2430" font-weight="700">KDA</text>
+<rect x="698" y="208" width="86" height="30" rx="3" fill="#e8f0e2" stroke="#55702f" stroke-width="1"/>
+<text x="706" y="221" font-size="8.4" fill="#5d6878">层 3</text>
+<text x="706" y="233" font-size="10.4" fill="#1b2430" font-weight="700">KDA</text>
+<rect x="790" y="208" width="86" height="30" rx="3" fill="#fff2dc" stroke="#a9742a" stroke-width="1"/>
+<text x="798" y="221" font-size="8.4" fill="#5d6878">层 4</text>
+<text x="798" y="233" font-size="10.4" fill="#1b2430" font-weight="700">DSA</text>
+<text x="514" y="258" font-size="8.8" fill="#3d4a56">· KDA 层不写 KV，每层只维护 64 × 128 × 128 的 FP32 状态</text>
+<text x="514" y="274" font-size="8.8" fill="#3d4a56">· DSA 层每 token 写 512 维潜向量与 128 + 128 维索引器状态</text>
+<text x="514" y="290" font-size="8.8" fill="#3d4a56">· 11 个稀疏层各自持有索引器，不做 5.2 式的跨层复用</text>
+<rect x="500" y="326" width="416" height="252" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="514" y="348" font-size="11.6" fill="#2f6b47" font-weight="700">缓存、权重与部署</text>
+<text x="514" y="372" font-size="9.2" fill="#3d4a56">· 稀疏层 1536 B/token：潜向量 1 KB + 索引键 256 B + 门控 256 B</text>
+<text x="514" y="394" font-size="9.2" fill="#3d4a56">· 11 层合计 16.9 KB/token，1M 上下文约 17.7 GB</text>
+<text x="514" y="416" font-size="9.2" fill="#3d4a56">· KDA 状态每层约 4 MB，34 层约 143 MB，与序列长度无关</text>
+<text x="514" y="438" font-size="9.2" fill="#3d4a56">· FP8（e4m3）128 × 128 分块，激活动态量化，62 分片约 328 GB</text>
+<text x="514" y="460" font-size="9.2" fill="#3d4a56">· 1509 个模块保留高精度：mHC 参数、路由 gate、归一化与索引器</text>
+<text x="514" y="482" font-size="9.2" fill="#3d4a56">· 8 卡每卡约 41 GB，48 GB 级单机即可容纳</text>
+<text x="514" y="504" font-size="9.2" fill="#3d4a56">· 相对 5.3：注意力计算 1/3.0，KV Cache 1/4.4（官方口径）</text>
+<text x="514" y="526" font-size="9.2" fill="#3d4a56">· IndexPool 把打分粒度由 token 放大到 4-token 组，选中后展开回 2048 token</text>
+<text x="514" y="548" font-size="9.2" fill="#3d4a56">· 服务侧线性注意力与 LM head 走节点内张量并行，状态以 ReplaySSM 重放</text>
+<line x1="24" y1="600" x2="916" y2="600" stroke="#dfe4ea"/>
+<text x="24" y="622" font-size="11.4" fill="#8a6d1f" font-weight="700">对硬件的含义</text>
+<text x="24" y="644" font-size="10.4" fill="#243447">随序列长度增长的缓存只落在 11/45 的层上，1M 上下文的 KV 由百 GB 量级降到 20 GB 以内；代价是缓存管理器须同时维护</text>
+<text x="24" y="664" font-size="10.4" fill="#243447">分页 KV、递推状态与卷积状态三套结构。KDA 的解码路径是逐 token 递推，34 层串成一条链，其延迟不随算力并行度下降，</text>
+<text x="24" y="684" font-size="10.4" fill="#243447">只能靠块内并行与层切分分摊；权重 328 GB 已可单机容纳，跨机通信由必需转为可选。</text>
 </svg>

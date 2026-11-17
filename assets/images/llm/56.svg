@@ -1,71 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="632" viewBox="0 0 1040 632" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
-<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
-<rect width="1040" height="632" fill="#ffffff"/>
-<text x="24" y="38" font-size="15" font-weight="700" fill="#16202c">Ling 2.0 结构：高稀疏 MoE 主干与三分层配置</text>
-<text x="24" y="58" font-size="9.6" fill="#5d6878">Ling-flash-2.0：32 层（1 稠密 + 31 MoE），隐藏维 4,096，32 查询头 / 4 键值头 × 128 维，256 路由专家 top-8 + 1 共享专家，词表 157,184，原生 32K 上下文（YaRN 扩至 128K）</text>
-<line x1="24" y1="72" x2="1016" y2="72" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="92" font-size="10.4" fill="#6b7280">输入</text>
-<rect x="24" y="100" width="214" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="117" font-size="12.4" font-weight="700" fill="#1b2430">BBPE 分词</text>
-<text x="36" y="136" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">t → id，词表 157,184</text>
-<text x="36" y="154" font-size="9.4" fill="#5d6878">多语言字节级 BPE</text>
-<line x1="131.0" y1="170" x2="131.0" y2="185" stroke="#7c8794" stroke-width="1.4" marker-end="url(#b)"/>
-<rect x="24" y="192" width="214" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="36" y="209" font-size="12.4" font-weight="700" fill="#1b2430">词嵌入</text>
-<text x="36" y="228" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">E ∈ R^{157184×4096}</text>
-<text x="36" y="246" font-size="9.4" fill="#5d6878">输出嵌入独立（不对齐）</text>
-<text x="286" y="92" font-size="10.4" fill="#3f6fa8">主干（32 层）</text>
-<rect x="286" y="100" width="404" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="117" font-size="12.4" font-weight="700" fill="#1b2430">第 0 层：稠密块</text>
-<text x="298" y="136" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">GQA（QK-Norm、Partial-RoPE）→ SwiGLU 前馈，中间维 9,216</text>
-<text x="298" y="154" font-size="9.4" fill="#5d6878">唯一稠密 FFN，稳定早期表征</text>
-<line x1="488.0" y1="170" x2="488.0" y2="189" stroke="#7c8794" stroke-width="1.4" marker-end="url(#b)"/>
-<rect x="286" y="196" width="404" height="70" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
-<text x="298" y="213" font-size="12.4" font-weight="700" fill="#1b2430">第 1–31 层：MoE 块</text>
-<text x="298" y="232" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">GQA → 路由（σ + 偏置）→ top-8/256 + 共享专家 → 合并</text>
-<text x="298" y="250" font-size="9.4" fill="#5d6878">专家中间维 1,024；共享专家 1,024</text>
-<line x1="488.0" y1="266" x2="488.0" y2="285" stroke="#7c8794" stroke-width="1.4" marker-end="url(#b)"/>
-<rect x="286" y="292" width="404" height="70" rx="7" fill="#f3f0fa" stroke="#6f5aa8" stroke-width="1.2"/>
-<text x="298" y="309" font-size="12.4" font-weight="700" fill="#1b2430">MTP 层（深度 1）</text>
-<text x="298" y="328" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">共享嵌入与输出头，预测 t+1 与 t+2</text>
-<text x="298" y="346" font-size="9.4" fill="#5d6878">训练期辅助损失权重 0.1；推理供投机解码</text>
-<line x1="488.0" y1="362" x2="488.0" y2="381" stroke="#7c8794" stroke-width="1.4" marker-end="url(#b)"/>
-<rect x="286" y="388" width="404" height="70" rx="7" fill="#f4f6f9" stroke="#7d8794" stroke-width="1.2"/>
-<text x="298" y="405" font-size="12.4" font-weight="700" fill="#1b2430">输出头</text>
-<text x="298" y="424" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">logits = h · E_outᵀ</text>
-<text x="298" y="442" font-size="9.4" fill="#5d6878">[B,L,157184]</text>
-<text x="726" y="92" font-size="10.4" fill="#3d8b5f">单层内部（算子级详见图 13-2）</text>
-<rect x="726" y="100" width="290" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="738" y="117" font-size="12.4" font-weight="700" fill="#1b2430">① 注意力</text>
-<text x="738" y="136" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">q,k,v = xW；q ← QNorm(q)</text>
-<text x="738" y="154" font-size="9.4" fill="#5d6878">32 Q / 4 KV，头维 128</text>
-<rect x="726" y="186" width="290" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="738" y="203" font-size="12.4" font-weight="700" fill="#1b2430">② 位置编码</text>
-<text x="738" y="222" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">RoPE 作用于前 64 维</text>
-<text x="738" y="240" font-size="9.4" fill="#5d6878">θ = 6×10⁵，Partial-RoPE</text>
-<rect x="726" y="272" width="290" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="738" y="289" font-size="12.4" font-weight="700" fill="#1b2430">③ 路由</text>
-<text x="738" y="308" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">s_i = σ(x·e_iᵀ) + b_i</text>
-<text x="738" y="326" font-size="9.4" fill="#5d6878">8 组取 4 组，再 top-8</text>
-<rect x="726" y="358" width="290" height="70" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
-<text x="738" y="375" font-size="12.4" font-weight="700" fill="#1b2430">④ 专家聚合</text>
-<text x="738" y="394" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">y = 2.5Σŝ_i·SwiGLU_i(x) + E_s(x)</text>
-<text x="738" y="412" font-size="9.4" fill="#5d6878">9 个专家，激活率 3.1%</text>
-<line x1="24" y1="486" x2="1016" y2="486" stroke="#dfe4ea" stroke-width="1"/>
-<text x="24" y="504" font-size="11.4" font-weight="700" fill="#8a6d1f">Ling 2.0 三个规模的同一套骨架</text>
-<rect x="24.0" y="518" width="320.0" height="85" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="36.0" y="535" font-size="12.4" font-weight="700" fill="#1b2430">Ling-mini-2.0</text>
-<text x="36.0" y="554" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">20 层（1 稠密）· 16 查询头</text>
-<text x="36.0" y="572" font-size="9.4" fill="#5d6878">隐藏维 2,048 · 专家 512</text>
-<text x="36.0" y="587" font-size="9.4" fill="#5d6878">16B / 1.4B</text>
-<rect x="360.0" y="518" width="320.0" height="85" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="372.0" y="535" font-size="12.4" font-weight="700" fill="#1b2430">Ling-flash-2.0</text>
-<text x="372.0" y="554" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">32 层（1 稠密）· 32 查询头</text>
-<text x="372.0" y="572" font-size="9.4" fill="#5d6878">隐藏维 4,096 · 专家 1,024</text>
-<text x="372.0" y="587" font-size="9.4" fill="#5d6878">103B / 6.1B</text>
-<rect x="696.0" y="518" width="320.0" height="85" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
-<text x="708.0" y="535" font-size="12.4" font-weight="700" fill="#1b2430">Ling-1T</text>
-<text x="708.0" y="554" font-size="10.6" fill="#243447" font-family="Consolas, Cascadia Mono, monospace">80 层（4 稠密）· 64 查询头</text>
-<text x="708.0" y="572" font-size="9.4" fill="#5d6878">隐藏维 8,192 · 专家 2,048</text>
-<text x="708.0" y="587" font-size="9.4" fill="#5d6878">1T / 51B</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="930" viewBox="0 0 1400 930" role="img" aria-labelledby="title description">
+  <title id="title">Muse Spark model architecture</title>
+  <desc id="description">Text embeddings, projected NaViT image and video features, and projected audio encoder features form the shared decoder input sequence. Decoder blocks use grouped-query attention with sliding-window or global attention and feed-forward computation. The expanded MoE layer routes on full-width hidden vectors while a pooler compresses expert input features. Each selected SwiGLU expert output receives RMSNorm before the route-weighted sum. An unpooler restores the model width. Final normalization and the language-model head generate text tokens.</desc>
+  <defs>
+    <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#34995a"/></marker>
+    <marker id="gray-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#858e99"/></marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #222426; }
+      .muted { fill: #727872; }
+      .green { fill: #2c8d4e; }
+    </style>
+  </defs>
+  <rect width="1400" height="930" fill="white"/>
+  <text x="40" y="43" font-size="26" text-anchor="start" font-weight="600">Muse Spark model architecture</text>
+  <text x="40" y="72" font-size="16" text-anchor="start" class="muted">Multimodal inputs feed a shared language decoder with hybrid attention and routed experts.</text>
+  <text x="225" y="119" font-size="18" text-anchor="middle" font-weight="600">Text</text>
+  <rect x="60" y="138" width="330" height="67" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="225" y="165" font-size="18" text-anchor="middle" font-weight="500">Token embeddings</text>
+  <text x="225" y="188" font-size="14" text-anchor="middle">Text tokens → hidden vectors</text>
+  <path d="M225 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <text x="700" y="119" font-size="18" text-anchor="middle" font-weight="600">Images and video frames</text>
+  <rect x="535" y="138" width="330" height="67" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="700" y="165" font-size="18" text-anchor="middle" font-weight="500">NaViT visual encoder</text>
+  <text x="700" y="188" font-size="14" text-anchor="middle">Project visual features to model width</text>
+  <path d="M700 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <text x="1175" y="119" font-size="18" text-anchor="middle" font-weight="600">Audio</text>
+  <rect x="1010" y="138" width="330" height="67" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="1175" y="165" font-size="18" text-anchor="middle" font-weight="500">Audio encoder</text>
+  <text x="1175" y="188" font-size="14" text-anchor="middle">Project audio features to model width</text>
+  <path d="M1175 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="60" y="245" width="1280" height="55" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="700" y="269" font-size="18" text-anchor="middle" font-weight="600">Shared decoder input sequence</text>
+  <text x="700" y="289" font-size="14" text-anchor="middle">Text embeddings with projected vision and audio features at their corresponding token positions</text>
+  <path d="M230 300 V343" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="45" y="345" width="370" height="342" rx="7" fill="#fbfcfd" stroke="#adb5bf" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="230" y="374" font-size="20" text-anchor="middle" font-weight="600">Decoder stack</text>
+  <text x="230" y="396" font-size="14" text-anchor="middle" class="muted">MoE layer shown</text>
+  <text x="230" y="418" font-size="14" text-anchor="middle">Pre-attention norm</text>
+  <rect x="82" y="432" width="296" height="59" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="230" y="456" font-size="17" text-anchor="middle" font-weight="500">Grouped-query attention</text>
+  <text x="230" y="478" font-size="14" text-anchor="middle">Sliding-window or global attention</text>
+  <path d="M230 491 V506" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <text x="230" y="526" font-size="14" text-anchor="middle">Post-norm → residual → pre-norm</text>
+  <path d="M230 531 V545" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="82" y="547" width="296" height="59" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="230" y="571" font-size="17" text-anchor="middle" font-weight="500">MoE feed-forward block</text>
+  <text x="230" y="593" font-size="14" text-anchor="middle">Pooler · routed experts · unpooler</text>
+  <path d="M230 606 V620" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <text x="230" y="641" font-size="14" text-anchor="middle">Post-norm → residual</text>
+  <text x="230" y="667" font-size="14" text-anchor="middle" class="muted">Repeat across decoder layers</text>
+  <path d="M230 687 V731" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="82" y="733" width="296" height="55" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="230" y="766" font-size="18" text-anchor="middle" font-weight="500">Final norm + LM head</text>
+  <path d="M230 788 V817" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <text x="230" y="843" font-size="20" text-anchor="middle" class="green" font-weight="600">Generated text tokens</text>
+  <path d="M378 576 H449" fill="none" stroke="#609bd3" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <rect x="450" y="345" width="910" height="525" rx="7" fill="#fbfefc" stroke="#9ac8a8" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="905" y="374" font-size="20" text-anchor="middle" class="green" font-weight="600">Inside the MoE block</text>
+  <rect x="770" y="392" width="270" height="50" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="905" y="422" font-size="17" text-anchor="middle" font-weight="500">Full-width input · H features</text>
+  <path d="M905 442 V457 H635 V478" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <path d="M905 457 H1165 V478" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="520" y="480" width="230" height="58" rx="7" fill="#e8ebee" stroke="#9aa3ae" stroke-width="1.5"/>
+  <text x="635" y="505" font-size="17" text-anchor="middle" font-weight="500">Router</text>
+  <text x="635" y="527" font-size="13" text-anchor="middle">Top-k selection + route weights</text>
+  <rect x="1030" y="480" width="270" height="50" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="1165" y="510" font-size="17" text-anchor="middle" font-weight="500">Pooler · H → h</text>
+  <path d="M1165 530 V563" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="1030" y="565" width="270" height="43" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="1165" y="592" font-size="16" text-anchor="middle">Input RMSNorm</text>
+  <path d="M1165 608 V646" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <path d="M635 538 V646" fill="none" stroke="#858e99" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#gray-arrow)"/>
+  <text x="655" y="617" font-size="13" text-anchor="start" class="muted">Expert selection</text>
+  <path d="M520 509 H490 V750 H858" fill="none" stroke="#858e99" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#gray-arrow)"/>
+  <text x="635" y="737" font-size="14" text-anchor="start" class="muted">Route weights</text>
+  <rect x="610" y="648" width="670" height="57" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="945" y="671" font-size="17" text-anchor="middle" font-weight="500">For each selected expert</text>
+  <text x="945" y="693" font-size="16" text-anchor="middle">SwiGLU → per-expert RMSNorm</text>
+  <path d="M995 705 V723" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="860" y="725" width="270" height="50" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="995" y="755" font-size="17" text-anchor="middle" font-weight="500">Route-weighted sum</text>
+  <path d="M995 775 V809" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
+  <rect x="860" y="811" width="270" height="44" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
+  <text x="995" y="839" font-size="17" text-anchor="middle" font-weight="500">Unpooler · h → H</text>
+  <text x="40" y="901" font-size="14" text-anchor="start" class="muted">H = model hidden width; h = expert hidden width. Pooling changes feature width and preserves token count.</text>
+  <text x="40" y="921" font-size="14" text-anchor="start" class="muted">Green arrows show feature flow; gray dashed arrows show routing. Each expert output is normalized before the weighted sum.</text>
 </svg>

@@ -1,87 +1,153 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="930" viewBox="0 0 1400 930" role="img" aria-labelledby="title description">
-  <title id="title">Muse Spark model architecture</title>
-  <desc id="description">Text embeddings, projected NaViT image and video features, and projected audio encoder features form the shared decoder input sequence. Decoder blocks use grouped-query attention with sliding-window or global attention and feed-forward computation. The expanded MoE layer routes on full-width hidden vectors while a pooler compresses expert input features. Each selected SwiGLU expert output receives RMSNorm before the route-weighted sum. An unpooler restores the model width. Final normalization and the language-model head generate text tokens.</desc>
-  <defs>
-    <marker id="green-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#34995a"/></marker>
-    <marker id="gray-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#858e99"/></marker>
-    <style>
-      text { font-family: Arial, Helvetica, sans-serif; fill: #222426; }
-      .muted { fill: #727872; }
-      .green { fill: #2c8d4e; }
-    </style>
-  </defs>
-  <rect width="1400" height="930" fill="white"/>
-  <text x="40" y="43" font-size="26" text-anchor="start" font-weight="600">Muse Spark model architecture</text>
-  <text x="40" y="72" font-size="16" text-anchor="start" class="muted">Multimodal inputs feed a shared language decoder with hybrid attention and routed experts.</text>
-  <text x="225" y="119" font-size="18" text-anchor="middle" font-weight="600">Text</text>
-  <rect x="60" y="138" width="330" height="67" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="225" y="165" font-size="18" text-anchor="middle" font-weight="500">Token embeddings</text>
-  <text x="225" y="188" font-size="14" text-anchor="middle">Text tokens → hidden vectors</text>
-  <path d="M225 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <text x="700" y="119" font-size="18" text-anchor="middle" font-weight="600">Images and video frames</text>
-  <rect x="535" y="138" width="330" height="67" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="700" y="165" font-size="18" text-anchor="middle" font-weight="500">NaViT visual encoder</text>
-  <text x="700" y="188" font-size="14" text-anchor="middle">Project visual features to model width</text>
-  <path d="M700 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <text x="1175" y="119" font-size="18" text-anchor="middle" font-weight="600">Audio</text>
-  <rect x="1010" y="138" width="330" height="67" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="1175" y="165" font-size="18" text-anchor="middle" font-weight="500">Audio encoder</text>
-  <text x="1175" y="188" font-size="14" text-anchor="middle">Project audio features to model width</text>
-  <path d="M1175 205 V243" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="60" y="245" width="1280" height="55" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="700" y="269" font-size="18" text-anchor="middle" font-weight="600">Shared decoder input sequence</text>
-  <text x="700" y="289" font-size="14" text-anchor="middle">Text embeddings with projected vision and audio features at their corresponding token positions</text>
-  <path d="M230 300 V343" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="45" y="345" width="370" height="342" rx="7" fill="#fbfcfd" stroke="#adb5bf" stroke-width="1.5" stroke-dasharray="6 5"/>
-  <text x="230" y="374" font-size="20" text-anchor="middle" font-weight="600">Decoder stack</text>
-  <text x="230" y="396" font-size="14" text-anchor="middle" class="muted">MoE layer shown</text>
-  <text x="230" y="418" font-size="14" text-anchor="middle">Pre-attention norm</text>
-  <rect x="82" y="432" width="296" height="59" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="230" y="456" font-size="17" text-anchor="middle" font-weight="500">Grouped-query attention</text>
-  <text x="230" y="478" font-size="14" text-anchor="middle">Sliding-window or global attention</text>
-  <path d="M230 491 V506" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <text x="230" y="526" font-size="14" text-anchor="middle">Post-norm → residual → pre-norm</text>
-  <path d="M230 531 V545" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="82" y="547" width="296" height="59" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="230" y="571" font-size="17" text-anchor="middle" font-weight="500">MoE feed-forward block</text>
-  <text x="230" y="593" font-size="14" text-anchor="middle">Pooler · routed experts · unpooler</text>
-  <path d="M230 606 V620" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <text x="230" y="641" font-size="14" text-anchor="middle">Post-norm → residual</text>
-  <text x="230" y="667" font-size="14" text-anchor="middle" class="muted">Repeat across decoder layers</text>
-  <path d="M230 687 V731" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="82" y="733" width="296" height="55" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="230" y="766" font-size="18" text-anchor="middle" font-weight="500">Final norm + LM head</text>
-  <path d="M230 788 V817" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <text x="230" y="843" font-size="20" text-anchor="middle" class="green" font-weight="600">Generated text tokens</text>
-  <path d="M378 576 H449" fill="none" stroke="#609bd3" stroke-width="1.5" stroke-dasharray="5 4"/>
-  <rect x="450" y="345" width="910" height="525" rx="7" fill="#fbfefc" stroke="#9ac8a8" stroke-width="1.5" stroke-dasharray="6 5"/>
-  <text x="905" y="374" font-size="20" text-anchor="middle" class="green" font-weight="600">Inside the MoE block</text>
-  <rect x="770" y="392" width="270" height="50" rx="7" fill="#e3edf7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="905" y="422" font-size="17" text-anchor="middle" font-weight="500">Full-width input · H features</text>
-  <path d="M905 442 V457 H635 V478" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <path d="M905 457 H1165 V478" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="520" y="480" width="230" height="58" rx="7" fill="#e8ebee" stroke="#9aa3ae" stroke-width="1.5"/>
-  <text x="635" y="505" font-size="17" text-anchor="middle" font-weight="500">Router</text>
-  <text x="635" y="527" font-size="13" text-anchor="middle">Top-k selection + route weights</text>
-  <rect x="1030" y="480" width="270" height="50" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="1165" y="510" font-size="17" text-anchor="middle" font-weight="500">Pooler · H → h</text>
-  <path d="M1165 530 V563" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="1030" y="565" width="270" height="43" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="1165" y="592" font-size="16" text-anchor="middle">Input RMSNorm</text>
-  <path d="M1165 608 V646" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <path d="M635 538 V646" fill="none" stroke="#858e99" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#gray-arrow)"/>
-  <text x="655" y="617" font-size="13" text-anchor="start" class="muted">Expert selection</text>
-  <path d="M520 509 H490 V750 H858" fill="none" stroke="#858e99" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#gray-arrow)"/>
-  <text x="635" y="737" font-size="14" text-anchor="start" class="muted">Route weights</text>
-  <rect x="610" y="648" width="670" height="57" rx="7" fill="#b9d8ef" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="945" y="671" font-size="17" text-anchor="middle" font-weight="500">For each selected expert</text>
-  <text x="945" y="693" font-size="16" text-anchor="middle">SwiGLU → per-expert RMSNorm</text>
-  <path d="M995 705 V723" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="860" y="725" width="270" height="50" rx="7" fill="#d2e4f5" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="995" y="755" font-size="17" text-anchor="middle" font-weight="500">Route-weighted sum</text>
-  <path d="M995 775 V809" fill="none" stroke="#34995a" stroke-width="1.6" marker-end="url(#green-arrow)"/>
-  <rect x="860" y="811" width="270" height="44" rx="7" fill="#94c2e7" stroke="#609bd3" stroke-width="1.5"/>
-  <text x="995" y="839" font-size="17" text-anchor="middle" font-weight="500">Unpooler · h → H</text>
-  <text x="40" y="901" font-size="14" text-anchor="start" class="muted">H = model hidden width; h = expert hidden width. Pooling changes feature width and preserves token count.</text>
-  <text x="40" y="921" font-size="14" text-anchor="start" class="muted">Green arrows show feature flow; gray dashed arrows show routing. Each expert output is normalized before the weighted sum.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="408" viewBox="0 0 680 408" font-family="Georgia, 'Times New Roman', serif">
+<rect x="0" y="0" width="680" height="408" fill="#ffffff"/>
+<text x="12" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（a）61 层：前 3 层稠密，其后 58 层为 MoE</text>
+<rect x="12.0" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
+<rect x="17.24590163934426" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
+<rect x="22.491803278688522" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
+<rect x="27.737704918032787" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="32.983606557377044" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="38.22950819672131" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="43.47540983606557" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="48.721311475409834" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="53.967213114754095" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="59.213114754098356" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="64.45901639344262" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="69.70491803278688" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="74.95081967213115" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="80.1967213114754" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="85.44262295081967" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="90.68852459016392" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="95.93442622950819" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="101.18032786885246" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="106.42622950819671" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="111.67213114754098" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="116.91803278688523" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="122.1639344262295" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="127.40983606557376" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="132.655737704918" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="137.9016393442623" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="143.14754098360655" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="148.3934426229508" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="153.63934426229508" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="158.88524590163934" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="164.1311475409836" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="169.37704918032784" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="174.62295081967213" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="179.86885245901638" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="185.11475409836063" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="190.36065573770492" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="195.60655737704917" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="200.85245901639342" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="206.09836065573768" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="211.34426229508196" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="216.59016393442622" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="221.83606557377047" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="227.08196721311475" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="232.327868852459" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="237.57377049180326" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="242.8196721311475" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="248.0655737704918" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="253.31147540983605" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="258.55737704918033" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="263.8032786885246" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="269.04918032786884" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="274.2950819672131" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="279.54098360655735" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="284.7868852459016" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="290.03278688524586" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="295.27868852459017" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="300.5245901639344" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="305.7704918032787" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="311.0163934426229" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="316.2622950819672" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="321.50819672131144" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<rect x="326.7540983606557" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
+<text x="12" y="58" font-size="7.2" fill="#5a6675">1</text>
+<text x="332" y="58" font-size="7.2" fill="#5a6675" text-anchor="end">61</text>
+<text x="172.0" y="58" font-size="7.2" fill="#5a6675" text-anchor="middle">3 + 58</text>
+<text x="12" y="74" font-size="7.6" fill="#33414f">灰：稠密 FFN（中间维 16384），3 层；绿：MoE（128 选 4 + 1 共享），58 层。</text>
+<text x="12" y="86" font-size="7.6" fill="#33414f">KV 只存 512 维潜向量加 64 维 RoPE 分量，每层每 token 约 1.2 KB，</text>
+<text x="12" y="98" font-size="7.6" fill="#33414f">61 层合计约 70 KB/token，294,912 上下文约 20 GB。</text>
+<text x="12" y="120" font-size="8.6" fill="#1b2430" font-weight="bold">放大第 1–4 层</text>
+<rect x="12.0" y="126" width="76.25" height="30" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.85"/>
+<text x="50.125" y="139" font-size="8.0" fill="#111111" text-anchor="middle">稠密 + MLA</text>
+<text x="50.125" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">稠密 16384</text>
+<text x="50.125" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 1</text>
+<rect x="93.25" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="131.375" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
+<text x="131.375" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="131.375" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 2</text>
+<rect x="174.5" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="212.625" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
+<text x="212.625" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="212.625" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 3</text>
+<rect x="255.75" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
+<text x="293.875" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
+<text x="293.875" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
+<text x="293.875" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 4</text>
+<text x="12" y="180" font-size="7.6" fill="#33414f">注意力逐层同构，只有前馈分两档：这与 V3 的排布一致。</text>
+<text x="12" y="192" font-size="7.6" fill="#33414f">MLA 使 KV 与头数解耦，128 个头仍只缓存 576 维。</text>
+<text x="348" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（b）两类块的内部：同一 MLA，两种前馈</text>
+<rect x="348" y="26" width="320" height="99" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
+<text x="356" y="40" font-size="9.0" fill="#446084" font-weight="bold">MLA 块（61 层一律）</text>
+<text x="660" y="40" font-size="7.4" fill="#5a6675" text-anchor="end">潜注意力，576 维缓存</text>
+<text x="356" y="62" font-size="7.8" fill="#33414f">① 输入归一 + Q 低秩</text>
+<text x="660" y="62" font-size="7.6" fill="#5a6675" text-anchor="end">7168 → 1536 → 128 × 192</text>
+<text x="356" y="75" font-size="7.8" fill="#33414f">② KV 低秩压缩</text>
+<text x="660" y="75" font-size="7.6" fill="#5a6675" text-anchor="end">7168 → 576（512 + RoPE 64）</text>
+<text x="356" y="88" font-size="7.8" fill="#33414f">③ 上投影</text>
+<text x="660" y="88" font-size="7.6" fill="#5a6675" text-anchor="end">k 升至 192 维，v 升至 128 维</text>
+<text x="356" y="101" font-size="7.8" fill="#33414f">④ 打分与聚合</text>
+<text x="660" y="101" font-size="7.6" fill="#5a6675" text-anchor="end">128 头共用一份潜向量</text>
+<text x="356" y="114" font-size="7.8" fill="#33414f">⑤ 输出投影</text>
+<text x="660" y="114" font-size="7.6" fill="#5a6675" text-anchor="end">128 × 128 → 7168</text>
+<rect x="348" y="133" width="320" height="99" fill="#ffffff" stroke="#55702f" stroke-width="1.0"/>
+<text x="356" y="147" font-size="9.0" fill="#55702f" font-weight="bold">MoE 块（58 层）</text>
+<text x="660" y="147" font-size="7.4" fill="#5a6675" text-anchor="end">细粒度路由，top-4</text>
+<text x="356" y="169" font-size="7.8" fill="#33414f">① 路由</text>
+<text x="660" y="169" font-size="7.6" fill="#5a6675" text-anchor="end">sigmoid 打分，全局取 top-4</text>
+<text x="356" y="182" font-size="7.8" fill="#33414f">② 专家 FFN</text>
+<text x="660" y="182" font-size="7.6" fill="#5a6675" text-anchor="end">128 个专家，中间维 4096，SwiGLU</text>
+<text x="356" y="195" font-size="7.8" fill="#33414f">③ 共享专家</text>
+<text x="660" y="195" font-size="7.6" fill="#5a6675" text-anchor="end">1 个，与路由专家并列</text>
+<text x="356" y="208" font-size="7.8" fill="#33414f">④ 合并</text>
+<text x="660" y="208" font-size="7.6" fill="#5a6675" text-anchor="end">y = Σ ŝ_i h_i + E_s(x)</text>
+<text x="356" y="221" font-size="7.8" fill="#33414f">⑤ 稠密替代</text>
+<text x="660" y="221" font-size="7.6" fill="#5a6675" text-anchor="end">前 3 层为稠密，中间维 16384</text>
+<line x1="12" y1="248" x2="668" y2="248" stroke="#c9cfd8" stroke-width="0.9"/>
+<text x="12" y="264" font-size="9.8" fill="#1b2430" font-weight="bold">（c）官方 params.json：规模、头配置与数值格式</text>
+<rect x="12" y="272" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
+<rect x="13" y="276" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="287" font-size="7.6" fill="#33414f">总参 / 激活</text>
+<text x="325" y="287" font-size="7.6" fill="#1b2430" text-anchor="end">675B / 41B</text>
+<text x="19" y="302" font-size="7.6" fill="#33414f">主干 / 视觉</text>
+<text x="325" y="302" font-size="7.6" fill="#1b2430" text-anchor="end">673B / 2.5B</text>
+<rect x="13" y="306" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="317" font-size="7.6" fill="#33414f">隐藏维 / 层数</text>
+<text x="325" y="317" font-size="7.6" fill="#1b2430" text-anchor="end">7168 / 61</text>
+<text x="19" y="332" font-size="7.6" fill="#33414f">词表</text>
+<text x="325" y="332" font-size="7.6" fill="#1b2430" text-anchor="end">131,072</text>
+<rect x="13" y="336" width="318" height="15" fill="#f1f2f4"/>
+<text x="19" y="347" font-size="7.6" fill="#33414f">上下文</text>
+<text x="325" y="347" font-size="7.6" fill="#1b2430" text-anchor="end">294,912</text>
+<text x="19" y="362" font-size="7.6" fill="#33414f">位置编码</text>
+<text x="325" y="362" font-size="7.6" fill="#1b2430" text-anchor="end">YaRN ×36，β 0.1</text>
+<rect x="348" y="272" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
+<rect x="349" y="276" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="287" font-size="7.6" fill="#33414f">注意力头数</text>
+<text x="661" y="287" font-size="7.6" fill="#1b2430" text-anchor="end">128</text>
+<text x="355" y="302" font-size="7.6" fill="#33414f">Q 低秩</text>
+<text x="661" y="302" font-size="7.6" fill="#1b2430" text-anchor="end">1536</text>
+<rect x="349" y="306" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="317" font-size="7.6" fill="#33414f">KV 低秩</text>
+<text x="661" y="317" font-size="7.6" fill="#1b2430" text-anchor="end">512</text>
+<text x="355" y="332" font-size="7.6" fill="#33414f">qk 维</text>
+<text x="661" y="332" font-size="7.6" fill="#1b2430" text-anchor="end">128 + RoPE 64</text>
+<rect x="349" y="336" width="318" height="15" fill="#f1f2f4"/>
+<text x="355" y="347" font-size="7.6" fill="#33414f">v 头维</text>
+<text x="661" y="347" font-size="7.6" fill="#1b2430" text-anchor="end">128</text>
+<text x="355" y="362" font-size="7.6" fill="#33414f">专家</text>
+<text x="661" y="362" font-size="7.6" fill="#1b2430" text-anchor="end">128 选 4 + 1 共享</text>
+<text x="12" y="384" font-size="7.6" fill="#33414f">视觉编码器另计：48 层、宽 1664、patch 14、最大输入 1540，经 2 × 2 空间合并接入。</text>
+<text x="12" y="396" font-size="7.6" fill="#33414f">FP8 以 128 × 128 分块量化，嵌入、视觉、低秩投影、门控与输出头豁免；另有 NVFP4 与 BF16 两版。</text>
 </svg>
