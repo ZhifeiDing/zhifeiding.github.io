@@ -4,7 +4,7 @@
 
 # 1. 概述
 
-自 2017 年提出至 2026 年，Transformer 已近十年。本文考察这十年间各组件的演化，哪些设计被反复修改，哪些保持稳定，以及推动改动的实际约束。预测未来模型的具体走向并不容易，但回顾这段历史，可以把握大的方向。
+自 2017 年提出至 2026 年，Transformer 已近十年。本文考察这十年间各组件的演化，哪些设计被反复修改，哪些保持稳定，以及推动改动的实际约束。预测未来模型的具体走向并不容易，但回顾这段历史，可以把握大的方向，进而指导硬件加速器的架构设计。
 
 按组件划分，本文讨论以下六个方面的改进：
 
@@ -102,9 +102,9 @@ class MultiHeadAttention(nn.Module):
 
 注意力机制的改进始终围绕全局建模能力伴随 $O(N^2)$ 的计算与存储开销而展开。本章按推理缓存、计算与 IO、稀疏化三条线索梳理这些工作，最后讨论线性注意力与门控注意力。
 
-随着模型规模与序列长度增长，标准 MHA 的二次复杂度与 **KV Cache**（解码时缓存的键值对）成为主要瓶颈：
+随着模型规模与序列长度增长，标准 MHA 的二次复杂度与 **KV Cache**（解码时缓存的键值对）成为主要瓶颈。
 
-标准自注意力的计算复杂度为 $O(n^2 \cdot d)$（序列长度 $n$，特征维度 $d$），推理时 KV Cache 显存占用为 $O(n \cdot h \cdot d_k)$。相应的改进沿三条主线展开：
+标准自注意力的计算复杂度为 $O(n^2 \cdot d)$（序列长度 $n$，特征维度 $d$），推理时 KV Cache 显存占用为 $O(n \cdot h \cdot d_k)$。相应的改进沿三条主线展开。
 
 表 3.1　注意力效率优化的三条主线
 
@@ -116,13 +116,15 @@ class MultiHeadAttention(nn.Module):
 
 **1. 优化 KV Cache，提升推理效率**
 
-目标是缓解自回归解码时的显存带宽压力。
+目标是缓解自回归解码时的显存带宽压力。为减小推理时的 KV Cache，**多查询注意力（MQA）** 让所有查询头共享一组 K/V；**分组查询注意力（GQA）** 把查询头分组，组内共享 K/V，在 MHA 与 MQA 之间折中。MLA将KV变成低维的潜变量。
 
-- **效率优化变体**：为减小推理时的 KV Cache，**多查询注意力（MQA）** 让所有查询头共享一组 K/V；**分组查询注意力（GQA）** 把查询头分组，组内共享 K/V，在 MHA 与 MQA 之间折中。
+**2. 减少计算量**
 
-**2. 优化计算与 IO：FlashAttention**
+以DSA为代表的稀疏注意力减少参与计算的 token 数，而线性注意力则放弃Softmax，通过矩阵乘法做到O(n)的复杂度。
 
-KV Cache 减小之后，训练与预填充阶段的 $O(n^2)$ 注意力矩阵仍是瓶颈。FlashAttention（Tri Dao et al., 2022）保持数学形式不变，只改变数据搬运方式：利用 GPU 存储层级（SRAM 快而小，HBM 大而慢）做 tiling 与 online softmax 分块计算，IO 复杂度从 $O(N^2 + Nd^2)$ 降至 $O(N^2 d^2 / M)$，结果与标准注意力数值等价。核心机制与 FA1 至 FA4 的演进见附录。
+**3. 优化计算与 IO - FlashAttention**
+
+KV Cache 减小之后，训练与预填充阶段的 $O(n^2)$ 注意力矩阵仍是瓶颈。FlashAttention（Tri Dao et al., 2022）保持数学形式不变，只改变数据搬运方式，利用 GPU 存储层级（SRAM 快而小，HBM 大而慢）做 tiling 与 online softmax 分块计算，IO 复杂度从 $O(N^2 + Nd^2)$ 降至 $O(N^2 d^2 / M)$，结果与标准注意力数值等价。因为本方法主要是算法上优化，不在于结构上，所以本文不做讲解。
 
 ## 3.1 Multi-query attention
 
@@ -138,7 +140,7 @@ KV Cache 减小之后，训练与预填充阶段的 $O(n^2)$ 注意力矩阵仍�
 - 键（K）：$[b, n, 1, d_k]$（1 个头）
 - 值（V）：$[b, n, 1, d_k]$（1 个头）
 
-KV Cache 从 $O(n \cdot h \cdot d_k)$ 降到 $O(n \cdot d_k)$，解码阶段的内存带宽压力随之下降（解码阶段主要受显存带宽限制，KV 读取量决定吞吐）。代价是表达能力下降：所有查询头只能从同一套 K/V 里取信息，部分长尾任务上有质量损失。
+KV Cache 从 $O(n \cdot h \cdot d_k)$ 降到 $O(n \cdot d_k)$，解码阶段的内存带宽压力随之下降（解码阶段主要受显存带宽限制，KV 读取量决定吞吐）。但是表达能力下降，所有查询头只能从同一套 K/V 里取信息，部分长尾任务上有质量损失。
 
 ```python
 # MQA 是 GQA 的特例：num_kv_groups = 1
@@ -148,7 +150,7 @@ mqa = GroupedQueryAttention(d_in=2048, num_heads=32, num_kv_groups=1)
 
 ## 3.2 Grouped query attention
 
-分组查询注意力（Grouped Query Attention, GQA，Ainslie et al., 2023）在 MHA 与 MQA 之间折中：把查询头分为若干组，每组共享一组键、值投影，键值头数因此由 $h$ 降为 $g$，长序列下缓存与访存开销随之下降。
+分组查询注意力（Grouped Query Attention, GQA，Ainslie et al., 2023）在 MHA 与 MQA 之间折中，把查询头分为若干组，每组共享一组键、值投影，键值头数因此由 $h$ 降为 $g$，长序列下缓存与访存开销随之下降。
 
 ![4.png](/assets/images/transformer/4.png)
 
@@ -340,7 +342,7 @@ class GroupedQueryAttention(nn.Module):
 
 ## 3.3 MLA
 
-GQA 把 KV 按头分组共享，缓存量仍为 $O(L \cdot n_h \cdot d_h)$，头数较多时 KV Cache 仍是主要开销。MLA（Multi-head Latent Attention，DeepSeek-V2 提出、V3 沿用）改为沿特征维度压缩：把 KV 联合投影到低维潜变量，推理时只缓存这个潜变量。
+GQA 把 KV 按头分组共享，缓存量仍为 $O(L \cdot n_h \cdot d_h)$，头数较多时 KV Cache 仍是主要开销。MLA（Multi-head Latent Attention，DeepSeek-V2 提出、V3 沿用）改为沿特征维度压缩，把 KV 联合投影到低维潜变量，推理时只缓存这个潜变量。
 
 ![5.png](/assets/images/transformer/5.png)
 
@@ -358,15 +360,15 @@ $$k_{t,i} = [\,k_{t,i}^C \,;\, k_t^R\,], \qquad q_{t,i} = [\,q_{t,i}^C \,;\, q_{
 
 其中 $W^{DKV} \in \mathbb{R}^{d_c \times d}$ 是下投影，$W^{UK}, W^{UV} \in \mathbb{R}^{d_h n_h \times d_c}$ 是上投影。
 
-**RoPE 的解耦**。RoPE 需作用在 K 上，而 K 由潜变量解压得到；若把旋转并入 $W^{UK}$，潜变量便携带了位置信息，内容压缩不再纯粹。DeepSeek 另设一路共享的 $k^R$ 专门携带位置信息，内容部分 $k^C$ 保持无位置，两者拼接后再计算注意力。
+RoPE 需作用在 K 上，而 K 由潜变量解压得到；若把旋转并入 $W^{UK}$，潜变量便携带了位置信息，内容压缩不再纯粹。DeepSeek 另设一路共享的 $k^R$ 专门携带位置信息，内容部分 $k^C$ 保持无位置，两者拼接后再计算注意力。
 
-**矩阵吸收**：推理时无需显式还原 $k^C$。因为
+MLA在推理decode阶段可以做**矩阵吸收**，推理时无需显式还原 $k^C$。因为
 
-$$QK^T = (h W^Q)(W^{UK} c^{KV})^T = h \underbrace{(W^Q (W^{UK})^T)}_{\text{可预折叠}} (c^{KV})^T \tag{3.5}$$
+$$QK^T = (h W^Q)(W^{UK} c^{KV})^T = h \underbrace{(W^Q (W^{UK})^T)}_{\text{按顺序计算}} (c^{KV})^T \tag{3.5}$$
 
-把 $W^Q (W^{UK})^T$ 预计算成一个矩阵，就可以在潜变量上直接算注意力分数，$K$ 自始至终无需显式生成。同理 $W^{UV}$ 可以吸收进输出投影。
+将 $W^Q (W^{UK})^T$ 在Q上计算成，就可以在潜变量上直接算注意力分数，$K$ 自始至终无需显式生成。同理 $W^{UV}$ 可以吸收进输出投影。
 
-**每层每 token 的缓存量**：
+MLA每层每 token 的缓存量相比MHA大幅减少。
 
 表 3.3　MHA、GQA 与 MLA 的每层每 token 缓存量对比
 
@@ -450,7 +452,7 @@ MLA 以压缩 KV 取代共享 KV，用训练期多一次投影换取推理期显
 
 ## 3.4 SWA
 
-SWA（Sliding Window Attention，滑动窗口注意力）是最简单的稀疏化做法：每个 token 只看最近 $w$ 个 token，而不是全部历史。
+SWA（Sliding Window Attention，滑动窗口注意力）是最简单的稀疏化方法，每个 token 只看最近 $w$ 个 token，而不是全部历史。
 
 ![6.png](/assets/images/transformer/6.png)
 
@@ -462,20 +464,20 @@ $$M_{sw,ij} = \begin{cases} 0, & j \le i \ \text{且}\ i - j < w \\ -\infty, & \
 
 复杂度从 $O(n^2)$ 降到 $O(n \cdot w)$，当 $w \ll n$ 时近似线性；KV Cache 也从 $O(n)$ 降到 $O(w)$。
 
-Mistral 7B 是第一个大规模验证 SWA 的开源模型，窗口 $w = 4096$，并配套**滚动缓冲缓存（Rolling Buffer Cache）**：固定大小 $W=4$ 的环形缓冲，位置超出后覆盖旧 K/V，32k 序列下缓存显存降到 1/8。窗口之外的信息只能经中间层逐层传递。
+Mistral 7B 是第一个大规模验证 SWA 的开源模型，窗口 $w = 4096$，并配套**滚动缓冲缓存（Rolling Buffer Cache）**，固定大小 $W=4$ 的环形缓冲，位置超出后覆盖旧 K/V，32k 序列下缓存显存降到 1/8。窗口之外的信息只能经中间层逐层传递。
 
-后续演化：
+SWA后续演化包括
 
 - **Gemma 2**：全局注意力与 SWA 交替（1:1），窗口 4096
 - **Gemma 3**：改成 5:1（每 5 层滑窗 + 1 层全局），窗口从 4096 缩到 1024
 
 $$\text{Memory}_{\text{Gemma3}} = \frac{5 \cdot 1024 + 1 \cdot L}{1 \cdot 4096 + 1 \cdot L} \approx 0.26 \quad (L = 32K) \tag{3.7}$$
 
-消融显示每 6 层设置一个全局层便足以捕捉长程依赖：Gemma 3 技术报告在验证集上测得，局部层与全局层之比从 1:1 改为 5:1 时，PPL 相对基线仅变化 $-0.05$（2B）与 $-0.02$（9B），放宽到 7:1 后影响同样很小。此处 PPL 为困惑度（perplexity）的原文缩写，定义是 token 平均负对数似然的指数，$\mathrm{PPL}=\exp(\bar{\mathcal L})$，数值越低越好；下文统一使用 PPL。
+消融实验显示每 6 层设置一个全局层便足以捕捉长程依赖，Gemma 3 技术报告在验证集上测得，局部层与全局层之比从 1:1 改为 5:1 时，PPL 相对基线仅变化 $-0.05$（2B）与 $-0.02$（9B），放宽到 7:1 后影响同样很小。此处 PPL 为困惑度（perplexity）的原文缩写，定义是 token 平均负对数似然的指数，$\mathrm{PPL}=\exp(\bar{\mathcal L})$，数值越低越好；下文统一使用 PPL。
 
 - **gpt-oss** 在交替层中使用；
 - **小米 MiMo-V2-Flash** 用 $w=128$ 的极端窗口
-- Mistral 3.1 Small 则放弃 SWA：统一的注意力模式更便于 FlashAttention-3 一类 kernel 优化
+- Mistral 3.1 Small 则放弃 SWA，采用统一的注意力模式更便于 FlashAttention-3 一类 kernel 优化
 
 ```python
 import torch
@@ -521,24 +523,22 @@ class SlidingWindowAttention(nn.Module):
         return self.wo(out), next_cache
 ```
 
-SWA 是纯局部的稀疏化，依靠层数堆叠获得长程能力。滑动窗口这一局部分支被后续工作普遍保留：NSA、DSA、CSA、QSA 均设有相应分支。
+SWA 是纯局部的稀疏化，依靠层数堆叠获得长程能力。滑动窗口这一局部分支被后续工作普遍保留，NSA、DSA、CSA、QSA 均设有相应分支。
 
 ## 3.5 Sparse Attention
 
-与 FlashAttention 保持全部计算不同，稀疏注意力减少参与计算的 token 数。
+与前面的稠密Attention 保持全部计算不同，稀疏注意力减少参与计算的 token 数。
 
-两条路线的差别在于：
+表 3.4　稠密Attention 与稀疏注意力的技术路线对比
 
-表 3.4　FlashAttention 与稀疏注意力的技术路线对比
+|                 | 稠密Attention     | 稀疏注意力             |
+| --------------- | --------------- | ----------------- |
+| 交互次数            | 全部 $n^2$ 对，一个不少 | 只保留 $n \cdot k$ 对 |
+| $n \times n$ 矩阵 | 不写入 HBM，但仍然要算   | 根本不构造大部分          |
+| 精确性             | **数值上完全等价**     | 近似，有质量损失          |
+| 省的是             | 显存带宽            | 算力 + 带宽 + KV 读取量  |
 
-| | FlashAttention | 稀疏注意力 |
-|---|---|---|
-| 交互次数 | 全部 $n^2$ 对，一个不少 | 只保留 $n \cdot k$ 对 |
-| $n \times n$ 矩阵 | 不写入 HBM，但仍然要算 | 根本不构造大部分 |
-| 精确性 | **数值上完全等价** | 近似，有质量损失 |
-| 省的是 | 显存带宽 | 算力 + 带宽 + KV 读取量 |
-
-稀疏注意力的一般框架是：用一个**低成本选择器**（indexer / scorer）判断哪些历史 token 值得看，然后只在这些 token 上跑精确注意力。关键在选择器的召回率：一旦漏掉重要 token，模型质量就会下降。
+稀疏注意力的一般框架是用一个**低成本选择器**（indexer / scorer）判断哪些历史 token 值得看，然后只在这些 token 上跑精确注意力。关键在选择器的召回率，一旦漏掉重要 token，模型质量就会下降。
 
 2025 年之后，这一分支密集产出了 DeepSeek 的 NSA / DSA / V4 的 CSA-HCA / V4.1 的 CSA2、Qwen 的 QSA、MiniMax 的 MSA、美团 LongCat 的 LSA 等工作。它们在三个维度上分化：
 
@@ -546,19 +546,17 @@ SWA 是纯局部的稀疏化，依靠层数堆叠获得长程能力。滑动窗�
 2. **选择器是否可训练**：原生端到端训练（NSA）→ 用 KL 对齐蒸馏（MSA）→ 轻量索引器（QSA）
 3. **是否保留全局分支**：多数方案保留滑窗、稀疏与全局三者的叠加
 
-2026 年的 CSA2 与 LSA 又开辟了第四个维度：沿层维度摊销索引与 KV：一次压缩、多层共享，一次选择、多层复用。
+2026 年的 CSA2 与 LSA 又开辟了第四个维度，沿层维度摊销索引与 KV，一次压缩、多层共享，一次选择、多层复用。
 
 ### 3.5.1 Native Sparse Attention
 
-NSA（Native Sparse Attention，由 DeepSeek 与北京大学张铭团队合作完成，获 ACL 2025 最佳论文）针对稀疏注意力长期难以落地的三个原因：选择器自身的开销、GPU 访存的不规则性，以及选择操作不可导而无法端到端训练。这些因素使理论上的复杂度优势难以转化为实际加速。
+NSA（Native Sparse Attention，由 DeepSeek 与北京大学张铭团队合作完成，获 ACL 2025 最佳论文）针对稀疏注意力长期难以落地的三个原因，选择器自身的开销、GPU 访存的不规则性，以及选择操作不可导而无法端到端训练。这些因素使理论上的复杂度优势难以转化为实际加速。
 
 ![7.png](/assets/images/transformer/7.png)
 
 > 图 3.5　NSA 架构总览（NSA 论文 Figure 2）。三条并行分支——压缩注意力、选择注意力、滑动注意力——最后经 Gated Output 融合。
 
-为此，NSA 在设计上同时保证硬件对齐与端到端可训练。
-
-**三条并行分支**：
+为此，NSA 在设计上同时保证硬件对齐与端到端可训练。三条并行分支：
 
 1. **压缩注意力（Compressed）**：把连续的 token 分组压缩成代表 token，用低维向量近似整段历史，提供粗粒度的全局信息
 2. **选择注意力（Selected）**：由**可训练的 indexer** 对每个 query 打分，选出 top-k 个重要块，提供细粒度的精确检索
@@ -578,15 +576,15 @@ $$\tilde{K}^{slc}_t = \mathrm{Cat}\Big[\big\{k_{il'+1:(i+1)l'} \;\big|\; i \in I
 
 $$\tilde{K}^{win}_t = k_{t-w:t}, \qquad \tilde{V}^{win}_t = v_{t-w:t} \tag{3.11}$$
 
-**门控融合**：三条分支各自产生 $o_c, o_s, o_w$，由 query 决定门控权重：
+三条分支各自产生 $o_c, o_s, o_w$，由 query 决定门控权重：
 
 $$o = g_c \odot o_c + g_s \odot o_s + g_w \odot o_w \tag{3.12}$$
 
 门控权重由模型学习，而非固定比例。
 
-**硬件对齐**：NSA 的三个分支共享同一套 tile 布局，并配套专门的 CUDA kernel，将选择器开销降至可忽略。所谓硬件对齐，即算法设计阶段就确定 kernel 的实现方式。
+NSA 的三个分支共享同一套 tile 布局，并配套专门的 CUDA kernel，将选择器开销降至可忽略。所谓硬件对齐，即算法设计阶段就确定 kernel 的实现方式。
 
-效果上，在 64k 序列长度下，相比 FlashAttention：前向最高 9× 加速、反向 6× 加速，且序列越长加速越明显；在通用基准、长文本任务与指令推理上均持平或超越全注意力模型。
+效果上，在 64k 序列长度下，相比 FlashAttention，前向最高 9× 加速、反向 6× 加速，且序列越长加速越明显；在通用基准、长文本任务与指令推理上均持平或超越全注意力模型。
 
 ```python
 import torch
@@ -662,16 +660,12 @@ NSA 的意义在于把稀疏注意力做到了原生可训练且与硬件对齐�
 
 ### 3.5.2 Deepseek Sparse Attention
 
-DSA（DeepSeek Sparse Attention）是 NSA 的工程化继任者，搭载于 2025 年 9 月发布的 DeepSeek-V3.2-Exp；稀疏注意力由此首次进入开源生产模型。
+DSA（DeepSeek Sparse Attention）是 NSA 的工程化继任者，搭载于 2025 年 9 月发布的 DeepSeek-V3.2-Exp；稀疏注意力由此首次进入开源生产模型。DSA 的核心是两个新组件：
 
-DSA 的核心是两个新组件：
+* ***闪电索引器（Lightning Indexer）**：一个轻量模块，为当前 query 与每个候选历史 token 计算相关性分数。该模块不进入主注意力路径，只做一次粗略筛选，计算量很小。
+* ***Top-k 选择器**：按分数取 top-$k$ 个 token（默认 2048）做精细注意力，其余全部跳过。
 
-**闪电索引器（Lightning Indexer）**：一个轻量模块，为当前 query 与每个候选历史 token 计算相关性分数。该模块不进入主注意力路径，只做一次粗略筛选，计算量很小。
-
-**Top-k 选择器**：按分数取 top-$k$ 个 token（默认 2048）做精细注意力，其余全部跳过。
-
-核心注意力复杂度由此从 $O(L^2)$ 降到 $O(L \cdot k)$。
-两个组件的形式化定义如下。**闪电索引器**对每个候选历史 token $s$ 计算相关性分数：
+核心注意力复杂度由此从 $O(L^2)$ 降到 $O(L \cdot k)$。两个组件的形式化定义如下。**闪电索引器**对每个候选历史 token $s$ 计算相关性分数：
 
 $$I_{t,s} = \sum_{j=1}^{n_h} w^I_{t,j} \cdot \mathrm{ReLU}\!\left(q^I_{t,j} \cdot k^I_s\right) \tag{3.13}$$
 
@@ -681,9 +675,9 @@ $$u_t = \mathrm{Attn}\!\left(h_t,\ \{c_s \mid I_{t,s} \in \mathrm{Top\text{-}k}(
 
 其中 $c_s$ 为 MLA 的压缩潜变量 KV 条目，$h_t$ 为查询隐状态。
 
-DSA 叠加在 MLA 之上而非替代它：索引器用各层隐状态的小投影打分，选中的是 MLA 的压缩潜变量 KV 条目，再走标准 MLA 注意力路径。MLA 减小单个条目的体积，DSA 减少需要读取的条目数，两者作用在不同维度。
+DSA 叠加在 MLA 之上，索引器用各层隐状态的小投影打分，选中的是 MLA 的压缩潜变量 KV 条目，再走标准 MLA 注意力路径。MLA 减小单个条目的体积，DSA 减少需要读取的条目数，两者作用在不同维度。
 
-训练采用三阶段：先用短期的“密集预热”让索引器拟合原模型的注意力分布，再进入“稀疏训练”阶段让整个模型适应新稀疏模式，最后沿用与前代完全相同的后训练流程（专家蒸馏 + GRPO）。实验中只改动注意力机制，其余设置对齐，因而性能差异可归因于这一处改动。
+训练采用三阶段，先用短期的“密集预热”让索引器拟合原模型的注意力分布，再进入“稀疏训练”阶段让整个模型适应新稀疏模式，最后沿用与前代完全相同的后训练流程（专家蒸馏 + GRPO）。实验中只改动注意力机制，其余设置对齐，因而性能差异可归因于这一处改动。
 
 DeepSeek 同时开源了 TileLang 和 CUDA 两版算子，并建议研究性实验优先用 TileLang 版本以便调试。结果上，V3.2-Exp 在与 V3.1-Terminus 严格对齐的设置下，各公开基准表现基本持平，同时把 API 价格下调了 50% 以上。
 
@@ -738,7 +732,7 @@ class DeepSeekSparseAttention(nn.Module):
 
 ### 3.5.3 CSA、HCA 与 CSA2
 
-2026 年 4 月的 DeepSeek-V4 把压缩从特征维度移到序列维度：MLA 沿头维度压缩 KV，V4 的 Compressed Attention 则压缩序列长度。百万上下文下 KV 显存主要由序列长度决定，压缩序列因此更为直接。
+2026 年 4 月的 DeepSeek-V4 把压缩从特征维度移到序列维度，MLA 沿头维度压缩 KV，V4 的 Compressed Attention 则压缩序列长度。百万上下文下 KV 显存主要由序列长度决定，压缩序列因此更为直接。
 
 ![8.png](/assets/images/transformer/8.png)
 
@@ -777,15 +771,15 @@ $$o_{t,i} = \mathrm{CoreAttn}\!\left(q_{t,i},\ C^{SprsComp}_t,\ C^{SprsComp}_t\r
 
 HCA 不做筛选，是因为 128 倍压缩后条目数已足够少（1M token 约合 8000 条），全量注意力的成本可以接受，也避免了选择器漏检的风险。
 
-HCA 的公式更为简洁：压缩率 $m' \gg m$、不重叠、无选择器，直接对全部压缩条目做稠密注意力：
+HCA 的公式更为简洁，压缩率 $m' \gg m$、不重叠、无选择器，直接对全部压缩条目做稠密注意力：
 
-$$S = \mathrm{Softmax}_{row}(Z + B), \qquad C^{Comp}_i = \sum_{j=m\'i}^{m\'(i+1)-1} S_j \odot C_j \tag{3.19}$$
+$$S_{i,j} = \mathrm{Softmax}_{j}\!\left(Z_{i,j} + B_{j}\right), \qquad C^{Comp}_i = \sum_{j=0}^{m^{\prime}-1} S_{i,j} \odot C_{i,j} \tag{3.19}$$
 
-其中 $C = H \cdot W^{KV}$、$Z = H \cdot W^{Z}$，$B \in \mathbb{R}^{m' \times c}$ 为位置偏置；核心注意力与 CSA 相同，只是对象换成了全部压缩条目：
+其中 $C = H \cdot W^{KV}$、$Z = H \cdot W^{Z}$ 按块重排为 $C_{i,j}$、$Z_{i,j}$（$i$ 为块号，$j$ 为块内位置），$B \in \mathbb{R}^{m' \times c}$ 为块内位置偏置，所有块共享同一份 $B$。Softmax 只在块内对 $j$ 归一，故 $\sum_{j} S_{i,j} = 1$（逐通道成立），$C^{Comp}_i$ 是块内 $m'$ 个 KV 的凸组合，其尺度不随上下文长度衰减——这与式 (3.16) 的组内归一、以及同节代码的 `softmax(dim=2)` 一致。核心注意力与 CSA 相同，只是对象换成了全部压缩条目：
 
 $$o_{t,i} = \mathrm{CoreAttn}\!\left(q_{t,i},\ C^{Comp},\ C^{Comp}\right) \tag{3.20}$$
 
-**层间堆叠策略**（V4-Pro 的 61 层）：
+V4-Pro 的 61 层按 CSA 与 HCA 混合方式堆叠。
 
 表 3.5　DeepSeek-V4-Pro 的层间注意力堆叠策略
 
@@ -799,7 +793,7 @@ $$o_{t,i} = \mathrm{CoreAttn}\!\left(q_{t,i},\ C^{Comp},\ C^{Comp}\right) \tag{3
 
 > 图 3.8　HCA 核心架构（DeepSeek-V4 技术报告 Figure 4）。重度压缩的 KV 条目 + 滑动窗口，**没有 Top-k 选择器**。
 
-效果：DeepSeek-V4-Pro 的单 token 推理 FLOPs 仅为 V3.2 的 27%、KV Cache 为 10%；V4-Flash 更低至 10% / 7%。相对标准 GQA-8 基线，KV Cache 约为其 2%。
+DeepSeek-V4-Pro 的单 token 推理 FLOPs 仅为 V3.2 的 27%、KV Cache 为 10%；V4-Flash 更低至 10% / 7%。相对标准 GQA-8 基线，KV Cache 约为其 2%。
 
 **代码实现**（CSA 的“压缩 → 索引 → 选择 → 注意力”四步，对应 V4 报告式(9)—(19)）：
 
@@ -942,9 +936,9 @@ class HeavilyCompressedAttention(nn.Module):
         return self.out_proj(o.reshape(B, L, -1))
 ```
 
-三个组件各承担一部分压缩：压缩器把 KV 条目数降到 1/m，索引器从中选出相关条目，MQA 通过共享 KV 减少显存。HCA 不设索引器，以高压缩率配合全量注意力换取召回的稳定性。
+三个组件各承担一部分压缩，压缩器把 KV 条目数降到 1/m，索引器从中选出相关条目，MQA 通过共享 KV 减少显存。HCA 不设索引器，以高压缩率配合全量注意力换取召回的稳定性。
 
-**CSA2（Compressed Sparse Attention 2）**。V4.1-Flash（arXiv:2609.19969）把压缩推进到层维度。前两个维度分别压缩条目体积与序列长度；进一步观察到相邻层选中的 Top-K 块高度重合，且主 KV 源自同一份隐藏状态，逐层各存一份便成为冗余。CSA2 让多层共享主 KV 与索引键，必要时也沿用 Top-K 选择结果。
+V4.1-Flash（arXiv:2609.19969）引入**CSA2（Compressed Sparse Attention 2）**，把压缩推进到层维度。前两个维度分别压缩条目体积与序列长度；进一步观察到相邻层选中的 Top-K 块高度重合，且主 KV 源自同一份隐藏状态，逐层各存一份便成为冗余。CSA2 让多层共享主 KV 与索引键，必要时也沿用 Top-K 选择结果。
 
 ![11.png](/assets/images/transformer/11.png)
 
@@ -972,9 +966,9 @@ $$
 | Reindex | 借用前序 Full 层 | 本层重新选择 | 索引 Q 打分 + 选择 |
 | Reuse | 借用前序 Full 层 | 直接复用 | 无（仅核心注意力） |
 
-V4.1-Flash 的 40 层 CED 布局里，encoder 的 2—19 层按“1 Full + 5 Reuse”分三组，decoder 的 20—23 层为“1 Full + 3 Reuse”，24—39 层按“1 Reindex + 3 Reuse”分四组。38 个全局注意力层里只有 4 个 Full、4 个 Reindex，其余 30 个全部 Reuse。Reuse 层因而很轻：prefill 只需 15 个 kernel，decode 只需 11 个。
+V4.1-Flash 的 40 层 CED 布局里，encoder 的 2—19 层按“1 Full + 5 Reuse”分三组，decoder 的 20—23 层为“1 Full + 3 Reuse”，24—39 层按“1 Reindex + 3 Reuse”分四组。38 个全局注意力层里只有 4 个 Full、4 个 Reindex，其余 30 个全部 Reuse。Reuse 层因而很轻，prefill 只需 15 个 kernel，decode 只需 11 个。
 
-**层级稀疏索引器（Hierarchical Sparse Indexer）**。即便有了 Reuse，剩下的索引层仍要对整个可见上下文打分，成本随长度线性增长。解码器把选择拆成两级：第一个 Full 层在完成自己的 Top-512 之外，按每 8 个位置一个子块、取块内索引分数最大值做块级粗排，保留最优的 2048 个块（16384 个位置）作为共享候选池；后续 Reindex 层只在池内精排：
+即便有了 Reuse，剩下的索引层仍要对整个可见上下文打分，成本随长度线性增长。因此引入**层级稀疏索引器（Hierarchical Sparse Indexer）**。解码器把选择拆成两级，第一个 Full 层在完成自己的 Top-512 之外，按每 8 个位置一个子块、取块内索引分数最大值做块级粗排，保留最优的 2048 个块（16384 个位置）作为共享候选池；后续 Reindex 层只在池内精排：
 
 $$
 \mathcal{P}_t = \mathrm{arg\,topK}\big(\{I^{\mathrm{blk}}_{t,p}\},\ 2048\big), \qquad
@@ -984,11 +978,11 @@ $$
 
 候选池大小固定，深层索引器的单查询成本因此与上下文长度无关。该机制在后训练阶段引入，训练与推理采用同一候选池限制，深层索引器在训练阶段即适应这一分布。
 
-**压缩器也随之简化**：V4 的 CSA 用 $2m$ 个重叠源条目加绝对位置偏置构造压缩条目，CSA2 去掉重叠与位置偏置，索引 K 直接由主 KV 投影得到，结构更简单，训练更快。压缩率上 encoder 取 $m = 2$（两个 token 合一），decoder 因逐 token 生成取 $m = 1$；选择粒度也从 V4 的 Top-1024 收紧到 Top-512。整个架构放弃了 CSA / HCA 混合，改为纯 CSA2。
+**压缩器也随之简化**，V4 的 CSA 用 $2m$ 个重叠源条目加绝对位置偏置构造压缩条目，CSA2 去掉重叠与位置偏置，索引 K 直接由主 KV 投影得到，结构更简单，训练更快。压缩率上 encoder 取 $m = 2$（两个 token 合一），decoder 因逐 token 生成取 $m = 1$；选择粒度也从 V4 的 Top-1024 收紧到 Top-512。整个架构放弃了 CSA / HCA 混合，改为纯 CSA2。
 
-**SWA Bounded Replay**。滑窗分支的 KV 在 V4 中必须逐层持久化，长上下文下 SSD 压力可观。V4.1-Flash 不再持久化 SWA KV：需要时只把最近 $n_{\mathrm{win}} = 128$ 个 token 重新回放一遍来近似重建，并在后训练阶段模拟回放误差，使模型适应这一近似。持久化 KV Cache 由此降到 V4-Flash 的约 1/8。
+滑窗分支的 KV 在 V4 中必须逐层持久化，长上下文下 SSD 压力可观。V4.1-Flash 不再持久化 SWA KV，而是采用**SWA Bounded Replay**，需要时只把最近 $n_{\mathrm{win}} = 128$ 个 token 重新回放一遍来近似重建，并在后训练阶段模拟回放误差，使模型适应这一近似。持久化 KV Cache 由此降到 V4-Flash 的约 1/8。
 
-**效果**：CSA2 与 FP4 主 KV（E2M1 格式，每 16 个通道共享一个 E4M3 缩放因子）叠加后，全局 KV Cache 降至每 token 890 字节，约为 V4-Flash 的 1/4；配合 CED 的非对称激活（prefill 8B / decode 16B），上下文从 4K 扩到 1M（256 倍），单 token 解码 FLOPs 只增加约四分之一。
+CSA2 与 FP4 主 KV（E2M1 格式，每 16 个通道共享一个 E4M3 缩放因子）叠加后，全局 KV Cache 降至每 token 890 字节，约为 V4-Flash 的 1/4；配合 CED 的非对称激活（prefill 8B / decode 16B），上下文从 4K 扩到 1M（256 倍），单 token 解码 FLOPs 只增加约四分之一。
 
 **代码实现**（简化压缩器 + 层级索引器 + 三种模式路由）：
 
@@ -1083,11 +1077,11 @@ class CSA2Layer(nn.Module):
         return self.out_proj(attn.reshape(B, L, -1))
 ```
 
-从 MLA 到 CSA/HCA 再到 CSA2，KV 压缩依次作用于条目体积、序列长度与层数：前两者决定每条缓存的体积与序列上的条目数，第三者决定同一内容存几份。MLA 的低秩分解是精确的，后两者引入近似；也正因允许近似，KV Cache 才得以降到基线的个位数百分比，直至每 token 百字节量级。
+从 MLA 到 CSA/HCA 再到 CSA2，KV 压缩依次作用于条目体积、序列长度与层数，前两者决定每条缓存的体积与序列上的条目数，第三者决定同一内容存几份。MLA 的低秩分解是精确的，后两者引入近似；也正因允许近似，KV Cache 才得以降到基线的个位数百分比，直至每 token 百字节量级。
 
 ### 3.5.4 Qwen Sparse Attention
 
-QSA（Qwen Sparse Attention）出自 Qwen3.8-Flash-Next 的架构论文（arXiv:2608.30320），针对 token 级稀疏注意力中索引器开销随上下文线性增长的问题：上下文足够长时，索引器本身成为瓶颈。
+QSA（Qwen Sparse Attention）出自 Qwen3.8-Flash-Next 的架构论文（arXiv:2608.30320），针对 token 级稀疏注意力中索引器开销随上下文线性增长的问题，上下文足够长时，索引器本身成为瓶颈。
 
 ![12.png](/assets/images/transformer/12.png)
 
@@ -1105,7 +1099,7 @@ QSA 的两级压缩策略：
 
 QSA 还在**每层独立做序列压缩**，不跨层共享索引，因而不依赖层间注意力相似性。这使它适用于 GDN 层与全局注意力层交错的 hybrid 架构，其中 GDN 层并没有可共享的注意力分布。
 
-QSA 的关键公式（论文式 12—16）如下。索引器采用 MQA：每个 query 头做独立轻量投影并归一化，key 全组共享一个头：
+QSA 的关键公式（论文式 12—16）如下。索引器采用 MQA，每个 query 头做独立轻量投影并归一化，key 全组共享一个头：
 
 $$\hat q^h_i = \mathrm{RMSNorm}(W^h_Q x_i), \qquad k_i = W_K x_i \tag{3.23}$$
 
@@ -1226,9 +1220,9 @@ class QwenSparseAttention(nn.Module):
         return self.out_proj(o.reshape(B, L, -1))
 ```
 
-**复杂度与访存**。索引器开销为 $O(L \cdot n_{\mathrm{blk}})$ 而非 $O(L^2)$；micro-block 粒度使 KV 读取保持连续，便于 Tensor Core 批量处理。两部分配合，把长上下文下的索引成本与访存成本一并压低。
+索引器开销为 $O(L \cdot n_{\mathrm{blk}})$ 而非 $O(L^2)$；micro-block 粒度使 KV 读取保持连续，便于 Tensor Core 批量处理。两部分配合，把长上下文下的索引成本与访存成本一并压低。
 
-效果：1M token 下 QSA 的注意力 kernel 在 prefill 加速 7.6×、decode 加速 4.9×；在 90% Prefix Cache 命中率的线上场景实验中，1M 上下文下 prefill 吞吐达到 Qwen3.7-Plus 的 8.6×。
+1M token 下 QSA 的注意力 kernel 在 prefill 加速 7.6×、decode 加速 4.9×；在 90% Prefix Cache 命中率的线上场景实验中，1M 上下文下 prefill 吞吐达到 Qwen3.7-Plus 的 8.6×。
 
 ### 3.5.5 MiniMax Sparse Attention
 
@@ -1238,15 +1232,14 @@ MSA（MiniMax Sparse Attention，arXiv:2606.13392）已开源推理 kernel，并
 
 > 图 3.11　MSA 总览（MSA 论文 Figure 1）。左半是 Index Branch（打分 → Block Max Pooling → Top-K Index），右半是 Main Branch（Top-K KV Block 上的精确稀疏注意力）。右侧热力图展示了两个 GQA 组各自选中的不同块。
 
-MSA 的核心设计是**两分支 + 每组独立选择**：
+MSA 的核心设计是**两分支 + 每组独立选择**。
 
-**Index Branch**：只增加两个投影矩阵。每个 GQA 组有一个 index query 头、一个共享的 index key 头；对可见的 key token 打分后做 **block max pooling** 得到块级分数，再做 Top-k 选择。包含 query 自身的局部块强制保留，以免遗漏邻近上下文。
+* ***Index Branch**：只增加两个投影矩阵。每个 GQA 组有一个 index query 头、一个共享的 index key 头；对可见的 key token 打分后做 **block max pooling** 得到块级分数，再做 Top-k 选择。包含 query 自身的局部块强制保留，以免遗漏邻近上下文。
+* ***Main Branch**：在选中的块上做**精确的块稀疏 softmax 注意力**。每个 query 头有自己的 query 投影，但共享所在组的块集合。
 
-**Main Branch**：在选中的块上做**精确的块稀疏 softmax 注意力**。每个 query 头有自己的 query 投影，但共享所在组的块集合。
+块大小 $B_k = 128$，每组保留 $k = 16$ 个块，即每个 query 固定只看 $2048$ 个 KV token。于是单 query 成本从 $O(N)$ 变成 $O(kB_k)$，与上下文长度无关。
 
-关键参数：块大小 $B_k = 128$，每组保留 $k = 16$ 个块，即每个 query 固定只看 $2048$ 个 KV token。于是单 query 成本从 $O(N)$ 变成 $O(kB_k)$，与上下文长度无关。
-
-选择发生在 GQA 组内共享、组间独立：一个 KV 头服务多个 query 头，它们共享同一组块；不同组则可以关注不同的长程区域。
+选择发生在 GQA 组内共享、组间独立，一个 KV 头服务多个 query 头，它们共享同一组块；不同组则可以关注不同的长程区域。
 
 两分支的公式如下。**Index Branch** 每个 GQA 组一个索引 query 头、全组共享一个索引 key 头：
 
@@ -1262,7 +1255,7 @@ $$I^{(r)}_i = \mathrm{TopK}_{b}\big(M^{idx,(r)}_{i,\cdot},\ k\big) \tag{3.29}$$
 
 $$O^{(h)}_i = \mathrm{softmax}\!\left(\frac{Q^{(h)}_i \big(K^{(r)}[I^{(r)}_i]\big)^\top}{\sqrt{d_h}}\right) V^{(r)}\big[I^{(r)}_i\big] \tag{3.30}$$
 
-**训练方法**。Top-k 不可导，语言建模损失无法训练索引投影。MSA 用 **KL 对齐损失**解决：让 Index Branch 的分布去匹配 Main Branch 在被选 token 上的（组平均的）注意力分布，充当 teacher。三个稳定化机制：
+Top-k 不可导，语言建模损失无法训练索引投影。MSA 用 **KL 对齐损失**解决，让 Index Branch 的分布去匹配 Main Branch 在被选 token 上的（组平均的）注意力分布，充当 teacher。三个稳定化机制：
 
 - **Gradient Detach**：对 Index Branch 的输入做 stop-gradient，把 KL 损失限制在索引投影内，避免梯度打回主干引起 loss 发散
 - **Indexer Warmup**：前若干步两分支都跑全注意力，先让索引器收敛到可用的路由
@@ -1272,12 +1265,12 @@ KL 对齐损失把 Main Branch 的组平均分布作为 teacher，蒸馏进 Inde
 
 $$\mathcal{L}_{KL} = \frac{1}{N H_{kv}} \sum_{i=1}^{N} \sum_{r=1}^{H_{kv}} D_{KL}\!\left(\mathrm{stopgrad}\big(P^{(r)}_{i,\cdot}\big) \,\big\|\, P^{idx,(r)}_{i,\cdot}\right) \tag{3.31}$$
 
-**算子协同设计**：
+MSA 的**算子协同设计**：
 
 - **exp-free Top-k**：softmax 保持序关系，所以对原始分数排序即可得到相同索引，内核跳过 max / exp / sum；128K 上下文、$k=16$ 时比 `torch.topk` 快 5.1×，比 TileLang 的 radix-select 还快 3.7×
 - **KV-outer 稀疏注意力 + query gather**：遍历 KV 块比遍历 query 算术强度更高，把 $\lceil 128/G \rceil$ 个 query 位置打包进一个 $128 \times 128$ 的 score MMA
 
-效果（109B 参数原生多模态模型，3T token 预算）：与 GQA 持平的同时，1M 上下文下每 token 注意力计算量减少 28.4×；配合协同设计的 kernel，在 H800 上取得 14.2× prefill / 7.6× decode 的墙钟加速。
+在109B 参数原生多模态模型，MSA与 GQA 持平的同时，1M 上下文下每 token 注意力计算量减少 28.4×。
 
 ```python
 import torch
@@ -1336,7 +1329,7 @@ class MiniMaxSparseAttention(nn.Module):
         return self.wo(o)
 ```
 
-MSA 的结构相对简单：没有 NSA 的三分支，也没有 QSA 的层级压缩，只保留两分支与组级 Top-k，并把块大小定在适配 Tensor Core 的粒度上。
+MSA 的结构相对简单，没有 NSA 的三分支，也没有 QSA 的层级压缩，只保留两分支与组级 Top-k，并把块大小定在适配 Tensor Core 的粒度上。
 
 ### 3.5.6 LongCat Sparse Attention
 
@@ -1346,7 +1339,7 @@ LSA（LongCat Sparse Attention，arXiv:2608.01662，美团 LongCat-2.0 采用）
 
 > 图 3.12　LSA 架构（LSA 论文 Figure 1）。左为 owner 层：Block Indexer 块级粗排 + Token Indexer 精排，预算对半分给连续的流式区域与动态选择的非连续区域；右为 reuse 层：直接复用 owner 层的 Top-K 索引。两层共享索引参数。
 
-LSA 用三项互补机制分别对应两个瓶颈：SI 解决访存连续性，CLI 与 HI 解决索引开销。SI 与 CLI 参与训练，HI 是训练无关的即插即用模块。
+LSA 用三项互补机制分别对应两个瓶颈，SI 解决访存连续性，CLI 与 HI 解决索引开销。SI 与 CLI 参与训练，HI 是训练无关的即插即用模块。
 
 表 3.7　LSA 三项索引机制对比
 
@@ -1356,34 +1349,34 @@ LSA 用三项互补机制分别对应两个瓶颈：SI 解决访存连续性，C
 | CLI（跨层索引） | 索引重复计算 | owner 层选择、reuse 层复用，跨层蒸馏 | 训练 + 推理 | 组大小 $N=2$（MTP 为 3） |
 | HI（层级索引） | 单次打分 $O(L)$ | 块级粗排候选页 + 页内精排 | 仅推理 | $P=128$、$B=8$、$M=1024$ |
 
-**Streaming-Aware Indexing（SI）**。稀疏预算不再全部交给动态选择，而是固定分配给可预测的连续区域，即开头的注意力汇聚（sink）与最近的滑动窗口：
+**Streaming-Aware Indexing（SI）** 使稀疏预算不再全部交给动态选择，而是固定分配给可预测的连续区域，即开头的注意力汇聚（sink）与最近的滑动窗口：
 
 $$
 \mathcal{S}_t = \underbrace{\{1, \dots, K_{\mathrm{sink}}\}}_{\text{sink}} \cup \underbrace{\{t - K_{\mathrm{swa}} + 1, \dots, t\}}_{\text{SWA}} \cup \underbrace{\mathrm{arg\,topK}\big(\{I_{t,s}\},\ K_{\mathrm{sparse}}\big)}_{\text{sparse}}
 \tag{3.32}
 $$
 
-总预算 $K = K_{\mathrm{sink}} + K_{\mathrm{swa}} + K_{\mathrm{sparse}} = 2048$，其中 $K_{\mathrm{sink}} = 16$、$K_{\mathrm{swa}} = K_{\mathrm{sparse}} = 1024$。这个 50 : 50 的划分有实测依据：在全注意力模型上，流式区域（sink + 滑窗）平均捕获约 83% 的注意力质量，75% 以上的固定预算则开始损害长程检索。内核侧把核心注意力拆成稀疏与滑窗两个算子，分发到不同硬件流重叠执行，再以 online-softmax 合并；选中 KV 的跨步 chunk 重叠率从 65% 提升到 82%，单层 reload 延迟从 53.9 μs 降到 30.5 μs。
+总预算 $K = K_{\mathrm{sink}} + K_{\mathrm{swa}} + K_{\mathrm{sparse}} = 2048$，其中 $K_{\mathrm{sink}} = 16$、$K_{\mathrm{swa}} = K_{\mathrm{sparse}} = 1024$。这个 50 : 50 的划分有实测依据，在全注意力模型上，流式区域（sink + 滑窗）平均捕获约 83% 的注意力质量，75% 以上的固定预算则开始损害长程检索。内核侧把核心注意力拆成稀疏与滑窗两个算子，分发到不同硬件流重叠执行，再以 online-softmax 合并；选中 KV 的跨步 chunk 重叠率从 65% 提升到 82%，单层 reload 延迟从 53.9 μs 降到 30.5 μs。
 
-**Cross-Layer Indexing（CLI）**。相邻层的 Top-K 集合高度一致：实测成对重叠 57.4%，复用相邻层索引仍能覆盖目标层 93.2% 的注意力质量。CLI 把连续 $N$ 层编成一组：组内第一层（owner）执行索引器，其余层（reuse）直接沿用其选中的 token 集合，索引计算降到 $1/N$。朴素复用有质量损失，解决办法是让 owner 的索引器为整组服务——用跨层蒸馏让共享索引器去匹配组内每一层的注意力分布：
+**Cross-Layer Indexing（CLI）** 则在层间复用索引。相邻层的 Top-K 集合高度一致，实测成对重叠 57.4%，复用相邻层索引仍能覆盖目标层 93.2% 的注意力质量。CLI 把连续 $N$ 层编成一组，组内第一层（owner）执行索引器，其余层（reuse）直接沿用其选中的 token 集合，索引计算降到 $1/N$。朴素复用有质量损失，解决办法是让 owner 的索引器为整组服务——用跨层蒸馏让共享索引器去匹配组内每一层的注意力分布：
 
 $$
 \mathcal{L}_{\mathrm{CLI}} = \sum_{i=0}^{N-1} \mathcal{L}_I^{(l+i)}
 \tag{3.33}
 $$
 
-其中 $l$ 为组首层，$\mathcal{L}_I^{(l+i)}$ 是共享索引器输出与第 $l+i$ 层注意力分布之间的蒸馏损失。没有这项蒸馏，$N = 2$ 时 128K 针检索准确率降到 70%；加上蒸馏后回到 96%，甚至优于无蒸馏的 $N = 4$（82%）。实验中主模型取 $N = 2$，$N = 4$ 在长上下文上有可测损失；MTP 的 3 个预测步共享一组索引（$N = 3$），draft 由主模型验证，不影响最终生成质量。
+其中 $l$ 为组首层，$\mathcal{L}_I^{(l+i)}$ 是共享索引器输出与第 $l+i$ 层注意力分布之间的蒸馏损失。没有这项蒸馏，$N = 2$ 时 128K 检索准确率降到 70%；加上蒸馏后回到 96%，甚至优于无蒸馏的 $N = 4$（82%）。实验中主模型取 $N = 2$，$N = 4$ 在长上下文上有可测损失；MTP 的 3 个预测步共享一组索引（$N = 3$），draft 由主模型验证，不影响最终生成质量。
 
-**Hierarchical Indexing（HI）**。HI 把单次打分拆成粗排与精排两步：先把序列切成大小 $P = 128$ 的页、每页再切成 $B = 8$ 的子块，用子块索引键均值 $\mathbf{k}^{\mathrm{mean}}_n$ 做块级显著性粗排，取 Top-$M$（$M = 1024$）个候选页；token 级精排只在候选页内进行：
+**Hierarchical Indexing（HI）** 把单次打分拆成粗排与精排两步，先把序列切成大小 $P = 128$ 的页、每页再切成 $B = 8$ 的子块，用子块索引键均值 $\mathbf{k}^{\mathrm{mean}}_n$ 做块级显著性粗排，取 Top-$M$（$M = 1024$）个候选页；token 级精排只在候选页内进行：
 
 $$
 I^{\mathrm{page}}_{t,p} = \sum_{j=1}^{H^I} w^I_{t,j} \sum_{n \in \mathrm{page}_p} \mathrm{ReLU}\big(\mathbf{q}^I_{t,j} \cdot \mathbf{k}^{\mathrm{mean}}_n\big), \qquad \mathcal{P}_t = \mathrm{arg\,topK}\big(\{I^{\mathrm{page}}_{t,p}\},\ M\big)
 \tag{3.34}
 $$
 
-两次 Top-K 的成本从 $O(L)$ 降为 $O(L/P + MP)$。HI 不参与训练，推理期直接启用：1024K 上下文的 prefill 索引选择加速 4.11 倍；128K 以下反而略慢，论文在 256K 以上才开启（约 200K 处出现收益拐点）。
+两次 Top-K 的成本从 $O(L)$ 降为 $O(L/P + MP)$。HI 不参与训练，推理期直接启用，1024K 上下文的 prefill 索引选择加速 4.11 倍；128K 以下反而略慢，论文在 256K 以上才开启（约 200K 处出现收益拐点）。
 
-**效果**。在 LongCat-Flash-Lite（69B-A3B）与 LongCat-Flash（560B-A27B）两个规模上，LSA 与全注意力在通用、推理、代码与长文本基准上全面持平（HELMET 59.02 对 MLA 的 58.50）；注意力层训练延迟加速 1.53—1.61 倍，prefill TTFT 加速 1.42—3.60 倍，decode TPOT 加速 1.25—1.40 倍。训练效率的提升使上下文预算得以扩大：LongCat-2.0（1.6T-A48B）在有限算力下把原生上下文做到 100 万 token，开源的 LongCat-Flash-Lite-Sparse 同样以 LSA 支撑 1M 上下文。
+在 LongCat-Flash-Lite（69B-A3B）与 LongCat-Flash（560B-A27B）两个规模上，LSA 与全注意力在通用、推理、代码与长文本基准上全面持平（HELMET 59.02 对 MLA 的 58.50）；注意力层训练延迟加速 1.53—1.61 倍，prefill TTFT 加速 1.42—3.60 倍，decode TPOT 加速 1.25—1.40 倍。训练效率的提升使上下文预算得以扩大，LongCat-2.0（1.6T-A48B）在有限算力下把原生上下文做到 100 万 token，开源的 LongCat-Flash-Lite-Sparse 同样以 LSA 支撑 1M 上下文。
 
 **代码实现**（HI 两级选择 + SI 流式预算拼接 + CLI 组调度）：
 
@@ -1456,11 +1449,11 @@ class CrossLayerGroup(nn.Module):
         return [sel] * self.n                                      # 组内共享
 ```
 
-LSA 与 CSA2 都把层维度作为继续降低稀疏注意力成本的切入点，但着力点不同：CSA2 把复用固定进架构与缓存格式（含 FP4 主 KV 与滑窗回放重建），LSA 则侧重选中 token 在 HBM 中的访存连续性。至此，稀疏注意力的优化对象从减少计算量扩展到减少缓存份数与访存次数。
+LSA 与 CSA2 都把层维度作为继续降低稀疏注意力成本的切入点，但着力点不同，CSA2 把复用固定进架构与缓存格式（含 FP4 主 KV 与滑窗回放重建），LSA 则侧重选中 token 在 HBM 中的访存连续性。至此，稀疏注意力的优化对象从减少计算量扩展到减少缓存份数与访存次数。
 
 ## 3.6 Linear Attention
 
-线性注意力属于另一条路线：它不改变参与计算的 token 集合，而改变矩阵乘法的结合顺序。
+线性注意力属于另一条路线，它不改变参与计算的 token 集合，而改变矩阵乘法的结合顺序。
 
 ![15.png](/assets/images/transformer/15.png)
 
@@ -1476,13 +1469,13 @@ $$O = Q\left(\phi(K)^T V\right) \quad \Rightarrow \quad O(N d^2) \tag{3.36}$$
 
 其中 $\phi$ 是核函数（如 $\phi(x) = \mathrm{elu}(x)+1$），替代 softmax 的指数。
 
-复杂度从 $O(N^2 d)$ 变为 $O(Nd^2)$，当 $N \gg d$ 时收益明显。推理状态为固定大小（每个 head 维护一个 $d_k \times d_v$ 矩阵），不再有 token 级 KV Cache：prefill 为 $O(n)$，decode 每步 $O(1)$。
+复杂度从 $O(N^2 d)$ 变为 $O(Nd^2)$，当 $N \gg d$ 时收益明显。推理状态为固定大小（每个 head 维护一个 $d_k \times d_v$ 矩阵），不再有 token 级 KV Cache，prefill 为 $O(n)$，decode 每步 $O(1)$。
 
-**早期工作的局限**。2020—2023 年的尝试（Katharopoulos et al., “Transformers are RNNs” 等）用简单核函数替换 softmax，推理复杂度降为线性，但语言建模质量始终落后。Zhang et al.（Hedgehog，NeurIPS 2023）在从头训练的对照实验中测得，早期线性注意力在 WikiText-103 上的 PPL 比 softmax 注意力高出 4—6 个点，相当于 125M 与 255M 参数 Transformer 之间的差距；这一质量代价使其未能进入生产模型。
+2020—2023 年的尝试（Katharopoulos et al., “Transformers are RNNs” 等）用简单核函数替换 softmax，推理复杂度降为线性，但语言建模质量始终落后。Zhang et al.（Hedgehog，NeurIPS 2023）在从头训练的对照实验中测得，早期线性注意力在 WikiText-103 上的 PPL 比 softmax 注意力高出 4—6 个点，相当于 125M 与 255M 参数 Transformer 之间的差距；这一质量代价使其未能进入生产模型。
 
-**门控 delta rule**。2025 年的改进集中在状态更新规则：纯加性更新 $S_t = S_{t-1} + k_t v_t^T$ 使状态无界增长，且无法修正已写入的关联，而 softmax 通过归一化引入竞争。**delta rule** 用预测误差项把更新改为“擦除旧关联、写入新关联”，再叠加可学习的衰减门控制遗忘，线性注意力的质量由此接近 softmax。
+2025 年的改进集中在状态更新规则，纯加性更新 $S_t = S_{t-1} + k_t v_t^T$ 使状态无界增长，且无法修正已写入的关联，而 softmax 通过归一化引入竞争。**delta rule** 用预测误差项把更新改为“擦除旧关联、写入新关联”，再叠加可学习的衰减门控制遗忘，线性注意力的质量由此接近 softmax。
 
-### 3.6.1 演进过程：从核替换到门控 delta rule
+### 3.6.1 从核替换到门控 delta rule
 
 这一脉络按状态更新规则的演变整理如下：
 
@@ -1516,7 +1509,7 @@ Gated DeltaNet（arXiv:2412.06464，Yang et al., 2024）把 delta rule 与 Mamba
 
 > 图 3.14　Gated DeltaNet 的（混合）架构与 block 设计（Gated DeltaNet 论文 Figure 1）。右侧是单个 Gated DeltaNet block：短卷积 → Q/K L2 归一化 → Gated Delta Rule → 输出门。
 
-**Gated Delta Rule 的递推**：设每个 head 维护状态矩阵 $S_t \in \mathbb{R}^{d_k \times d_v}$，
+**Gated Delta Rule 的递推** ，设每个 head 维护状态矩阵 $S_t \in \mathbb{R}^{d_k \times d_v}$，
 
 $$\tilde{S}_{t-1} = \alpha_t S_{t-1} \qquad \text{（先衰减）} \tag{3.37}$$
 
@@ -1530,9 +1523,9 @@ $$y_t = S_t^\top q_t \qquad \text{（读出）} \tag{3.40}$$
 
 $$S_t = \alpha_t\left(I - \beta_t k_t k_t^\top\right) S_{t-1} + \beta_t k_t v_t^\top \tag{3.41}$$
 
-两个门的作用是互补的：$\alpha_t \in (0,1)$ 是**数据相关的衰减**，控制已有状态的寿命；$\beta_t \in (0,1)$ 控制 delta 更新的写入强度。delta 项先估计“当前 $k_t$ 已经关联了什么值”，只写入残差误差：重复或相似的 key 会更新已有关联，而不是让外积无界累积。这一“定点擦除—写入”机制是 GDN 与纯加性线性注意力的主要区别。
+两个门的作用是互补的， $\alpha_t \in (0,1)$  是**数据相关的衰减**，控制已有状态的寿命；$\beta_t \in (0,1)$ 控制 delta 更新的写入强度。delta 项先估计“当前 $k_t$ 已经关联了什么值”，只写入残差误差，重复或相似的 key 会更新已有关联，而不是让外积无界累积。这一“定点擦除—写入”机制是 GDN 与纯加性线性注意力的主要区别。
 
-**并行计算推导（Chunkwise Parallel Form）**。上面的递推式逐 token 串行，无法在 GPU 上高效执行。GDN 把它改写为**块内并行、块间串行**的形式：把序列切成长度 $C$ 的 chunk，记 $S[t]$ 为进入第 $t$ 个 chunk 的状态。
+上面的递推式逐 token 串行，无法在 GPU 上高效执行。GDN 把它改写为**块内并行、块间串行**的形式，把序列切成长度 $C$ 的 chunk，记 $S[t]$ 为进入第 $t$ 个 chunk 的状态。
 
 **第一步：把递推展开成“累计转移 × 初始状态 + 局部贡献”**。对 chunk 内第 $r$ 个位置，部分展开：
 
