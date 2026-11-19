@@ -660,10 +660,12 @@ NSA 的意义在于把稀疏注意力做到了原生可训练且与硬件对齐�
 
 ### 3.5.2 Deepseek Sparse Attention
 
-DSA（DeepSeek Sparse Attention）是 NSA 的工程化继任者，搭载于 2025 年 9 月发布的 DeepSeek-V3.2-Exp；稀疏注意力由此首次进入开源生产模型。DSA 的核心是两个新组件：
+DSA（DeepSeek Sparse Attention）是 NSA 的工程化继任者，搭载于 2025 年 9 月发布的 DeepSeek-V3.2-Exp；稀疏注意力由此首次进入开源生产模型。
+![8.png](/assets/images/transformer/8.png)
+DSA 的核心是两个新组件：
 
-* ***闪电索引器（Lightning Indexer）**：一个轻量模块，为当前 query 与每个候选历史 token 计算相关性分数。该模块不进入主注意力路径，只做一次粗略筛选，计算量很小。
-* ***Top-k 选择器**：按分数取 top-$k$ 个 token（默认 2048）做精细注意力，其余全部跳过。
+* **闪电索引器（Lightning Indexer）**：一个轻量模块，为当前 query 与每个候选历史 token 计算相关性分数。该模块不进入主注意力路径，只做一次粗略筛选，计算量很小。
+* **Top-k 选择器**：按分数取 top-$k$ 个 token（默认 2048）做精细注意力，其余全部跳过。
 
 核心注意力复杂度由此从 $O(L^2)$ 降到 $O(L \cdot k)$。两个组件的形式化定义如下。**闪电索引器**对每个候选历史 token $s$ 计算相关性分数：
 
@@ -734,10 +736,10 @@ class DeepSeekSparseAttention(nn.Module):
 
 2026 年 4 月的 DeepSeek-V4 把压缩从特征维度移到序列维度，MLA 沿头维度压缩 KV，V4 的 Compressed Attention 则压缩序列长度。百万上下文下 KV 显存主要由序列长度决定，压缩序列因此更为直接。
 
-![8.png](/assets/images/transformer/8.png)
+![9.png](/assets/images/transformer/9.png)
 
 > 图 3.6　DeepSeek-V4 整体架构（DeepSeek-V4 技术报告 Figure 2）。Transformer Block 内是 CSA / HCA 交替，残差部分换成了 mHC 的 Pre-Block / Post-Block Mixing。
-![9.png](/assets/images/transformer/9.png)
+![10.png](/assets/images/transformer/10.png)
 
 > 图 3.7　CSA 核心架构（DeepSeek-V4 技术报告 Figure 3）：Token-Level Compressor 做门控池化压缩，Lightning Indexer 打分、Top-k Selector 筛选后走 Shared-KV MQA 核心注意力。
 
@@ -789,7 +791,7 @@ V4-Pro 的 61 层按 CSA 与 HCA 混合方式堆叠。
 | 2 — 60 | CSA / HCA 交替 | 局部精细 + 全局骨架兼顾 |
 | 最后一层 MTP | 仅滑动窗口 | 最高精度输出 |
 
-![10.png](/assets/images/transformer/10.png)
+![11.png](/assets/images/transformer/11.png)
 
 > 图 3.8　HCA 核心架构（DeepSeek-V4 技术报告 Figure 4）。重度压缩的 KV 条目 + 滑动窗口，**没有 Top-k 选择器**。
 
@@ -940,7 +942,7 @@ class HeavilyCompressedAttention(nn.Module):
 
 V4.1-Flash（arXiv:2609.19969）引入**CSA2（Compressed Sparse Attention 2）**，把压缩推进到层维度。前两个维度分别压缩条目体积与序列长度；进一步观察到相邻层选中的 Top-K 块高度重合，且主 KV 源自同一份隐藏状态，逐层各存一份便成为冗余。CSA2 让多层共享主 KV 与索引键，必要时也沿用 Top-K 选择结果。
 
-![11.png](/assets/images/transformer/11.png)
+![12.png](/assets/images/transformer/12.png)
 
 > 图 3.9　CSA2 的三种运行模式（DeepSeek-V4.1-Flash 技术报告 Figure 4）。绿色张量由本层计算，黄色张量从前序层借用。Full 模式自带主 KV、索引 K 与 Top-K 索引；Reindex 模式借用主 KV 与索引 K、用自己的索引 Q 重新选择 Top-K；Reuse 模式连 Top-K 索引也直接复用。
 
@@ -1083,7 +1085,7 @@ class CSA2Layer(nn.Module):
 
 QSA（Qwen Sparse Attention）出自 Qwen3.8-Flash-Next 的架构论文（arXiv:2608.30320），针对 token 级稀疏注意力中索引器开销随上下文线性增长的问题，上下文足够长时，索引器本身成为瓶颈。
 
-![12.png](/assets/images/transformer/12.png)
+![13.png](/assets/images/transformer/13.png)
 
 > 图 3.10　QSA 架构（Qwen3.8-Next 架构论文 Figure 3）。左侧是压缩的轻量索引器（Partial RoPE + Zero-Centered RMSNorm + AvgPool），右侧是 micro-block 粒度的稀疏注意力。
 
@@ -1228,14 +1230,14 @@ class QwenSparseAttention(nn.Module):
 
 MSA（MiniMax Sparse Attention，arXiv:2606.13392）已开源推理 kernel，并用于生产模型 MiniMax-M3。
 
-![13.png](/assets/images/transformer/13.png)
+![14.png](/assets/images/transformer/14.png)
 
 > 图 3.11　MSA 总览（MSA 论文 Figure 1）。左半是 Index Branch（打分 → Block Max Pooling → Top-K Index），右半是 Main Branch（Top-K KV Block 上的精确稀疏注意力）。右侧热力图展示了两个 GQA 组各自选中的不同块。
 
 MSA 的核心设计是**两分支 + 每组独立选择**。
 
-* ***Index Branch**：只增加两个投影矩阵。每个 GQA 组有一个 index query 头、一个共享的 index key 头；对可见的 key token 打分后做 **block max pooling** 得到块级分数，再做 Top-k 选择。包含 query 自身的局部块强制保留，以免遗漏邻近上下文。
-* ***Main Branch**：在选中的块上做**精确的块稀疏 softmax 注意力**。每个 query 头有自己的 query 投影，但共享所在组的块集合。
+* **Index Branch**：只增加两个投影矩阵。每个 GQA 组有一个 index query 头、一个共享的 index key 头；对可见的 key token 打分后做 **block max pooling** 得到块级分数，再做 Top-k 选择。包含 query 自身的局部块强制保留，以免遗漏邻近上下文。
+* **Main Branch**：在选中的块上做**精确的块稀疏 softmax 注意力**。每个 query 头有自己的 query 投影，但共享所在组的块集合。
 
 块大小 $B_k = 128$，每组保留 $k = 16$ 个块，即每个 query 固定只看 $2048$ 个 KV token。于是单 query 成本从 $O(N)$ 变成 $O(kB_k)$，与上下文长度无关。
 
@@ -1335,7 +1337,7 @@ MSA 的结构相对简单，没有 NSA 的三分支，也没有 QSA 的层级压
 
 LSA（LongCat Sparse Attention，arXiv:2608.01662，美团 LongCat-2.0 采用）以 DSA 为基线，重点在选中 token 之后的访存与索引开销。论文对 DSA 的实测给出两个瓶颈。
 
-![14.png](/assets/images/transformer/14.png)
+![15.png](/assets/images/transformer/15.png)
 
 > 图 3.12　LSA 架构（LSA 论文 Figure 1）。左为 owner 层：Block Indexer 块级粗排 + Token Indexer 精排，预算对半分给连续的流式区域与动态选择的非连续区域；右为 reuse 层：直接复用 owner 层的 Top-K 索引。两层共享索引参数。
 
@@ -1455,7 +1457,7 @@ LSA 与 CSA2 都把层维度作为继续降低稀疏注意力成本的切入点�
 
 线性注意力属于另一条路线，它不改变参与计算的 token 集合，而改变矩阵乘法的结合顺序。
 
-![15.png](/assets/images/transformer/15.png)
+![16.png](/assets/images/transformer/16.png)
 
 > 图 3.13　Softmax 注意力与线性注意力的计算方式对比（MiniMax-01 论文 Figure 5）。
 
@@ -1505,7 +1507,7 @@ $$O = Q\left(\phi(K)^T V\right) \quad \Rightarrow \quad O(N d^2) \tag{3.36}$$
 
 Gated DeltaNet（arXiv:2412.06464，Yang et al., 2024）把 delta rule 与 Mamba2 的门控机制结合起来，是这一方向的代表性工作。
 
-![16.png](/assets/images/transformer/16.png)
+![17.png](/assets/images/transformer/17.png)
 
 > 图 3.14　Gated DeltaNet 的（混合）架构与 block 设计（Gated DeltaNet 论文 Figure 1）。右侧是单个 Gated DeltaNet block：短卷积 → Q/K L2 归一化 → Gated Delta Rule → 输出门。
 
@@ -1519,7 +1521,7 @@ $$S_t = \tilde{S}_{t-1} + \beta_t k_t e_t^\top \qquad \text{（delta 更新）} 
 
 $$y_t = S_t^\top q_t \qquad \text{（读出）} \tag{3.40}$$
 
-等价地写成一式：
+等价地写成：
 
 $$S_t = \alpha_t\left(I - \beta_t k_t k_t^\top\right) S_{t-1} + \beta_t k_t v_t^\top \tag{3.41}$$
 
@@ -1547,13 +1549,13 @@ $$\overleftarrow{q}_r = \gamma_r\, q_r \quad\text{（衰减到 chunk 起点）},
 
 $$O[t] = \underbrace{\overleftarrow{Q}[t]\, S[t]^\top}_{\text{跨块贡献}} + \underbrace{\big(Q[t]K[t]^\top \odot \Gamma[t]\big) V[t]}_{\text{块内贡献}} \tag{3.45}$$
 
-块内输出全部可写成矩阵乘，适合 Tensor Core；跨块部分只依赖上一 chunk 的状态，串行但代价低，块内部分完全并行。这就是 GDN 论文所称的 hardware-efficient：复杂度仍为 $O(Nd^2)$，但常数项足够小，可以实际训练。
+块内输出全部可写成矩阵乘，适合 Tensor Core；跨块部分只依赖上一 chunk 的状态，串行但代价低，块内部分完全并行。这就是 GDN 论文所称的 hardware-efficient，复杂度仍为 $O(Nd^2)$，但常数项足够小，可以实际训练。
 
-> 推广：当 $\gamma_t$ 与输入无关时，上式退化为 RetNet 的 retention；当 $\beta_t=0$ 时退化为带衰减的纯线性注意力（GLA）。GDN 可视为这族“递归状态 + 门控”算法的一般形式。
+> 当 $\gamma_t$ 与输入无关时，上式退化为 RetNet 的 retention；当 $\beta_t=0$ 时退化为带衰减的纯线性注意力（GLA）。GDN 可视为这族“递归状态 + 门控”算法的一般形式。
 
-**block 组成**：短因果卷积（注入局部上下文）→ Q/K 做 L2 归一化 → 门控 delta 递推 → sigmoid 输出门 + 零中心 RMSNorm。
+整个GDN block 组成包括短因果卷积（注入局部上下文）→ Q/K 做 L2 归一化 → 门控 delta 递推 → sigmoid 输出门 + 零中心 RMSNorm。
 
-**与全局注意力的混合**。纯线性注意力在精确检索（needle-in-a-haystack 类任务）上弱于全注意力，因此生产模型普遍采用 3:1 混合：3 层 Gated DeltaNet 配 1 层全局注意力。Qwen3-Next 首次将该组合用于生产模型，MiniMax-01 的 lightning attention 与 Kimi 的 KDA 同属这一族。
+GDN在实际中一般与全局注意力的混合。纯线性注意力在精确检索（needle-in-a-haystack 类任务）上弱于全注意力，因此生产模型普遍采用 3:1 混合，即3 层 Gated DeltaNet 配 1 层全局注意力。Qwen3-Next 首次将该组合用于生产模型，MiniMax-01 的 lightning attention 与 Kimi 的 KDA 同属这一族。
 
 ```python
 import torch
@@ -1657,7 +1659,7 @@ def gdn_chunkwise(q, k, v, alpha, beta, chunk_size=64):
     return o
 ```
 
-与逐步递推版的对应关系：递推版第 (1)(2)(3) 步的“衰减 → 误差 → 写入”被压缩成一次三角求解（第 2 步），第 (4) 步的逐 token 读出变成第 3 步的批量矩阵乘。串行部分只剩“块间状态传递”（第 4 步），代价是常数级的。
+递推版第 (1)(2)(3) 步的“衰减 → 误差 → 写入”被压缩成一次三角求解（第 2 步），第 (4) 步的逐 token 读出变成第 3 步的批量矩阵乘。串行部分只剩“块间状态传递”（第 4 步），代价是常数级的。
 
 Gated DeltaNet 使线性注意力同时具备固定大小的状态与接近 softmax 的质量，但它并未取代全局注意力，而是在 hybrid 架构中承担长程信息的压缩。
 
@@ -1665,7 +1667,7 @@ Gated DeltaNet 使线性注意力同时具备固定大小的状态与接近 soft
 
 KDA（Kimi Delta Attention）在 Gated DeltaNet 基础上改动了衰减门的参数化，目标是让 delta rule 的 chunkwise 计算在 GPU 上高效执行。
 
-![17.png](/assets/images/transformer/17.png)
+![18.png](/assets/images/transformer/18.png)
 
 > 图 3.15　Kimi K3 架构（Kimi K3 技术报告 Figure 2）。左下角是 KDA 的内部结构（q/k 走 L2 + Conv，α/β 走独立线性），右侧是 3×KDA + 1×Gated MLA 的混合堆叠，红色细线是 Block Attention Residual。
 
@@ -1673,7 +1675,7 @@ KDA 的递推把 delta rule 与**逐通道的遗忘门**结合：
 
 $$S_t = \left(I - \beta_t k_t k_t^\top\right) \mathrm{Diag}(\alpha_t) S_{t-1} + \beta_t k_t v_t^\top, \qquad \tilde{o}_t = S_t^\top q_t \tag{3.46}$$
 
-GDN 的 $\alpha_t$ 是**每个 head 一个标量**，KDA 则改为**逐通道（channel-wise）**形式，不同特征维度可以有各自的记忆寿命。
+GDN 的 $\alpha_t$ 是**每个 head 一个标量**，KDA 则改为**逐通道（channel-wise）** 形式，不同特征维度可以有各自的记忆寿命。
 
 **下界衰减（Lower-bounded decay）** 是其中的关键改动。chunkwise 计算时，chunk 内需要除以累计衰减的倒数 $1/\Gamma$，而 $\Gamma$ 是 $(0,1)$ 上保留因子的连乘，倒数会无界增长、在 BF16 下溢出。Kimi Linear 采用 negative-Softplus 映射，对角块使用显式的 position-pair 计算，开销较大。
 
@@ -1689,17 +1691,17 @@ $$y_t = W_o\left[\mathrm{Sigmoid}(W_g x_t) \odot \mathrm{RMSNorm}(\tilde{o}_t)\r
 
 input-dependent 的全秩门让每个 token 能精细调控从循环状态读出的通道，而不是所有 token 共享一个低秩方向。
 
-**并行计算推导（Chunkwise Form + Context Parallelism）**。KDA 沿用 GDN 的 chunkwise 框架，并把整条计算路径对齐 Tensor Core。记进入 chunk 的状态为 $S[t]$，$\gamma_{i\to j}[t] = \prod_{r=i}^{j}\alpha_r[t]$（逐通道累计衰减）。
+KDA 沿用 GDN 的 chunkwise 框架，并把整条计算路径对齐 Tensor Core。记进入 chunk 的状态为 $S[t]$，$\gamma_{i\to j}[t] = \prod_{r=i}^{j}\alpha_r[t]$（逐通道累计衰减）。
 
-**Chunkwise 并行形式**：KDA 的 UT 变换产出 $U[t], W[t]$，定义伪值项 $\tilde V[t] = U[t] - W[t] S[t]$（把“状态修正项”吸收进一个伪值矩阵），则 chunk 内所有输出一次性并行算出：
+KDA 的 UT 变换产出 $U[t], W[t]$，定义伪值项 $\tilde V[t] = U[t] - W[t] S[t]$（把“状态修正项”吸收进一个伪值矩阵），则 chunk 内所有输出一次性并行算出：
 
 $$A[t] = \mathrm{Tril}\Big[\big(Q[t]\odot \Gamma_{1\to C}[t]\big)\big(K[t] / \Gamma_{1\to C}[t]\big)^\top\Big], \qquad O[t] = \underbrace{\big(\Gamma_{1\to C}[t]\odot Q[t]\big) S[t]}_{\text{跨块贡献}} + \underbrace{A[t]\,\tilde V[t]}_{\text{块内贡献}} \tag{3.49}$$
 
-其中 $\mathrm{Tril}(\cdot)$ 保留对角线（因为每个输出读的是**当前 token 更新后**的状态），$\Gamma_{1\to C}[t] \in \mathbb{R}^{C\times d_k}$ 把累计衰减逐行堆叠。关键在于 $A[t]$ 与两处贡献**全部是矩阵乘**：配合下界衰减（对角块不再需要 position-pair 慢路径），整条计算路径都能走 Tensor Core。
+其中 $\mathrm{Tril}(\cdot)$ 保留对角线（因为每个输出读的是**当前 token 更新后**的状态），$\Gamma_{1\to C}[t] \in \mathbb{R}^{C\times d_k}$ 把累计衰减逐行堆叠。关键在于 $A[t]$ 与两处贡献**全部是矩阵乘**，配合下界衰减（对角块不再需要 position-pair 慢路径），整条计算路径都能走 Tensor Core。
 
-**FlashKDA 内核**：chunk 内并行、chunk 间串行的两阶段若朴素交替，SM 会在串行传播时空闲。Kimi 用 CUTLASS 写了 **FlashKDA**，把工作拆成 token-parallel 阶段与 head-parallel 递推，各自独立调度，让 chunk 内计算与跨 chunk 状态传播重叠执行，吞吐明显高于 Triton 参考实现。
+chunk 内并行、chunk 间串行的两阶段若朴素交替，SM 会在串行传播时空闲。Kimi 用 CUTLASS 写了 **FlashKDA**，把工作拆成 token-parallel 阶段与 head-parallel 递推，各自独立调度，让 chunk 内计算与跨 chunk 状态传播重叠执行，吞吐明显高于 Triton 参考实现。
 
-**Context Parallelism（跨设备并行）**。KDA 的跨设备并行与普通线性注意力不同。softmax 注意力做 context parallel 要交换随序列长度增长的 KV 块；线性注意力只携带固定大小的状态 $S \in \mathbb{R}^{d_k\times d_v}$，通信量是常数。但 KDA 不能像 vanilla 线性注意力那样“各 rank 算从零开始的局部状态再求和”——因为 delta rule 的更新是 $S_t = M_t S_{t-1} + \beta_t k_t v_t^\top$，其中 $M_t = (I-\beta_t k_t k_t^\top)\mathrm{Diag}(\alpha_t)$ 是 **token 相关的矩阵**，它会作用在传入状态上。因此需要**累积转移矩阵**精确还原：
+KDA 的跨设备并行(Context Parallelism)与普通线性注意力不同。softmax 注意力做 context parallel 要交换随序列长度增长的 KV 块；线性注意力只携带固定大小的状态 $S \in \mathbb{R}^{d_k\times d_v}$，通信量是常数。但 KDA 不能像 vanilla 线性注意力那样“各 rank 算从零开始的局部状态再求和”——因为 delta rule 的更新是 $S_t = M_t S_{t-1} + \beta_t k_t v_t^\top$，其中 $M_t = (I-\beta_t k_t k_t^\top)\mathrm{Diag}(\alpha_t)$ 是 **token 相关的矩阵**，它会作用在传入状态上。因此需要**累积转移矩阵**精确还原：
 
 $$M_{t\leftarrow 1}[i+1] := \prod_{r\leftarrow 1}^{t} M_r, \qquad S_t[i+1] = \tilde S_t[i+1] + M_{t\leftarrow 1}[i+1]\, S_T[i] \tag{3.50}$$
 
@@ -1707,11 +1709,11 @@ $$M_{t\leftarrow 1}[i+1] := \prod_{r\leftarrow 1}^{t} M_r, \qquad S_t[i+1] = \ti
 
 $$S_t[i+1] = \tilde S_t[i+1] + M_{t\leftarrow 1}[i+1] \sum_{j=1}^{i}\Big(\prod_{l\leftarrow j+1}^{i} M_{l\leftarrow 1}[l]^\top\Big)\, \tilde S_T[j] \tag{3.51}$$
 
-含义是：每个 rank 的本地段效果与传入状态无关，可以独立算，之后用累积转移矩阵精确合成。这让 KDA 在多卡上仍能保持线性注意力的“常数通信量”优势，同时不牺牲 delta rule 的表达力。
+上式的含义是每个 rank 的本地段效果与传入状态无关，可以独立算，之后用累积转移矩阵精确合成。这让 KDA 在多卡上仍能保持线性注意力的“常数通信量”优势，同时不牺牲 delta rule 的表达力。
 
-**在 Kimi K3 中的位置**：KDA 与 Gated MLA 按 3:1 混合：KDA 负责高效的长上下文 token 混合，Gated MLA 负责无约束的全局内容交互（Gated MLA 用了 NoPE，位置感知完全交给 KDA，从而省去了百万上下文外推时重调 RoPE 频率的步骤）。
+在 Kimi K3 中KDA 与 Gated MLA 按 3:1 混合，KDA 负责高效的长上下文 token 混合，Gated MLA 负责无约束的全局内容交互（Gated MLA 用了 NoPE，位置感知完全交给 KDA，从而省去了百万上下文外推时重调 RoPE 频率的步骤）。
 
-上面的推导给出 chunkwise 并行形式的骨架；与 GDN 不同，KDA 的衰减门是逐通道的，累计衰减 $\Gamma$ 因此是一个逐通道矩阵，不能像 GDN 那样用一个标量掩码概括。实现上将衰减掩码“吸收”进 $Q$、$K$ 的缩放：$\Gamma \odot Q$ 与 $K / \Gamma$ 的点积本身即携带 $\gamma_i / \gamma_j$ 衰减比：
+上面的推导给出 chunkwise 并行形式的骨架；与 GDN 不同，KDA 的衰减门是逐通道的，累计衰减 $\Gamma$ 因此是一个逐通道矩阵，不能像 GDN 那样用一个标量掩码概括。实现上将衰减掩码“吸收”进 $Q$、$K$ 的缩放， $\Gamma \odot Q$ 与 $K / \Gamma$ 的点积本身即携带 $\gamma_i / \gamma_j$ 衰减比：
 
 ```python
 import torch
@@ -1776,34 +1778,34 @@ def kda_chunkwise(q, k, v, z, beta, w_log_a, chunk_size=64, g_min=-5.0):
     return o
 ```
 
-与 GDN 版的结构完全对齐：第 2 步的三角求解替代逐步递推，第 3 步把输出变成纯矩阵乘，第 4 步串行传状态。差别集中在衰减进入点积的方式：GDN 的标量衰减用显式掩码 $\Gamma_{ij} = \gamma_i/\gamma_j$，KDA 的逐通道衰减则拆成 $\Gamma \odot Q$ 与 $K / \Gamma$ 两路缩放，让 Tensor Core 不必显式构造 $C \times C$ 掩码。FlashKDA 内核进一步把这两个阶段重叠调度，消除串行传播时的 SM 空闲。
+与 GDN 版的结构完全对齐，第 2 步的三角求解替代逐步递推，第 3 步把输出变成纯矩阵乘，第 4 步串行传状态。差别集中在衰减进入点积的方式，GDN 的标量衰减用显式掩码 $\Gamma_{ij} = \gamma_i/\gamma_j$，KDA 的逐通道衰减则拆成 $\Gamma \odot Q$ 与 $K / \Gamma$ 两路缩放，让 Tensor Core 不必显式构造 $C \times C$ 掩码。FlashKDA 内核进一步把这两个阶段重叠调度，消除串行传播时的 SM 空闲。
 
-从 Gated DeltaNet 到 KDA，状态更新规则基本未变，改动集中在怎样让 delta rule 的 chunkwise 形式落到 Tensor Core 上。其中下界衰减是关键一步：它移除了对角块中无法并行的 position-pair 计算，使这条路线得以用于训练与推理。
+从 Gated DeltaNet 到 KDA，状态更新规则基本未变，改动集中在怎样让 delta rule 的 chunkwise 形式落到 Tensor Core 上。其中下界衰减是关键一步，它移除了对角块中无法并行的 position-pair 计算，使这条路线得以用于训练与推理。
 
 ## 3.7 Gated Attention
 
-前几节的改动都作用于注意力的计算路径：共享 KV、低秩压缩、稀疏化、线性化。Gated Attention 则在 softmax 注意力的输出上加一道门，改动很小。Qwen 团队在 3.5T token 上做了系统消融，该工作获 NeurIPS 2025 最佳论文。
+前几节的改动都作用于注意力的计算路径，包括共享 KV、低秩压缩、稀疏化、线性化。Gated Attention 则在 softmax 注意力的输出上加一道门，改动很小。Qwen 团队在 3.5T token 上做了系统消融，该工作获 NeurIPS 2025 最佳论文。
 
-![18.png](/assets/images/transformer/18.png)
+![19.png](/assets/images/transformer/19.png)
 
 > 图 3.16　Gated Attention 的门控位置、性能对比与训练曲线（Qiu et al., 2025, Figure 1）。左图是 G1—G5 五个候选门控位置，G1（SDPA 输出后）效果最好；中图是 15B MoE 模型的 PPL 与 MMLU 对比；右图是 1.7B dense 模型的训练损失：门控降低最终损失，并消除了 loss spike。
 
-**机制**。在每个注意力头的 SDPA 输出 $H$ 上，乘一个由当前 token 隐藏状态产生的 sigmoid 门：
+在每个注意力头的 SDPA 输出 $H$ 上，乘一个由当前 token 隐藏状态产生的 sigmoid 门：
 
 $$H' = H \odot \sigma(X W_\theta), \qquad O = H' W_O \tag{3.52}$$
 
 其中 $X$ 是 pre-norm 后的隐藏状态，$W_\theta \in \mathbb{R}^{d_{model} \times d_k}$ 是每个头独立的门控投影，$\sigma$ 是 sigmoid。门是逐元素、逐头独立、乘性的。论文在位置（5 种）、粒度（elementwise / headwise）、参数共享（head-specific / head-shared）、激活函数（sigmoid / SiLU）、运算方式（乘性 / 加性）这几个维度上共训练了 30 余种变体，逐一消融后锁定了上述组合。
 
-**五个门控位置**。论文对比了 G1（SDPA 输出后）、G2（Value 投影后）、G3（Key 投影后）、G4（Query 投影后）、G5（最终输出层后）五个插入点。G1 显著领先：15B MoE 上 PPL 从 6.026 降到 5.761，MMLU 从 58.79 升到 60.82。G2 也能消除隐状态离群值，但不消除 attention sink；G3、G4 保持底层映射的线性，收益几乎为零。这说明门必须插在 $W_V W_O$ 这条低秩线性映射的中间，才能引入有效的非线性。
+论文对比了 G1（SDPA 输出后）、G2（Value 投影后）、G3（Key 投影后）、G4（Query 投影后）、G5（最终输出层后）五个插入点。G1 显著领先，15B MoE 上 PPL 从 6.026 降到 5.761，MMLU 从 58.79 升到 60.82。G2 也能消除隐状态离群值，但不消除 attention sink；G3、G4 保持底层映射的线性，收益几乎为零。这说明门必须插在 $W_V W_O$ 这条低秩线性映射的中间，才能引入有效的非线性。
 
-**门控的作用机制**。论文给出两条解释：
+关于门控的作用机制，论文给出两条解释：
 
 1. **非线性**：$W_V W_O$ 是低秩线性映射，表达力受秩约束。在两者之间插一个 sigmoid 门，等价于在低秩映射中间引入一次非线性变换，打破了秩瓶颈。
-2. **query 依赖的稀疏门控**：门分数 $\sigma(X W_\theta)$ 随 query 变化，天然呈稀疏分布：多数位置的门接近 0，只有少数相关位置被放行。这直接抑制了 attention sink：baseline 模型首 token 的注意力占比高达 46.7%，加门控后降到 4.8%（单层峰值从 83% 降到 4%），隐状态最大激活值从 1053 降到 94。
+2. **query 依赖的稀疏门控**：门分数 $\sigma(X W_\theta)$ 随 query 变化，天然呈稀疏分布，多数位置的门接近 0，只有少数相关位置被放行。这直接抑制了 attention sink，baseline 模型首 token 的注意力占比高达 46.7%，加门控后降到 4.8%（单层峰值从 83% 降到 4%），隐状态最大激活值从 1053 降到 94。
 
-attention sink 的消除带来额外收益：长上下文外推能力显著提升：YaRN 扩展到 128k 时，64k 长度的 RULER 得分从 37.51 提到 66.60，128k 从 31.65 提到 58.82。训练稳定性也受益：baseline 在学习率 8e-3 时发散，门控模型正常训练且 PPL 更低；门控本身的开销不到 2% wall-time。
+attention sink 的消除带来额外收益，长上下文外推能力显著提升，YaRN 扩展到 128k 时，64k 长度的 RULER 得分从 37.51 提到 66.60，128k 从 31.65 提到 58.82。训练稳定性也受益，baseline 在学习率 8e-3 时发散，门控模型正常训练且 PPL 更低；门控本身的开销不到 2% wall-time。
 
-**与其他门控机制的关系**。FFN 的 SwiGLU、线性注意力的 $\alpha_t/\beta_t$ 门、NSA 的三分支门控、Switch Heads 的 sigmoid 门控与 Forgetting Transformer 的遗忘门都使用了门控，但此前工作把收益一并归因于稀疏选择或路由，没有单独度量门控本身的贡献。Gated Attention 把这道门单独隔离出来验证。Qwen3-Next 交替堆叠 Gated Attention（3.7 节）与 Gated DeltaNet（3.6.2 节），前者负责全局内容交互，后者负责长上下文压缩。
+FFN 的 SwiGLU、线性注意力的 $\alpha_t/\beta_t$ 门、NSA 的三分支门控、Switch Heads 的 sigmoid 门控与 Forgetting Transformer 的遗忘门都使用了门控，但此前工作把收益一并归因于稀疏选择或路由，没有单独度量门控本身的贡献。Gated Attention 把这道门单独隔离出来验证。Qwen3-Next 交替堆叠 Gated Attention（3.7 节）与 Gated DeltaNet（3.6.2 节），前者负责全局内容交互，后者负责长上下文压缩。
 
 ```python
 import torch
@@ -1842,15 +1844,14 @@ class GatedAttention(nn.Module):
         return self.w_o(out)
 ```
 
-Gated Attention 的实验在固定算力预算下逐维度消融，把门控与其他机制隔离后单独度量。结论是：不引入新算子或新架构，只增加一个逐元素乘法，PPL 降低最多 0.2、MMLU 提升约 2 分，长上下文表现与训练稳定性同时改善。
+Gated Attention 的实验在固定算力预算下逐维度消融，把门控与其他机制隔离后单独度量。结论是不引入新算子或新架构，只增加一个逐元素乘法，PPL 降低最多 0.2、MMLU 提升约 2 分，长上下文表现与训练稳定性同时改善。
 
 # 4. 归一化的改进(Normalization)
 
-残差连接（Add）与归一化（Norm）通常成对出现。残差连接让梯度可以在层与层之间直接回传，缓解梯度消失，同时使子层只需学习相对输入的特征增量，而不必从头重构表示；其代价是残差项逐层累加，层数增多后容易引起数值膨胀。归一化正是用来抑制这种膨胀：无论残差相加后的数值多大，归一化都将其除以方差或均方根，把特征向量的尺度拉回稳定范围（通常均值接近 0、方差接近 1），使传给下一层的表示保持可控。
+残差连接（Add）与归一化（Norm）通常成对出现。残差连接让梯度可以在层与层之间直接回传，缓解梯度消失，同时使子层只需学习相对输入的特征增量，而不必从头重构表示；其代价是残差项逐层累加，层数增多后容易引起数值膨胀。归一化正是用来抑制这种膨胀，无论残差相加后的数值多大，归一化都将其除以方差或均方根，把特征向量的尺度拉回稳定范围（通常均值接近 0、方差接近 1），使传给下一层的表示保持可控。归一化在计算形式上由 BatchNorm（CV）到 LayerNorm，再到省去均值统计量的 RMSNorm 与注意力内部的 L2Norm；归一化的位置则由 Post-Norm 转向 Pre-Norm。改动多表现为删减——去掉均值统计量、去掉 $\beta$ 参数、把归一化移到残差之前，控制数值尺度这一目的始终未变。
 
 2017 年的原始 Transformer 采用 Post-Norm，即先做残差、再做归一化；现代主流采用 Pre-Norm，即先做归一化、再做残差。调整之后，残差主干不再经过归一化，梯度路径更直接。
 
-两种范式的公式对比：
 
 **Post-Norm**（原始 Transformer）：
 
@@ -1860,13 +1861,13 @@ $$x_{l+1} = \text{LN}\big(x_l + \text{Sublayer}(x_l)\big) \tag{4.1}$$
 
 $$x_{l+1} = x_l + \text{Sublayer}\big(\text{LN}(x_l)\big) \tag{4.2}$$
 
-![19.png](/assets/images/transformer/19.png)
+![20.png](/assets/images/transformer/20.png)
 
 > 图 4.1　(a) Post-LN 与 (b) Pre-LN 的层结构对比（Xiong et al., 2020, Figure 1）。注意归一化在残差加法的哪一侧。
 
 Pre-Norm 下主干梯度存在恒等路径，深层网络训练更稳定，通常可省去 warm-up；代价是同等参数量下效果可能略逊于 Post-Norm，因此现代模型多配合更精细的学习率调度与更深的堆叠。
 
-以上讨论归一化在 block 中的位置。以下四节讨论归一化自身的计算形式，依次为 LayerNorm（4.1 节）、BatchNorm（4.2 节）、RMSNorm（4.3 节）与 L2Norm（4.4 节）。两条线索可以分开来看：计算形式由 BatchNorm（CV）到 LayerNorm，再到省去均值统计量的 RMSNorm 与注意力内部的 L2Norm；归一化的位置则由 Post-Norm 转向 Pre-Norm。改动多表现为删减——去掉均值统计量、去掉 $\beta$ 参数、把归一化移到残差之前，控制数值尺度这一目的始终未变。
+以上讨论归一化在 block 中的位置。以下四节讨论归一化自身的计算形式，依次为 LayerNorm（4.1 节）、BatchNorm（4.2 节）、RMSNorm（4.3 节）与 L2Norm（4.4 节）。
 
 ## 4.1 LayerNorm
 
@@ -1904,7 +1905,7 @@ class LayerNorm(nn.Module):
 
 ## 4.2 BatchNorm
 
-与 LayerNorm 的逐样本归一化不同，BatchNorm 对整个 batch 内每个特征维度做归一化，消除特征之间的尺度差异，保留样本之间的相对大小。它适用于 CV 输入 $b \times c \times h \times w$（批量大小 × 通道 × 高 × 宽）：把每个通道视作一个特征，将各通道特征图调整到相近的数量级，同时保持不同样本在同一通道上的相对大小。其计算式为：
+与 LayerNorm 的逐样本归一化不同，BatchNorm 对整个 batch 内每个特征维度做归一化，消除特征之间的尺度差异，保留样本之间的相对大小。它适用于 CV 输入 $b \times c \times h \times w$（批量大小 × 通道 × 高 × 宽），把每个通道视作一个特征，将各通道特征图调整到相近的数量级，同时保持不同样本在同一通道上的相对大小。其计算式为：
 
 $$y = \frac{x - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}} \odot \gamma + \beta \tag{4.4}$$
 
@@ -1947,13 +1948,13 @@ class BatchNorm(nn.Module):
         return norm_x * self.scale + self.shift
 ```
 
-BatchNorm 在 CNN 中效果良好，但不适合 Transformer 类架构：其一，NLP 序列长度不一，padding 位置会污染 batch 统计量；其二，小 batch 下统计量噪声大，训练不稳定；其三，自回归推理时 batch 常退化为单样本，batch 统计失真。因此 Transformer 从一开始就选择了 LayerNorm（4.1 节），并进一步演化出 RMSNorm（4.3 节）。
+BatchNorm 在 CNN 中效果良好，但不适合 Transformer 类架构，其一，NLP 序列长度不一，padding 位置会污染 batch 统计量；其二，小 batch 下统计量噪声大，训练不稳定；其三，自回归推理时 batch 常退化为单样本，batch 统计失真。因此 Transformer 从一开始就选择了 LayerNorm（4.1 节），并进一步演化出 RMSNorm（4.3 节）。
 
 ## 4.3 RMSNorm
 
-RMSNorm（Root Mean Square Normalization，均方根归一化）由 Zhang 与 Sennrich 于 2019 年提出，是 LayerNorm 的简化替代方案，随后被 T5 与 LLaMA 等模型采用。其动机是 LayerNorm 的运算量偏大：在性能相当的前提下，RMSNorm 可节省 7% 至 64% 的运算。
+RMSNorm（Root Mean Square Normalization，均方根归一化）由 Zhang 与 Sennrich 于 2019 年提出，是 LayerNorm 的简化替代方案，随后被 T5 与 LLaMA 等模型采用。其动机是 LayerNorm 的运算量偏大，在性能相当的前提下，RMSNorm 可节省 7% 至 64% 的运算。
 
-他们的消融实验把 LayerNorm 拆成两步：先以 $x-\mu$ 令均值为 0，再除以标准差 $\sigma$ 令方差为 1，分别对应平移不变性与缩放不变性。结果表明起作用的主要是缩放：是否减去 $\mu$ 影响不大，除以 $\sigma$ 才能控制前向传播中的数值膨胀并平滑损失曲面。
+他们的消融实验把 LayerNorm 拆成两步，先以 $x-\mu$ 令均值为 0，再除以标准差 $\sigma$ 令方差为 1，分别对应平移不变性与缩放不变性。结果表明起作用的主要是缩放，是否减去 $\mu$ 影响不大，除以 $\sigma$ 才能控制前向传播中的数值膨胀并平滑损失曲面。
 
 LayerNorm 的方差 $\sigma$ 与 RMSNorm 的 $\mathrm{RMS}(x)$ 定义如下：
 
@@ -1963,22 +1964,14 @@ $$\text{RMS}(x) = \sqrt{\frac{1}{d} \sum_{i=1}^{d} x_i^2} \tag{4.6}$$
 
 若 $\mu$ 接近 0，两者在数学上等价，这构成了 RMSNorm 的依据。省去均值计算后，单层前向与反向传播速度提升 10% 至 40%。
 
-![20.png](/assets/images/transformer/20.png)
+![21.png](/assets/images/transformer/21.png)
 
 > 图 4.2　RMSNorm 的定义公式（Zhang & Sennrich, 2019）
 
-![21.png](/assets/images/transformer/21.png)
+![22.png](/assets/images/transformer/22.png)
 
 > 图 4.3　RNNSearch 机器翻译任务上 LayerNorm 与 RMSNorm 的验证集 BLEU 曲线（RMSNorm 论文 Figure 4）。RMSNorm 以更少计算取得更好的收敛。
 
-表 4.1　RMSNorm 的主要特性
-
-| 特性 | 说明 |
-| --- | --- |
-| 核心思想 | 仅用输入特征的均方根（RMS）做缩放归一化，省略 LayerNorm 的均值中心化步骤。 |
-| 关键公式 | $\mathrm{RMS}(x) = \sqrt{\frac{1}{n}\sum_i x_i^2}$，输出 $y = \frac{x}{\mathrm{RMS}(x)} \odot \gamma$。 |
-| 主要优势 | 计算量减少约 30%，数值稳定性好；多数场景下与 LayerNorm 性能相当。 |
-| 应用场景 | 广泛用于 Transformer 及其变体（如 LLaMA、Mamba），替代编码器/解码器中的 LayerNorm。 |
 
 RMSNorm 的计算分三步：
 
@@ -1986,7 +1979,6 @@ RMSNorm 的计算分三步：
 2. **执行归一化**：把 $x$ 的每个元素除以上一步的 RMS 值。各特征的尺度被统一，中心位置不变（不强制均值为 0）。  
 3. **应用仿射变换**：引入可学习的缩放参数 $\gamma$（与输入同维的向量，初始化为 1），与归一化结果逐元素相乘。原始论文与多数实现**不设可学习的偏移参数 $\beta$**，这是与 LayerNorm 的另一处区别。
 
-表 4.2 将其与常见归一化方法对比：
 
 表 4.2　常见归一化方法对比
 
@@ -1996,7 +1988,7 @@ RMSNorm 的计算分三步：
 |LayerNorm|先减去均值，再除以标准差。|经典方法，具备平移和缩放不变性，但计算量稍大。|早期的Transformer模型（如原始BERT、GPT-2）。|
 |BatchNorm（见 4.2 节）|对一个小批次（Batch）内所有样本的同一特征维度进行归一化。|依赖批量大小，对小批量效果不佳。|卷积神经网络（CNN）用于图像分类等任务。|
 
-RMSNorm 相对 LayerNorm 的优势在计算效率：省去均值及其减法操作后计算量更小、训练更快，部分设置下训练稳定性也更好。
+RMSNorm 相对 LayerNorm 的优势在计算效率，省去均值及其减法操作后计算量更小、训练更快，部分设置下训练稳定性也更好。
 
 代码：
 
@@ -2031,21 +2023,17 @@ class RMSNorm(nn.Module):
 
 ## 4.4 L2Norm（QK-Norm）
 
-在注意力算子内部对 Query 与 Key 分别做 L2 归一化后再计算点积，以此限制 logits 的量级，稳定超大模型训练。
+在注意力算子内部对 Query 与 Key 分别做 L2 归一化后再计算点积，以此限制 logits 的量级，稳定超大模型训练。模型规模与训练量增大时，注意力 logits（$QK^\top$）会明显增长；小模型上这一现象被其他训练动态掩盖，参数上百亿、训练几十万亿 token 后则会导致 softmax 饱和、损失尖峰乃至训练崩溃。ViT-22B（220 亿参数）在扩展视觉 Transformer 时观察到这一问题。
 
-**训练不稳定的来源**。模型规模与训练量增大时，注意力 logits（$QK^\top$）会明显增长；小模型上这一现象被其他训练动态掩盖，参数上百亿、训练几十万亿 token 后则会导致 softmax 饱和、损失尖峰乃至训练崩溃。ViT-22B（220 亿参数）在扩展视觉 Transformer 时观察到这一问题。
-
-**L2Norm**。在 $Q$、$K$ 的投影输出后各做一次 L2 归一化，把每个 head 的向量约束到单位长度，logits 便有上界：
+在 $Q$、$K$ 的投影输出后各做一次 L2 归一化（L2Norm），把每个 head 的向量约束到单位长度，logits 便有上界：
 
 $$\hat{Q} = \frac{Q}{\|Q\|_2}, \qquad \hat{K} = \frac{K}{\|K\|_2}, \qquad \mathrm{Attn}(Q,K,V) = \mathrm{softmax}\!\left(\frac{\hat{Q}\hat{K}^\top}{\sqrt{d_k}}\right)V \tag{4.7}$$
 
-单位向量的点积满足 $\hat q^\top \hat k \in [-1, 1]$，logits 天然有界；式中的 $1/\sqrt{d_k}$ 沿用标准缩放。**代价**：归一化抹去了向量模长所携带的相关性强度信息，个别工作报告 QK-Norm 会轻微降低长上下文检索的敏感度；在大模型上，这一代价通常小于训练稳定性的收益。
+单位向量的点积满足 $\hat q^\top \hat k \in [-1, 1]$，logits 天然有界；式中的 $1/\sqrt{d_k}$ 沿用标准缩放。代价是归一化抹去了向量模长所携带的相关性强度信息，个别工作报告 QK-Norm 会轻微降低长上下文检索的敏感度；在大模型上，这一代价通常小于训练稳定性的收益。
 
-**起源与普及**。QK-Norm 由 ViT-22B（Dehghani et al., 2023, arXiv:2302.05442）提出并验证，随后被 Llama 3、Gemma 2/3、DeepSeek-V4 等模型采纳。
+QK-Norm 由 ViT-22B（Dehghani et al., 2023, arXiv:2302.05442）提出并验证，随后被 Llama 3、Gemma 2/3、DeepSeek-V4 等模型采纳。
 
-**在前述架构中的位置**。第 3 章若干线性注意力架构也在注意力内部使用 L2Norm：
-
-表 4.3　采用 L2Norm 的架构与归一化位置
+第 3 章若干线性注意力架构也在注意力内部使用 L2Norm。表 4.3　采用 L2Norm 的架构与归一化位置
 
 | 架构 | 归一化位置 | 形式 |
 |---|---|---|
@@ -2086,13 +2074,13 @@ class QKNormAttention(nn.Module):
         return self.out(o.reshape(B, L, -1))
 ```
 
-L2Norm 把归一化的位置从 block 级推进到 attention 内部的向量级：不改变注意力的表达形式，只约束参与点积的向量长度。
+L2Norm 把归一化的位置从 block 级推进到 attention 内部，不改变注意力的表达形式，只约束参与点积的向量长度。
 
 # 5. 位置编码的改进
 
-注意力对位置置换等变（permutation equivariant）：不注入位置信息，模型无法区分词序不同、token 相同的序列。位置编码的作用在于向这一集合表示中引入次序，实现形式经历了**绝对 → 相对 → 旋转**三个阶段。
+注意力对位置置换等变（permutation equivariant），不注入位置信息，模型无法区分词序不同、token 相同的序列。位置编码的作用在于向这一集合表示中引入次序，实现形式经历了**绝对 → 相对 → 旋转**三个阶段。
 
-**绝对位置编码**按 token 的绝对位置生成编码向量，与 token 自身的表示相加后送入自注意力，相当于在输入层注入位置信息。实现方式分固定式与可学习式：固定式如原始 Transformer 的三角函数 sin-cos 编码，由无参公式直接推演；可学习式没有固定公式，位置向量初始化后随训练更新，BERT 与 GPT 采用这一方式。
+**绝对位置编码**按 token 的绝对位置生成编码向量，与 token 自身的表示相加后送入自注意力，相当于在输入层注入位置信息。实现方式分固定式与可学习式，固定式如原始 Transformer 的三角函数 sin-cos 编码，由无参公式直接推演；可学习式没有固定公式，位置向量初始化后随训练更新，BERT 与 GPT 采用这一方式。
 
 原始论文的正弦-余弦位置编码：
 
@@ -2102,11 +2090,11 @@ $$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right) \t
 
 不同维度 $i$ 对应不同频率的正弦波，构成多尺度的位置表征。固定式理论上可向训练长度之外外推，但实测 sin-cos 的外推能力有限，后续工作因此转向 RoPE 一类方案。
 
-位置信息的改进沿两条线索展开：一条让注意力分数随序列长度自适应缩放，抑制长上下文下的注意力衰退（5.1 节）；另一条改造位置编码的实现形式，使模型在训练长度之外仍能分辨位置（5.2 节）。
+位置信息的改进沿两条方向展开，一条让注意力分数随序列长度自适应缩放，抑制长上下文下的注意力衰退（5.1 节）；另一条改造位置编码的实现形式，使模型在训练长度之外仍能分辨位置（5.2 节）。
 
 ## 5.1 SSMax
 
-Softmax 归一化存在**注意力衰退**（attention fading）问题：被归一化的向量越长，最大元素的输出权重越小。设向量长度为 $n$，最大与最小元素为 $z_{\max}$、$z_{\min}$，则最大输出权重满足
+Softmax 归一化存在**注意力衰退**（attention fading）问题，即被归一化的向量越长，最大元素的输出权重越小。设向量长度为 $n$，最大与最小元素为 $z_{\max}$、$z_{\min}$，则最大输出权重满足
 
 $$\frac{e^{z_{\max}}}{\sum_{j=1}^{n} e^{z_j}} \le \frac{1}{(n-1)\, e^{-(z_{\max}-z_{\min})}+1} \tag{5.3}$$
 
@@ -2124,9 +2112,9 @@ $$z_i \mapsto \frac{e^{(s \log n + b)\,z_i}}{\sum_{j=1}^{n} e^{(s \log n + b)\,z
 
 $$\frac{n^{s z_{\max}}}{\sum_{j=1}^{n} n^{s z_j}} \le \frac{1}{(n-1)\, n^{-s(z_{\max}-z_{\min})}+1} \tag{5.6}$$
 
-当 $s(z_{\max}-z_{\min})>1$ 时右端随 $n$ 增大趋于 1：最大 logit 只需超出其他位置约 $1/s$ 就能获得聚焦，阈值与长度无关。偏置 $b$ 通常省略：保留 $b$ 略微加快预训练损失的下降，去掉 $b$ 对长度泛化更有利。
+当 $s(z_{\max}-z_{\min})>1$ 时右端随 $n$ 增大趋于 1，最大 logit 只需超出其他位置约 $1/s$ 就能获得聚焦，阈值与长度无关。偏置 $b$ 通常省略，保留 $b$ 略微加快预训练损失的下降，去掉 $b$ 对长度泛化更有利。
 
-![22.png](/assets/images/transformer/22.png)
+![23.png](/assets/images/transformer/23.png)
 
 > 图 5.1　Softmax 的注意力衰退与 SSMax 的聚焦行为（依 Nakanishi, 2025, Figure 3 的设置重绘）。(a) 固定 logit 差 $\Delta$ 时，Softmax 的最大权重随 $n$ 衰减，SSMax（$s=1$）保持不降；(b) SSMax 的聚焦阈值在 $\Delta \approx 1/s$ 附近，与 $n$ 无关，Softmax 的阈值则随 $n$ 变大而右移。
 
@@ -2161,13 +2149,13 @@ class SSMax(nn.Module):
 
 ## 5.2 RoPE（旋转位置编码）
 
-RoPE 用绝对位置的形式实现相对位置的效果：对 Query、Key 向量的每一对相邻维度施加与位置相关的旋转，使二者内积只依赖相对位置差。实现上是绝对位置编码，作用上等价于相对位置编码，注意力计算无需改动。
+RoPE 用绝对位置的形式实现相对位置的效果，对 Query、Key 向量的每一对相邻维度施加与位置相关的旋转，使二者内积只依赖相对位置差。实现上是绝对位置编码，作用上等价于相对位置编码，注意力计算无需改动。
 
-![23.png](/assets/images/transformer/23.png)
+![24.png](/assets/images/transformer/24.png)
 
 > 图 5.2　RoPE 的实现示意——对 Q/K 向量按二维子空间施加 $m\theta$ 的旋转（Su et al., 2021, Figure 1）。
 
-RoPE 的数学形式：设 token 位置为 $m$，Query/Key 向量为 $x$，RoPE 对 $x$ 的每对相邻维度 $(x_{2i}, x_{2i+1})$ 施加一个角度为 $m\theta_i$ 的二维旋转：
+设 token 位置为 $m$，Query/Key 向量为 $x$，RoPE 对 $x$ 的每对相邻维度 $(x_{2i}, x_{2i+1})$ 施加一个角度为 $m\theta_i$ 的二维旋转：
 
 $$f(x_m, m) = R_{\Theta, m} x_m, \qquad \theta_i = 10000^{-2i/d} \tag{5.7}$$
 
@@ -2181,7 +2169,7 @@ $$\langle f(q, m), f(k, n) \rangle = g(q, k, m - n) \tag{5.9}$$
 
 对位置 $m$ 的 Q 与位置 $n$ 的 K 分别施加旋转后，点积只与 $m-n$ 有关；注意力计算本身不必修改。
 
-**长度外推**。外推指模型处理超出训练长度的文本。RoPE 本身具备一定的外推能力，**NTK-aware 缩放**等技术进一步在少微调或不微调的条件下扩展上下文窗口，例如把 2048 token 的训练长度扩展到 8192 token 以上。
+长度外推指模型处理超出训练长度的文本。RoPE 本身具备一定的外推能力，**NTK-aware 缩放**等技术进一步在少微调或不微调的条件下扩展上下文窗口，例如把 2048 token 的训练长度扩展到 8192 token 以上。
 
 NTK-aware 缩放不对所有频率统一缩放，以免损失高频细节；它把 $\theta_i = 10000^{-2i/d}$ 中的基频 10000 调大：
 
@@ -2232,7 +2220,7 @@ q_pos = apply_rope(q, cos, sin)                    # 注入位置信息
 
 注意力负责 token 之间的信息混合，FFN 对每个位置做逐点非线性变换，并承载了模型中的大部分参数。本章梳理这一组件的改动。
 
-![24.png](/assets/images/transformer/24.png)
+![25.png](/assets/images/transformer/25.png)
 
 > 图 6.1　Transformer 中的 FFN 子层（Vaswani et al., 2017, Figure 1 局部）——Add & Norm 之后的两层线性变换。
 
@@ -2294,13 +2282,13 @@ class FeedForward(nn.Module):
         return self.fc2(self.act(self.fc1(x)))
 ```
 
-FFN 的演进路线：ReLU 两层（2017）→ GELU 两层（2018—2019，BERT/GPT-2）→ SwiGLU 三块门控（2020 至今）→ 变体搜索与 MoE-FFN（2022 至今）。MoE 把单个大 FFN 换成多个小专家加路由器，在保持激活参数量不变的前提下继续扩大参数容量，可视为 FFN 思路的延伸。逐位置、非线性、承载知识这三点未变，改动集中在门控、激活函数与是否稀疏化。
+FFN 的演进路线从ReLU 两层（2017）→ GELU 两层（2018—2019，BERT/GPT-2）→ SwiGLU 三块门控（2020 至今）→ 变体搜索与 MoE-FFN（2022 至今）。MoE 把单个大 FFN 换成多个小专家加路由器，在保持激活参数量不变的前提下继续扩大参数容量，可视为 FFN 思路的延伸。逐位置、非线性、承载知识这三点未变，改动集中在门控、激活函数与是否稀疏化。
 
 ## 6.1 MoE
 
-MoE（Mixture-of-Experts，混合专家）并非新提出的结构，但它改变了 FFN 的扩展方式：以多个小专家加一个路由器取代单个大 FFN，使参数容量与激活计算量解耦。
+MoE（Mixture-of-Experts，混合专家）并非新提出的结构，但它改变了 FFN 的扩展方式，以多个小专家加一个路由器取代单个大 FFN，使参数容量与激活计算量解耦。
 
-![25.png](/assets/images/transformer/25.png)
+![26.png](/assets/images/transformer/26.png)
 
 > 图 6.2　Switch Transformer 的 encoder block（Switch Transformer 论文 Figure 2）。稠密 FFN 被替换成“Router + 多个 FFN”，每个 token 走其中一条。
 
@@ -2326,7 +2314,6 @@ $$h_t' = u_t + \sum_{i=1}^{N_s} \mathrm{FFN}_i^{(s)}(u_t) + \sum_{i=1}^{N_r} g_{
 
 其中 $g_{i,t}$ 是路由权重（对选中专家做归一化），$N_s$ 与 $N_r$ 分别是共享专家与路由专家的数量。DeepSeek-V3 进一步改用**无辅助损失的负载均衡**（auxiliary-loss-free），用可学习的偏置项替代辅助损失，避免辅助损失对训练目标的干扰。
 
-**规模对比**：
 
 表 6.1　近年 MoE 模型的规模对比
 
@@ -2390,9 +2377,9 @@ MoE 把 FFN 的参数容量与激活计算量解耦，是大模型扩展参数�
 
 6.1 节的 MoE 变体中，专家均工作在完整的隐藏维度 $d$ 上。Latent MoE 让路由专家工作在低维潜空间（latent space），共享专家仍留在原维度，从而支持更细的专家粒度与更多的专家数。
 
-**以维度换专家数**。传统 MoE（如 Mixtral）的每个专家都是 $d \to d_{ff} \to d$ 的完整 FFN，参数成本高，专家数通常在 8 至 16 个。DeepSeekMoE 验证了“细粒度专家 + 共享专家”，但专家仍占完整宽度。Latent MoE 让路由专家在 $\ell \ll d$ 的潜空间中做变换，单个专家的参数成本随之下降，专家池可扩展到数百个。
+传统 MoE（如 Mixtral）的每个专家都是 $d \to d_{ff} \to d$ 的完整 FFN，参数成本高，专家数通常在 8 至 16 个。DeepSeekMoE 验证了“细粒度专家 + 共享专家”，但专家仍占完整宽度。Latent MoE 让路由专家在 $\ell \ll d$ 的潜空间中做变换，单个专家的参数成本随之下降，专家池可扩展到数百个。
 
-**结构**（Kimi K3 的 Stable LatentMoE，对应论文公式 11）：
+Kimi K3 的 Stable LatentMoE：
 
 $$z = W^\downarrow x \in \mathbb{R}^{\ell}, \qquad u = \sum_{i \in T_k(x)} p_i\, E_i^{\mathrm{routed}}(z), \qquad y = \sum_{j=1}^{N_s} E_j^{\mathrm{shared}}(x) + W^\uparrow \mathrm{RMSNorm}(u) \tag{6.7}$$
 
@@ -2402,13 +2389,13 @@ $$z = W^\downarrow x \in \mathbb{R}^{\ell}, \qquad u = \sum_{i \in T_k(x)} p_i\,
 2. **潜空间路由**：$z$ 被 dispatch 到选中的 $k$ 个路由专家（$E_i^{\mathrm{routed}}: \mathbb{R}^\ell \to \mathbb{R}^\ell$），加权聚合得 $u \in \mathbb{R}^\ell$
 3. **升维 + 共享专家**：$W^\uparrow$ 把 $u$ 投回 $\mathbb{R}^d$，再与 $N_s$ 个**全宽度**共享专家（$E_j^{\mathrm{shared}}: \mathbb{R}^d \to \mathbb{R}^d$）的输出相加
 
-![26.png](/assets/images/transformer/26.png)
+![27.png](/assets/images/transformer/27.png)
 
 > 图 6.3　标准 MoE 与 LatentMoE 的架构对比（Elango et al., 2026, Figure 1）。(a) 标准 MoE 中路由专家直接工作在完整隐藏维度 $d$ 上；(b) LatentMoE 先把 token 下投影到潜空间 $\ell$ 再做专家计算，最后上投影回 $d$。下投影省下的路由参数与 all-to-all 通信开销，被用于成倍扩大专家池与 top-k。
 
-**共享专家保持全宽**。共享专家承担所有 token 都需要的基础变换，需直接作用于 $d$ 维隐状态；路由专家只处理特定 token 的专门变换，低维表示已足够。Kimi K3 在每层固定 $N_s = 2$ 个全宽共享专家。
+共享专家承担所有 token 都需要的基础变换，需直接作用于 $d$ 维隐状态；路由专家只处理特定 token 的专门变换，低维表示已足够。Kimi K3 在每层固定 $N_s = 2$ 个全宽共享专家。
 
-**Stable LatentMoE 的稳定化组件**。专家数增至 896、每 token 激活 16 个（$k=16$）后，训练会出现两类问题：激活爆炸（$W^\uparrow$ 作用在尺度波动的 $u$ 上）与路由崩塌（负载严重不均）。Kimi K3 采用三项措施：
+专家数增至 896、每 token 激活 16 个（$k=16$）后，训练会出现两类问题，激活爆炸（$W^\uparrow$ 作用在尺度波动的 $u$ 上）与路由崩塌（负载严重不均）。Kimi K3 采用三项措施：
 
 1. **Normalized LatentMoE**：在专家聚合 $u$ 与上投影 $W^\uparrow$ 之间插一个 $\mathrm{RMSNorm}$。这一步稳定了路由分支的尺度，使其与全宽共享分支相加时不致相互干扰，实测也降低了验证损失。
 2. **SiTU-GLU**：路由专家内部的激活用 $\beta$-softcap 的 GLU（详见 7.5），把大值封顶在 $\beta_1\beta_2 = 100$，杜绝低精度下的溢出离群值。
@@ -2478,19 +2465,19 @@ class LatentMoE(nn.Module):
         return shared_out + routed_out
 ```
 
-**参数配置**（Kimi K3 实测）：896 个路由专家每 token 激活 16 个 + 2 个全宽共享专家，让激活专家数从传统 MoE 的 8 个扩到 18 个；路由专家工作在 $\ell$ 维潜空间，总参数量与激活参数量之比高于全宽度专家方案。QB 使负载趋于均衡，专家并行训练不再受最慢 rank 制约。
+Kimi K3 的参数配置包括896 个路由专家每 token 激活 16 个 + 2 个全宽共享专家，让激活专家数从传统 MoE 的 8 个扩到 18 个；路由专家工作在 $\ell$ 维潜空间，总参数量与激活参数量之比高于全宽度专家方案。QB 使负载趋于均衡，专家并行训练不再受最慢 rank 制约。
 
-Latent MoE 把调整对象从专家数与激活数转到专家的工作空间。它与 MLA 压缩 KV、CSA 压缩序列采用相同的做法：先把高维表示投影到低维完成选择性计算，仅在必要处还原。
+Latent MoE 把调整对象从专家数与激活数转到专家的工作空间。它与 MLA 压缩 KV、CSA 压缩序列采用相同的做法，先把高维表示投影到低维完成选择性计算，仅在必要处还原。
 
 ## 6.3 Shortcut MoE
 
 6.1 节改路由，6.2 节改专家的工作空间；Shortcut MoE（ScMoE，shortcut-connected MoE）改的是 MoE 与主干的连接方式，目标是把 All-to-All 通信从关键路径上移走。
 
-**通信瓶颈**。专家并行把专家分散到多卡，token 必须先经 All-to-All 发送到专家所在设备，算完再送回，通信与计算严格串行。实测单机 8×A30（PCIe 互联）上 All-to-All 占 MoE 总耗时约 60%，8×A800（NVLink）降到 15%，跨节点以太网又回到接近 50%。分层 All-to-All 与流水线只能部分重叠——只要 dispatch 还依赖当前层的输出，通信就无法提前开始。
+专家并行把专家分散到多卡，token 必须先经 All-to-All 发送到专家所在设备，算完再送回，通信与计算严格串行。实测单机 8×A30（PCIe 互联）上 All-to-All 占 MoE 总耗时约 60%，8×A800（NVLink）降到 15%，跨节点以太网又回到接近 50%。分层 All-to-All 与流水线只能部分重叠——只要 dispatch 还依赖当前层的输出，通信就无法提前开始。
 
-**关键观察**。相邻层的 token 表示高度相似。同一个 MoE 模块对当前层与前一层的表示分别做 top-1 路由，绝大多数 token 选中同一专家（训练中一致率一度达 98%）；前一层的表示因此足以替当前层做路由决策。
+实际中观察到相邻层的 token 表示高度相似。同一个 MoE 模块对当前层与前一层的表示分别做 top-1 路由，绝大多数 token 选中同一专家（训练中一致率一度达 98%）；前一层的表示因此足以替当前层做路由决策。
 
-**结构**。ScMoE 把一个 top-2 MoE 拆成两条独立支路：共享专家就地处理当前层表示；门选专家（top-1）经 **shortcut 连接**处理前一层表示。两路并行、结果相加，门控与 All-to-All 因输入来自前一层而得以提前执行。记 $\mathcal{H}^{MH}_{l}$ 为第 $l$ 层注意力子层的输出（shortcut 默认取自前一层注意力与 MLP 之间的中间表示）：
+ScMoE 把一个 top-2 MoE 拆成两条独立支路，共享专家就地处理当前层表示；门选专家（top-1）经 **shortcut 连接**处理前一层表示。两路并行、结果相加，门控与 All-to-All 因输入来自前一层而得以提前执行。记 $\mathcal{H}^{MH}_{l}$ 为第 $l$ 层注意力子层的输出（shortcut 默认取自前一层注意力与 MLP 之间的中间表示）：
 
 $$\mathcal{H}_{l+1} = \mathcal{H}^{MH}_{l+1} + \mathrm{SE}(\mathcal{H}^{MH}_{l+1}) + \sum_{i=1}^{N} G(\mathcal{H}^{MH}_{l})_i\, E_i(\mathcal{H}^{MH}_{l}) \tag{6.8}$$
 
@@ -2500,15 +2487,15 @@ $$\mathcal{H}_{l+1} = \mathcal{H}^{MH}_{l+1} + \mathrm{SE}(\mathcal{H}^{MH}_{l+1
 
 $$\mathcal{H}_{l+1} = \mathcal{H}^{MH}_{l+1} + \sum_{i=1}^{N}\Big( G(\mathcal{H}^{MH}_{l+1})_i\, E_i(\mathcal{H}^{MH}_{l+1}) + G(\mathcal{H}^{MH}_{l})_i\, E_i(\mathcal{H}^{MH}_{l})\Big) \tag{6.9}$$
 
-两次路由若选中同一专家则退化为 top-1，DGMoE 改选 top-2 中的次高分专家补齐。ScMoE 则天然分配不同专家：共享专家管当前层，门选专家管前一层，通信与计算彻底解耦。
+两次路由若选中同一专家则退化为 top-1，DGMoE 改选 top-2 中的次高分专家补齐。ScMoE 则天然分配不同专家，共享专家管当前层，门选专家管前一层，通信与计算彻底解耦。
 
-![27.png](/assets/images/transformer/27.png)
+![28.png](/assets/images/transformer/28.png)
 
 > 图 6.4　ScMoE 的数据流与通信重叠（依 Cai et al., 2025 重绘）。(a) 标准 top-2 MoE 中 All-to-All 与计算串行；(b) ScMoE 的两条独立支路——共享专家处理当前层表示，门选专家经 shortcut 处理前一层表示；(c) 通信被夹进本地计算的执行窗口。
 
-**重叠执行**。两路运行在独立 CUDA stream 上：共享专家一路只做本地计算；门选专家一路走 gate routing → encode → All-to-All dispatch → 专家计算 → All-to-All combine → decode。调度上 dispatch 尽早、combine 尽晚，把通信夹进本地计算的窗口里。实测 PCIe 环境隐藏 70% 的通信时间，NVLink 单机与跨节点场景实现完全重叠。与 top-2 MoE 相比，训练加速 30%（PCIe）与 11%（NVLink），推理加速 40% 与 15%；GPT2-MoE-Medium 的 WikiText-103 PPL 从 19.18 降到 17.62，质量与 shared-expert MoE 相当，网络越深优势越大。
+两路运行在独立 CUDA stream 上，共享专家一路只做本地计算；门选专家一路走 gate routing → encode → All-to-All dispatch → 专家计算 → All-to-All combine → decode。调度上 dispatch 尽早、combine 尽晚，把通信夹进本地计算的窗口里。实测 PCIe 环境隐藏 70% 的通信时间，NVLink 单机与跨节点场景实现完全重叠。与 top-2 MoE 相比，训练加速 30%（PCIe）与 11%（NVLink），推理加速 40% 与 15%；GPT2-MoE-Medium 的 WikiText-103 PPL 从 19.18 降到 17.62，质量与 shared-expert MoE 相当，网络越深优势越大。
 
-**专家卸载**。路由提前一层确定还有一个副产品：被选中的专家可以从 CPU 异步换入 GPU，换入过程与前一层剩余的计算重叠。这是确定性的专家迁移，不依赖预测、不偏离预训练的计算逻辑；单卡 A30 上把 GPT3-MoE-XL 的峰值显存压低约 60%。
+路由提前一层确定还有一个副产品，被选中的专家可以从 CPU 异步换入 GPU，换入过程与前一层剩余的计算重叠。这是确定性的专家迁移，不依赖预测、不偏离预训练的计算逻辑；单卡 A30 上把 GPT3-MoE-XL 的峰值显存压低约 60%。
 
 代码：
 
@@ -2554,19 +2541,20 @@ class ScMoE(nn.Module):
         return x_cur + se_out + routed                          # 式 (6.8)
 ```
 
-Shortcut MoE 不动专家的计算方式，改的是专家层的输入来源与通信时序：用前一层的表示换通信的提前量，让 All-to-All 退出关键路径。这一改动已在生产模型落地——LongCat-Flash 系列采用 shortcut-connected MoE 架构（每个 shortcut 层含两个串联的注意力操作，见 3.5.6 节），与 MLA 配套使用。至此第 6 章的三条改动线索完整：6.1 节改路由与分工，6.2 节改专家的工作空间，6.3 节改连接方式与通信时序；FFN 的逐位置非线性变换本身始终未变。
+Shortcut MoE 不动专家的计算方式，改的是专家层的输入来源与通信时序，用前一层的表示换通信的提前量，让 All-to-All 退出关键路径。这一改动已在生产模型落地——LongCat-Flash 系列采用 shortcut-connected MoE 架构（每个 shortcut 层含两个串联的注意力操作，见 3.5.6 节），与 MLA 配套使用。
+至此第 6 章的三条改动已经完整，6.1 节改路由与分工，6.2 节改专家的工作空间，6.3 节改连接方式与通信时序；FFN 的逐位置非线性变换本身始终未变。
 
 # 7. 激活函数
 
 Transformer 中的激活函数几经更替，从 ReLU、GELU 到现代模型普遍采用的 SiLU/Swish，再到面向数值稳定性的 SiTU-GLU。本章先按这一主线介绍，并增加 Sigmoid 门（7.2 节）、Softplus（7.3 节）与 softcap（7.4 节）；7.5 节说明后两者如何组合成 SiTU-GLU。
 
-![28.png](/assets/images/transformer/28.png)
+![29.png](/assets/images/transformer/29.png)
 
 > 图 7.1　GELU、ReLU、ELU 曲线对比（Hendrycks & Gimpel, 2016, Figure 1）。
 
 ## 7.1 ReLU、GELU 与 SiLU
 
-激活函数决定前馈网络在每个位置上引入怎样的非线性。原始 Transformer 的 FFN 采用 ReLU，BERT 与 GPT 时代改用 GELU，LLaMA、Qwen 等现代模型则普遍采用 SiLU（Swish 在 $\beta=1$ 时的特例）。三者的更替不是简单的性能排序：ReLU 以最低的计算成本换来稀疏激活，GELU 把随机正则化的思想写进激活形式，SiLU 则以自门控在平滑性与计算开销之间取得平衡。表 7.1 先给出三者的形式与性质对照，随后按提出顺序逐一讨论。
+激活函数决定前馈网络在每个位置上引入怎样的非线性。原始 Transformer 的 FFN 采用 ReLU，BERT 与 GPT 时代改用 GELU，LLaMA、Qwen 等现代模型则普遍采用 SiLU（Swish 在 $\beta=1$ 时的特例）。三者的更替不是简单的性能排序，ReLU 以最低的计算成本换来稀疏激活，GELU 把随机正则化的思想写进激活形式，SiLU 则以自门控在平滑性与计算开销之间取得平衡。表 7.1 先给出三者的形式与性质对照，随后按提出顺序逐一讨论。
 
 表 7.1　ReLU、GELU 与 SiLU 的特性对比
 
@@ -2580,13 +2568,13 @@ Transformer 中的激活函数几经更替，从 ReLU、GELU 到现代模型普�
 | 主要思想 | 稀疏激活 | 基于随机正则化的平滑近似 | 平滑、自门控 |
 | 常见应用 | CNN、早期模型 | Transformer（BERT、GPT） | 现代 LLM 主流 |
 
-**ReLU**。定义为 $f(x)=\max(0,x)$；导数在正半轴恒为 1、负半轴恒为 0，$x=0$ 处不可导，实现中通常取 0 或 1。正区间梯度不随深度衰减，缓解了 Sigmoid 与 Tanh 在饱和区的梯度消失，计算上只需一次比较与赋值；负半轴输出恒为 0，激活因而天然稀疏。这些性质使它自 2012 年起成为卷积网络与早期深层网络的默认选择，2017 年的原始 Transformer 同样沿用。代价也来自这几条性质：若某神经元的大部分输入在训练后落入负半轴，其梯度恒为 0，参数不再更新，该神经元对任何输入都不再响应，即所谓的神经元死亡（Dying ReLU）；输出均值恒大于 0，非零中心会影响梯度下降的动态；原点处的折点亦不可导。
+**ReLU** 的定义为 $f(x)=\max(0,x)$；导数在正半轴恒为 1、负半轴恒为 0，$x=0$ 处不可导，实现中通常取 0 或 1。正区间梯度不随深度衰减，缓解了 Sigmoid 与 Tanh 在饱和区的梯度消失，计算上只需一次比较与赋值；负半轴输出恒为 0，激活因而天然稀疏。这些性质使它自 2012 年起成为卷积网络与早期深层网络的默认选择，2017 年的原始 Transformer 同样沿用。代价也来自这几条性质，若某神经元的大部分输入在训练后落入负半轴，其梯度恒为 0，参数不再更新，该神经元对任何输入都不再响应，即所谓的神经元死亡（Dying ReLU）；输出均值恒大于 0，非零中心会影响梯度下降的动态；原点处的折点亦不可导。
 
-**GELU**。Hendrycks 与 Gimpel 于 2016 年提出 $f(x)=x\,\Phi(x)$，其中 $\Phi$ 为标准正态分布的累积分布函数。ReLU 按输入符号硬性决定是否激活，GELU 则按输入幅度软性加权：$\Phi(x)$ 可解释为 $x$ 被保留的概率，这一形式由此融合了 Dropout 与 Zoneout 的随机正则化思想。函数处处可导，负值区域保留平滑的非零输出，避开了 ReLU 的尖锐折角；BERT、GPT 等模型以其为默认激活，报告的性能通常优于 ReLU 与 ELU。精确计算 $\Phi$ 的代价较高，实际实现（如 Hugging Face Transformers、PyTorch、TensorFlow）多采用 tanh 近似 $\mathrm{GELU}(x)\approx 0.5x\left(1+\tanh\left[\sqrt{2/\pi}\left(x+0.044715x^3\right)\right]\right)$；即便如此，其计算量仍高于 ReLU 与 SiLU。
+**GELU** 是Hendrycks 与 Gimpel 于 2016 年提出， $f(x)=x\,\Phi(x)$，其中 $\Phi$ 为标准正态分布的累积分布函数。ReLU 按输入符号硬性决定是否激活，GELU 则按输入幅度软性加权， $\Phi(x)$ 可解释为 $x$ 被保留的概率，这一形式由此融合了 Dropout 与 Zoneout 的随机正则化思想。函数处处可导，负值区域保留平滑的非零输出，避开了 ReLU 的尖锐折角；BERT、GPT 等模型以其为默认激活，报告的性能通常优于 ReLU 与 ELU。精确计算 $\Phi$ 的代价较高，实际实现（如 Hugging Face Transformers、PyTorch、TensorFlow）多采用 tanh 近似 $\mathrm{GELU}(x)\approx 0.5x\left(1+\tanh\left[\sqrt{2/\pi}\left(x+0.044715x^3\right)\right]\right)$；即便如此，其计算量仍高于 ReLU 与 SiLU。
 
-**SiLU / Swish**。这一形式由 Ramachandran 等人于 2017 年经自动搜索发现并命名为 Swish，SiLU（Sigmoid-Linear Unit）即 $\beta=1$ 时的称呼。其定义为 $f(x)=x\,\sigma(x)$，其中 $\sigma(x)=1/(1+e^{-x})$，导数为 $f'(x)=\sigma(x)+x\sigma(x)\bigl(1-\sigma(x)\bigr)$。$\sigma(x)$ 充当软开关，控制 $x$ 的通过比例，形式上与 LSTM、GRU 的门控相近，故称自门控。曲线平滑且非单调：正半轴较大取值处导数趋近 1，梯度可在深层网络中稳定回传；负半轴不像 ReLU 那样直接置零，而是平滑趋近约 $-0.28$ 的下界，既避免了神经元死亡，也保留了部分负区信息（图 7.2）。Swish 的原始论文报告其在多个视觉与语言任务上优于 ReLU，代价是需计算一次 Sigmoid，开销高于 ReLU。LLaMA、Qwen 等现代模型将其用作默认激活，尤其常见于 SwiGLU 结构的 FFN（见 6.1 节）。
+**SiLU / Swish** 这一形式由 Ramachandran 等人于 2017 年经自动搜索发现并命名为 Swish，SiLU（Sigmoid-Linear Unit）即 $\beta=1$ 时的称呼。其定义为 $f(x)=x\,\sigma(x)$，其中 $\sigma(x)=1/(1+e^{-x})$，导数为 $f'(x)=\sigma(x)+x\sigma(x)\bigl(1-\sigma(x)\bigr)$。$\sigma(x)$ 充当软开关，控制 $x$ 的通过比例，形式上与 LSTM、GRU 的门控相近，故称自门控。曲线平滑且非单调，正半轴较大取值处导数趋近 1，梯度可在深层网络中稳定回传；负半轴不像 ReLU 那样直接置零，而是平滑趋近约 $-0.28$ 的下界，既避免了神经元死亡，也保留了部分负区信息（图 7.2）。Swish 的原始论文报告其在多个视觉与语言任务上优于 ReLU，代价是需计算一次 Sigmoid，开销高于 ReLU。LLaMA、Qwen 等现代模型将其用作默认激活，尤其常见于 SwiGLU 结构的 FFN（见 6.1 节）。
 
-![29.png](/assets/images/transformer/29.png)
+![30.png](/assets/images/transformer/30.png)
 
 > 图 7.2　Swish 激活函数及其一阶导数（Ramachandran et al., 2017, Figure 4 & 5）。负值区域呈平滑下探，导数非单调。
 
@@ -2633,18 +2621,17 @@ Sigmoid 是最早用于深度学习的激活函数之一。在现代 Transformer
 
 $$f(x) = \frac{1}{1+e^{-x}}, \qquad f'(x) = f(x)\left(1 - f(x)\right) \tag{7.1}$$
 
-![30.png](/assets/images/transformer/30.png)
+![31.png](/assets/images/transformer/31.png)
 
 > 图 7.3　Sigmoid 的函数形状（左）与导数（右）。左图对照零中心的 tanh：sigmoid 输出恒在 $(0,1)$，均值大于 0（非零中心）；右图导数峰值仅 0.25，且两侧饱和区梯度趋近 0，正是深层网络梯度消失的数学来源。
 
-**历史与局限**：RNN 时代（20 世纪 90 年代至 2015 年前后）Sigmoid 与 Tanh 是默认激活，用于 LSTM/GRU 的门控。作为逐元素激活，Sigmoid 有两处明显缺陷：
+RNN 时代（20 世纪 90 年代至 2015 年前后）Sigmoid 与 Tanh 是默认激活，用于 LSTM/GRU 的门控。作为逐元素激活，Sigmoid 有两处明显缺陷：
 
 1. **梯度消失**：输入绝对值较大时 $f'(x) \to 0$，深层网络反向传播时梯度指数级衰减
 2. **非零中心**：输出恒在 $(0,1)$ 且均值大于 0，会让下游层的梯度带偏
 
 因此自 ReLU 起，Sigmoid 逐渐从激活函数转为门控函数。
 
-**Sigmoid 在现代 Transformer 中的应用位置**：
 
 表 7.2　Sigmoid 在 Transformer 中的典型应用位置
 
@@ -2658,7 +2645,7 @@ $$f(x) = \frac{1}{1+e^{-x}}, \qquad f'(x) = f(x)\left(1 - f(x)\right) \tag{7.1}$
 | 门控残差的读写门 | $\sigma(\cdot)$ | Qwen3.8-Flash-Next |
 | mHC 的 Birkhoff 投影 | Sinkhorn-Knopp 内部用 $\exp$ 归一化 | DeepSeek mHC |
 
-**适合门控的性质**：Sigmoid 把任意实数平滑映射到 $(0,1)$，可直接作为开关强度；输出有界，不会像 SwiGLU 的线性因子那样无界增长；梯度在饱和区虽小但有界，配合低秩投影不会引入离群值。Kimi K3 的 SiTU-GLU 因此采用“sigmoid 门 + tanh soft-cap”，而非纯 Swish 门（见 7.5 节）。
+Sigmoid 把任意实数平滑映射到 $(0,1)$，可直接作为开关强度；输出有界，不会像 SwiGLU 的线性因子那样无界增长；梯度在饱和区虽小但有界，配合低秩投影不会引入离群值。因此Sigmoid适合作为门控函数。Kimi K3 的 SiTU-GLU 因此采用“sigmoid 门 + tanh soft-cap”，而非纯 Swish 门（见 7.5 节）。
 
 ```python
 import torch
@@ -2682,23 +2669,23 @@ Sigmoid 作为逐元素激活让位于 ReLU，作为 SwiGLU 的门因子则多�
 
 Softplus 是 ReLU 的光滑近似，定义为 $\mathrm{softplus}(x) = \ln(1 + e^x)$。其导数恰为 7.2 节的 Sigmoid，因此它同时也是 Sigmoid 的原函数。
 
-![31.png](/assets/images/transformer/31.png)
+![32.png](/assets/images/transformer/32.png)
 
 > 图 7.4　Softplus 及其导数。左图对比 Softplus 与 ReLU，$x=0$ 处 Softplus 以 $\ln 2 \approx 0.693$ 平滑过渡、无折点；右图为 Softplus 的导数，即 Sigmoid，在 $[0,1]$ 内连续。
 
-**定义与性质**。Softplus 的值域为 $(0, +\infty)$，处处可导：
+Softplus 的值域为 $(0, +\infty)$，处处可导：
 
 $$\mathrm{softplus}(x) = \ln(1+e^x), \qquad \mathrm{softplus}'(x) = \sigma(x) = \frac{1}{1+e^{-x}} \tag{7.2}$$
 
 当 $x \to +\infty$ 时 $\mathrm{softplus}(x) \approx x$，当 $x \to -\infty$ 时 $\mathrm{softplus}(x) \to 0$，两端渐近行为与 ReLU 一致，只在原点附近以圆滑过渡替代尖角。它由 Dugas et al. (2001) 为期权定价引入；与 ReLU 相比，其梯度连续、无“神经元死亡”问题，但代价是正向要算一个 $\exp$ 与一个 $\log$，反向还要再算一次 Sigmoid。
 
-**数值稳定形式**。直接计算 $\ln(1+e^x)$ 在 $x$ 较大时会产生 $e^x$ 溢出，因此实现上改写为：
+直接计算 $\ln(1+e^x)$ 在 $x$ 较大时会产生 $e^x$ 溢出，因此实现上改写为：
 
 $$\mathrm{softplus}(x) = \max(x, 0) + \ln\!\big(1 + e^{-|x|}\big) \tag{7.3}$$
 
 这个等价形式把指数项压到 $e^{-|x|}$ 上，任取 $x$ 都不溢出。PyTorch 的 `softplus` 自带 `threshold` 参数，当 $x$ 超过阈值时直接返回 $x$（导数近似为 1），在正半轴几乎等价于 ReLU。
 
-**线性注意力中的衰减门**。Softplus 较少用作 FFN 的逐元素激活（该位置多由 SiLU/GELU 占据），主要用于线性注意力中衰减门的参数化。回顾 3.6.2 节的 Gated DeltaNet，状态更新需要每个 token 一个衰减因子 $\alpha_t \in (0,1]$。沿袭 Mamba-2 与 Gated DeltaNet 的约定，Kimi K3 报告中的 Kimi Linear 用负 Softplus 把衰减 logits 映射到 $(-\infty, 0)$，再取指数：
+Softplus 较少用作 FFN 的逐元素激活（该位置多由 SiLU/GELU 占据），主要用于线性注意力中衰减门的参数化。回顾 3.6.2 节的 Gated DeltaNet，状态更新需要每个 token 一个衰减因子 $\alpha_t \in (0,1]$。沿袭 Mamba-2 与 Gated DeltaNet 的约定，Kimi K3 报告中的 Kimi Linear 用负 Softplus 把衰减 logits 映射到 $(-\infty, 0)$，再取指数：
 
 $$g_h^t = -e^{A_h}\,\mathrm{softplus}(z_h^t) \in (-\infty, 0)^{d_k}, \qquad \alpha_h^t = \exp(g_h^t) \in (0, 1)^{d_k} \tag{7.4}$$
 
@@ -2731,23 +2718,23 @@ class NegativeSoftplusDecay(nn.Module):
 #   # 超过 threshold 时直接返回 x，正半轴几乎等价于 ReLU
 ```
 
-Softplus 与 SiLU、Sigmoid 的分工不同。它很少作为 FFN 的主激活，但“导数等于 Sigmoid、值域严格为正、处处光滑”这三条性质使它适用于需要平滑正输出的场合：概率模型的尺度参数、变分推断的方差项，以及线性注意力中把衰减压入 $(0,1]$ 的门。激活函数除了为 FFN 引入非线性，也用于为某个量提供合适的取值空间。
+Softplus 与 SiLU、Sigmoid 的分工不同。它很少作为 FFN 的主激活，但“导数等于 Sigmoid、值域严格为正、处处光滑”这三条性质使它适用于需要平滑正输出的场合，概率模型的尺度参数、变分推断的方差项，以及线性注意力中把衰减压入 $(0,1]$ 的门。激活函数除了为 FFN 引入非线性，也用于为某个量提供合适的取值空间。
 
 Softplus 保证平滑与正值，但不给幅值加上界。为幅值加一个有界且可导的上限，是下一节 softcap 的任务；两者在 7.5 节组合成 SiTU-GLU。
 
 ## 7.4 Softcap
 
-前几节的激活函数都在调整曲线形状。softcap 处理另一端的问题：当激活值或 logits 的幅值没有上界时，如何给它一个有界且处处可导的上限。硬截断 $\mathrm{clip}(x,-c,c)$ 在边界之外梯度为零，被截断的单元不再更新；softcap 用饱和曲线把大值渐进压到 $(-c,c)$，在原点附近保持近似线性，在饱和区仍保留非零梯度。
+前几节的激活函数都在调整曲线形状。softcap 处理另一端的问题，当激活值或 logits 的幅值没有上界时，如何给它一个有界且处处可导的上限。硬截断 $\mathrm{clip}(x,-c,c)$ 在边界之外梯度为零，被截断的单元不再更新；softcap 用饱和曲线把大值渐进压到 $(-c,c)$，在原点附近保持近似线性，在饱和区仍保留非零梯度。
 
-**定义**。取双曲正切作饱和函数，给定上界 $\beta>0$：
+取双曲正切作饱和函数，给定上界 $\beta>0$：
 
 $$\mathrm{softcap}(x;\beta) = \beta\tanh\!\Big(\frac{x}{\beta}\Big), \qquad \mathrm{softcap}'(x;\beta) = 1-\tanh^2\!\Big(\frac{x}{\beta}\Big) \tag{7.5}$$
 
 由 $\tanh u = u + O(u^3)$ 可得 $\mathrm{softcap}(x;\beta) = x + O(x^3/\beta^2)$，小值区间几乎不改变原函数；由 $|\tanh u|<1$ 可得 $|\mathrm{softcap}(x;\beta)|<\beta$，且导数落在 $(0,1]$，处处可导。局部近似线性、全局有界、无梯度死区，这三条性质是它优于硬截断的原因。
 
-**两种用法**。一是作用在 logits 上：Gemma 2 用 $\tanh$ 对注意力与最终输出的 logits 做软截断（logit soft-capping），防止 softmax 前的分数在训练中失控。二是作用在激活值上：Kimi K3 把 softcap 分别施加到 SwiGLU 的门线性因子与上分支（见 7.5 节），GPT-OSS 与 DeepSeek-V4 则采用 hard clip。K3 的消融显示，在上界取值相同时，softcap 的训练表现优于硬截断，差别正来自饱和区仍有梯度。
+Softcap 有 **两种用法**。一是作用在 logits 上，Gemma 2 用 $\tanh$ 对注意力与最终输出的 logits 做软截断（logit soft-capping），防止 softmax 前的分数在训练中失控。二是作用在激活值上，Kimi K3 把 softcap 分别施加到 SwiGLU 的门线性因子与上分支（见 7.5 节），GPT-OSS 与 DeepSeek-V4 则采用 hard clip。K3 的消融显示，在上界取值相同时，softcap 的训练表现优于硬截断，差别正来自饱和区仍有梯度。
 
-**与 Softplus 的关系**。两者都是对线性增长的平滑改写，方向却相反：Softplus 把 ReLU 的折角磨圆，输出 $(0,+\infty)$ 依旧无上界；softcap 保留线性段，而给两端加上有限上界。先由 Softplus 型函数提供平滑的正值增长，再由 softcap 封顶，就得到一类有界且可导的激活构件，7.5 节的 SiTU-GLU 即建立在这一组合之上。
+Softcap与 Softplus 都是对线性增长的平滑改写，方向却相反，Softplus 把 ReLU 的折角磨圆，输出 $(0,+\infty)$ 依旧无上界；softcap 保留线性段，而给两端加上有限上界。先由 Softplus 型函数提供平滑的正值增长，再由 softcap 封顶，就得到一类有界且可导的激活构件，7.5 节的 SiTU-GLU 即建立在这一组合之上。
 
 ```python
 def softcap(x, beta):
@@ -2757,21 +2744,19 @@ def softcap(x, beta):
 
 ## 7.5 SiTU-GLU
 
-SiTU-GLU（Sigmoid Tanh Unit GLU）是 Kimi K3 提出的激活函数，用于解决 SwiGLU 在超大 MoE 规模下的**激活离群值与溢出**问题。其构造可看作 7.3 节 Softplus 与 7.4 节 softcap 两类元件的组合：Softplus 一支提供平滑且严格为正的增长，其导数正是 Sigmoid 门（$\sigma=\mathrm{softplus}'$），softcap 则把增长限制在有限上界之内。Kimi K3 的具体实现并未直接调用 Softplus，而是以 $\sigma(W_g x)$ 为门、以 $\beta\tanh(z/\beta)$ 为 softcap，两者相乘得到 SiTU（Sigmoid Tanh Unit）；再对上分支独立施加一次 softcap，即构成 SiTU-GLU。
+SiTU-GLU（Sigmoid Tanh Unit GLU）是 Kimi K3 提出的激活函数，用于解决 SwiGLU 在超大 MoE 规模下的**激活离群值与溢出**问题。其构造可看作 7.3 节 Softplus 与 7.4 节 softcap 两类元件的组合，Softplus 一支提供平滑且严格为正的增长，其导数正是 Sigmoid 门（$\sigma=\mathrm{softplus}'$），softcap 则把增长限制在有限上界之内。Kimi K3 的具体实现并未直接调用 Softplus，而是以 $\sigma(W_g x)$ 为门、以 $\beta\tanh(z/\beta)$ 为 softcap，两者相乘得到 SiTU（Sigmoid Tanh Unit）；再对上分支独立施加一次 softcap，即构成 SiTU-GLU。
 
-![32.png](/assets/images/transformer/32.png)
+![33.png](/assets/images/transformer/33.png)
 
 > 图 7.5　GLU / SwiGLU / SiTU-GLU 的门与上分支对比及标量响应曲线（Kimi K3 技术报告 Figure 4）。SiTU-GLU 逼近上界 $\beta_1\beta_2 = 100$，而 SwiGLU 继续无界增长。
 
-**SwiGLU 的溢出风险**：SwiGLU 的两个乘性因子均无上界：
+SwiGLU 的两个乘性因子均无上界：
 
 $$\text{SwiGLU}(x) = \big(\underbrace{x \cdot \sigma(x)}_{\text{线性因子无界}} \odot \underbrace{xV}_{\text{上分支无界}}\big) \tag{7.6}$$
 
-当两个因子同时取较大值时，乘积会被显著放大。在 2.8T 参数、896 个专家的规模下，这种激活离群值会导致低精度算术溢出，或迫使共享的量化 scale 牺牲普通数值的精度。Kimi K3 技术报告把这条链路描述为“近似四次连续矩阵乘”，条件数较差，内部激活可能溢出。
+当两个因子同时取较大值时，乘积会被显著放大，会有溢出风险。在 2.8T 参数、896 个专家的规模下，这种激活离群值会导致低精度算术溢出，或迫使共享的量化 scale 牺牲普通数值的精度。Kimi K3 技术报告把这条链路描述为“近似四次连续矩阵乘”，条件数较差，内部激活可能溢出。
 
-**原始 GLU 的取舍**：sigmoid 门避免了无界增长，却也失去了 Swish 在正半轴近似线性的响应。
-
-**SiTU-GLU 的解法**：对 Swish 门里的线性因子、以及上分支，**各自独立**施加一次 7.4 节的 softcap：
+原始 GLU 采用的sigmoid 门避免了无界增长，却也失去了 Swish 在正半轴近似线性的响应。而 SiTU-GLU 对 Swish 门里的线性因子、以及上分支，**各自独立**施加一次 7.4 节的 softcap：
 
 $$\text{SiTU-GLU}(x) = \Big[\beta_1 \tanh\!\Big(\frac{W_g x}{\beta_1}\Big) \odot \sigma(W_g x)\Big] \odot \Big[\beta_2 \tanh\!\Big(\frac{W_u x}{\beta_2}\Big)\Big] \tag{7.7}$$
 
@@ -2783,7 +2768,6 @@ $$\text{SiTU-GLU}(x) = \Big[\beta_1 \tanh\!\Big(\frac{W_g x}{\beta_1}\Big) \odot
 2. **两个因子都被有界化**：门的线性因子 $|f| \le \beta_1 = 4$，上分支 $|f| \le \beta_2 = 25$，因此乘积的绝对值不超过 $\beta_1\beta_2 = 100$
 3. **保留 sigmoid 门**：门仍表示 $[0,1]$ 的开合强度
 
-对照来看：
 
 表 7.3　SiTU-GLU 与 SwiGLU 的门控对照
 
@@ -2819,7 +2803,7 @@ class SiTUGLU(nn.Module):
 
 SiTU-GLU 针对数值稳定性重新设计了激活形式：不改动曲线形状，只在 Swish 的两个因子上各加一次 tanh 上界，以两次 tanh 的代价消除整条链路的溢出风险。激活函数的设计目标由此从表达能力扩展到数值鲁棒性。
 
-激活函数的主线演进为 Tanh/Sigmoid（RNN 时代）→ ReLU（2012 年起，进入原始 Transformer）→ GELU（2016，BERT/GPT 时代）→ SiLU/Swish（2017 年由搜索发现，现代 LLM 的默认选择）。这条主线之外还有四类补充：退居门控的 Sigmoid、作为 Sigmoid 原函数而用于衰减门参数化的 Softplus、给幅值加上界的 softcap，以及由 Softplus 与 softcap 组合而成、同时处理门控与数值稳定性的 SiTU-GLU。曲线形状几经更替，引入非线性与控制梯度流这两项作用始终保留。
+激活函数的主线演进为 Tanh/Sigmoid（RNN 时代）→ ReLU（2012 年起，进入原始 Transformer）→ GELU（2016，BERT/GPT 时代）→ SiLU/Swish（2017 年由搜索发现，现代 LLM 的默认选择）。这条主线之外还有四类补充，退居门控的 Sigmoid、作为 Sigmoid 原函数而用于衰减门参数化的 Softplus、给幅值加上界的 softcap，以及由 Softplus 与 softcap 组合而成、同时处理门控与数值稳定性的 SiTU-GLU。曲线形状几经更替，引入非线性与控制梯度流这两项作用始终保留。
 
 # 8. 残差
 
@@ -2833,7 +2817,7 @@ $$y = F(x, \{W_i\}) + x \tag{8.1}$$
 
 其中 $F(x, \{W_i\})$ 是子层（注意力或 FFN）的输出。原始 Transformer 论文中的 “Add & Norm” 里的 **Add** 就是这个残差连接。
 
-![33.png](/assets/images/transformer/33.png)
+![34.png](/assets/images/transformer/34.png)
 
 > 图 8.1　ResNet 残差学习的 building block（He et al., 2015, Figure 2）——恒等映射 $x$ 与 $F(x)$ 相加。
 
@@ -2841,7 +2825,7 @@ $$y = F(x, \{W_i\}) + x \tag{8.1}$$
 
 $$\frac{\partial \mathcal{L}}{\partial x} = \frac{\partial \mathcal{L}}{\partial y} \left(1 + \frac{\partial F}{\partial x}\right) \tag{8.2}$$
 
-括号中的 **1** 对应一条恒等梯度路径：即使 $\frac{\partial F}{\partial x}$ 很小（梯度消失）或很大（梯度爆炸），梯度仍可直达浅层，使上百层乃至上千层网络的训练成为可能。残差的另一重作用是**学习增量**：子层只需拟合 $F(x)$，即在输入基础上的改变量，不必从零重构整个表示。
+括号中的 **1** 对应一条恒等梯度路径，即使 $\frac{\partial F}{\partial x}$ 很小（梯度消失）或很大（梯度爆炸），梯度仍可直达浅层，使上百层乃至上千层网络的训练成为可能。残差的另一重作用是**学习增量**，子层只需拟合 $F(x)$，即在输入基础上的改变量，不必从零重构整个表示。
 
 在 Transformer 中，每个子层都包裹在残差里：
 
@@ -2881,19 +2865,19 @@ y.sum().backward()
 print("input grad norm:", x.grad.norm().item())  # 梯度不会消失为 0
 ```
 
-在 2017 至 2025 年的多数模型中，残差的基本形式保持不变：从 ResNet 到原始 Transformer，再到更深的模型，$y = F(x) + x$ 始终是主干。与 Norm 的相对位置（Post-Norm → Pre-Norm）和少量缩放（如 DeepNet 对残差分支加 $\beta$ 缩放）属于局部调整。2025 年之后，残差流的宽度与信息流动方式也开始被重新设计。
+在 2017 至 2025 年的多数模型中，残差的基本形式保持不变，从 ResNet 到原始 Transformer，再到更深的模型，$y = F(x) + x$ 始终是主干。与 Norm 的相对位置（Post-Norm → Pre-Norm）和少量缩放（如 DeepNet 对残差分支加 $\beta$ 缩放）属于局部调整。2025 年之后，残差流的宽度与信息流动方式也开始被重新设计。
 
 ## 8.2 mHC
 
 mHC（Manifold-Constrained Hyper-Connections，流形约束超连接）是 DeepSeek 在 2025 年底发布的工作（arXiv:2512.24880），也是对残差连接改动最大的工作之一。
 
-![34.png](/assets/images/transformer/34.png)
+![35.png](/assets/images/transformer/35.png)
 
 > 图 8.2　三种残差连接范式的对比（mHC 论文 Figure 1）。(a) 标准残差；(b) Hyper-Connections（HC），残差流加宽并加多个映射算子；(c) mHC，把这些映射算子约束到 Birkhoff 流形上。
 
-**HC 拓宽残差流**。Hyper-Connections 把单一的残差状态 $x_l$ 扩展成 $n$ 条并行分支 $h_l^{res} \in \mathbb{R}^{n \times d}$，并用可学习的映射矩阵（Res Mapping / Pre Mapping / Post Mapping）在读写之间做重组。残差流宽度因此可扩展，模型容量随之提升。
+**HC 拓宽了残差流**。Hyper-Connections 把单一的残差状态 $x_l$ 扩展成 $n$ 条并行分支 $h_l^{res} \in \mathbb{R}^{n \times d}$，并用可学习的映射矩阵（Res Mapping / Pre Mapping / Post Mapping）在读写之间做重组。残差流宽度因此可扩展，模型容量随之提升。
 
-**HC 削弱恒等映射**。自由形态的连接矩阵削弱了残差连接固有的恒等映射性质。实测中，27B 模型的 HC 在反向传播里使信号最大放大倍数逼近 3000 倍，出现信号爆炸与梯度异常，显存占用与通信带宽也明显上升。
+**HC 削弱了恒等映射**。自由形态的连接矩阵削弱了残差连接固有的恒等映射性质。实测中，27B 模型的 HC 在反向传播里使信号最大放大倍数逼近 3000 倍，出现信号爆炸与梯度异常，显存占用与通信带宽也明显上升。
 
 **mHC 约束连接矩阵**。不再自由学习连接矩阵，而是把它**投影到 Birkhoff 多面体**（双随机矩阵构成的集合，满足行和列和均为 1）上：
 
@@ -2903,9 +2887,9 @@ $$\mathcal{P}_{\mathcal{M}}(A) = \arg\min_{P \in \mathcal{M}} \|A - P\|_F^2, \qq
 
 双随机矩阵的谱范数不超过 1，因此无论堆叠多少层，信号都不会被放大；恒等映射性质在拓扑意义下得到恢复，同时保留 HC 的连接表达能力。
 
-**效果**：mHC 支持 3B 到 27B 规模的稳定训练，在 8 个下游任务上全面超越 HC 与 baseline：BBH 推理任务 +2.1%、DROP 阅读理解 +2.3%。当扩展率 $n = 4$ 时，仅带来约 6.7% 的额外训练时间开销。
+mHC 支持 3B 到 27B 规模的稳定训练，在 8 个下游任务上全面超越 HC 与 baseline，BBH 推理任务 +2.1%、DROP 阅读理解 +2.3%。当扩展率 $n = 4$ 时，仅带来约 6.7% 的额外训练时间开销。
 
-**生产配置**：DeepSeek-V4 全面用 mHC 替换了标准残差连接，残差流宽度扩展因子 $n_{hc} = 4$，投影同样用 Sinkhorn-Knopp（训练时最多 20 次迭代）。
+DeepSeek-V4 全面用 mHC 替换了标准残差连接，残差流宽度扩展因子 $n_{hc} = 4$，投影同样用 Sinkhorn-Knopp（训练时最多 20 次迭代）。
 
 ```python
 import torch
@@ -2954,13 +2938,13 @@ HC 说明残差流可以加宽，代价是失去恒等映射；mHC 说明在双�
 
 ## 8.3 Single-Pass mHC
 
-DeepSeek-V4.1-Flash 对 mHC 做了工程层面的改造：数学形式不变，只调整内核融合方式。原始 mHC 把每个 token 的 $n$ 条残差流记为 $X_l \in \mathbb{R}^{n \times d}$（$l$ 为 block 序号，$d$ 为隐藏维度），更新式为
+DeepSeek-V4.1-Flash 对 mHC 做了工程层面的改造，数学形式不变，只调整内核融合方式。原始 mHC 把每个 token 的 $n$ 条残差流记为 $X_l \in \mathbb{R}^{n \times d}$（$l$ 为 block 序号，$d$ 为隐藏维度），更新式为
 
 $$X_{l+1} = B_l X_l + C_l F_l(A_l X_l), \qquad (A_l, B_l, C_l) = H(X_l) \tag{8.5}$$
 
-其中 $H$ 是含归一化与投影的系数预测器，$A_l \in \mathbb{R}^{1 \times n}$、$C_l \in \mathbb{R}^{n \times 1}$、$B_l \in \mathbb{R}^{n \times n}$ 为逐 token 预测的系数，$F_l$ 为第 $l$ 个 block 的子层。工程实现将该式拆成三个 kernel（Residual Update、Coefficient Prediction、Input Mixing），彼此存在数据依赖：输入混合系数 $A_l$ 必须等隐藏维度上的规约完成才能取得，三个 kernel 只能串行，残差流被反复读写，激活访存量（activation memory traffic）约为理论下限的**两倍**。
+其中 $H$ 是含归一化与投影的系数预测器，$A_l \in \mathbb{R}^{1 \times n}$、$C_l \in \mathbb{R}^{n \times 1}$、$B_l \in \mathbb{R}^{n \times n}$ 为逐 token 预测的系数，$F_l$ 为第 $l$ 个 block 的子层。工程实现将该式拆成三个 kernel（Residual Update、Coefficient Prediction、Input Mixing），彼此存在数据依赖，输入混合系数 $A_l$ 必须等隐藏维度上的规约完成才能取得，三个 kernel 只能串行，残差流被反复读写，激活访存量（activation memory traffic）约为理论下限的**两倍**。
 
-Single-Pass mHC 只改动一处：把 Input Mixing 使用的系数向前错开一个 Block，当前 Block 直接消费上一 Block 已算好的混合系数，内部依赖由此解除：
+Single-Pass mHC 只改动一处，把 Input Mixing 使用的系数向前错开一个 Block，当前 Block 直接消费上一 Block 已算好的混合系数，内部依赖由此解除：
 
 $$X_{l+1} = B_l X_l + C_l F_l(A_{l-1} X_l), \qquad (A_l, B_l, C_l) = H(X_l) \tag{8.6}$$
 
@@ -2970,7 +2954,7 @@ $$\text{Activation Memory Traffic}:\quad (4n + 4)\,d \;\longrightarrow\; (2n + 2
 
 其中 $n$ 为残差流宽度扩展因子，$d$ 为隐藏维度。
 
-![35.png](/assets/images/transformer/35.png)
+![36.png](/assets/images/transformer/36.png)
 
 > 图 8.3　Single-Pass mHC 结构示意（依据 DeepSeek-V4.1-Flash 技术报告 2.4.1 节整理）。(a) 原始 mHC 的三个 kernel 因数据依赖串行执行，$X_l$ 被反复读写；(b) 系数错开一个 Block 后依赖解除，Mega-mHC 内核把 Residual Update、Input Mixing 与 Coefficient Prediction 融合为一次读、一次写。
 
@@ -3014,27 +2998,27 @@ class SinglePassMHC(nn.Module):
 
 Block Attention Residual 是 Kimi K3 提出的跨层信息流机制（AttnRes 的分块实现），把残差的顺序累加改为**可学习的跨层检索**。
 
-![36.png](/assets/images/transformer/36.png)
+![37.png](/assets/images/transformer/37.png)
 
 > 图 8.4　三种残差连接范式的结构对比（Attention Residuals 论文 Figure 1，arXiv:2603.15031）。(a) 标准残差：所有层输出以固定单位权重顺序累加；(b) Full AttnRes：每层通过可学习 pseudo-query $w$ 与注意力权重 $\alpha$ 检索全部前层输出；(c) Block AttnRes：层先分块、块内求和压缩，跨块再做注意力——显存从 $O(Ld)$ 降到 $O(Nd)$（$N$ 为块数）。
 
-**AttnRes 的思路**。注意力让每个位置选择性访问所有前序位置；把同一机制用于深度维度，即可让每一层选择性访问此前各层的输出。标准残差把前序层的信息等权累加，深层网络中早期特征因而被反复混合、逐步稀释。
+**AttnRes 的思路** 借鉴了注意力机制。注意力让每个位置选择性访问所有前序位置；把同一机制用于深度维度，即可让每一层选择性访问此前各层的输出。标准残差把前序层的信息等权累加，深层网络中早期特征因而被反复混合、逐步稀释。
 
-**机制**：给每一层一个可学习的 **pseudo-query** $w_l$，对前面所有层的输出做注意力：
+给每一层一个可学习的 **pseudo-query** $w_l$，对前面所有层的输出做注意力：
 
 $$\alpha_{i \to l} = \frac{\phi(q_l, k_i)}{\sum_j \phi(q_l, k_j)}, \qquad h_l = \sum_{i<l} \alpha_{i \to l} \cdot v_i \tag{8.8}$$
 
 其中 $\phi(q, k) = \exp\left(q^\top \mathrm{RMSNorm}(k)\right)$；RMSNorm 防止大范数的层主导权重。
 
-**分块版本**。全量形式需对 $L$ 个层的输出两两计算注意力，复杂度为 $O(L^2 d)$（$L$ 为层数，$d$ 为隐藏维度）；层数不到 100 时算术开销尚可接受，主要瓶颈在 $O(Ld)$ 的**显存**：每层都要保存此前所有层的输出以供检索。
+全量形式需对 $L$ 个层的输出两两计算注意力，复杂度为 $O(L^2 d)$（$L$ 为层数，$d$ 为隐藏维度）；层数不到 100 时算术开销尚可接受，主要瓶颈在 $O(Ld)$ 的**显存**，每层都要保存此前所有层的输出以供检索。
 
-Kimi K3 的 **Block AttnRes** 把 93 层分成 8 个 block：block 内的层输出先求和压缩成一个表示，跨 block 之间再做注意力：
+Kimi K3 的 **Block AttnRes** 把 93 层分成 8 个 block，block 内的层输出先求和压缩成一个表示，跨 block 之间再做注意力：
 
 $$\text{显存/通信}: O(Ld) \;\longrightarrow\; O(Nd) \tag{8.9}$$
 
 其中 $N$ 为 block 数；分块结构还可配合 online softmax 降低推理开销。
 
-**效果**：Kimi K3 相对 Kimi K2 的扩展效率提升约 2.5 倍，AttnRes 是四项架构改动之一（另三项为 KDA、Gated MLA、Stable LatentMoE）。mHC 加宽并约束残差流，AttnRes 则把残差流变为可检索的层索引，二者作用于同一对象。
+Kimi K3 相对 Kimi K2 的扩展效率提升约 2.5 倍，AttnRes 是四项架构改动之一（另三项为 KDA、Gated MLA、Stable LatentMoE）。mHC 加宽并约束残差流，AttnRes 则把残差流变为可检索的层索引，二者作用于同一对象。
 
 代码：
 
@@ -3073,35 +3057,34 @@ class AttnRes(nn.Module):
         return torch.einsum('lb,lbd->bd', alpha, v)      # 加权检索前层输出
 ```
 
-残差连接的改动轨迹为：恒等映射（ResNet）→ 可学习映射（Hyper-Connections）→ 流形约束的可学习映射（mHC）→ 跨层注意力检索（AttnRes）。共同点是让深层信息流不再局限于顺序累加。
 
 ## 8.5 Gated Residual
 
 Gated Residual（GR）是 Qwen3.8-Flash-Next 采用的门控残差设计，结合了 Hyper-Connections 的多分支加宽与 GatedNorm 的逐元素门控。
 
-![37.png](/assets/images/transformer/37.png)
+![38.png](/assets/images/transformer/38.png)
 
 > 图 8.5　Qwen3.8-Flash-Next 架构（Qwen3.8-Next 架构论文 Figure 1）。左侧是 3×GDN + 1×QSA 的层堆叠，右侧展开显示每个子层如何通过 GR Read / GR Write 与加宽后的残差流交互。
 
-**结构**：单一残差流扩展为 4 条并行分支，每条分支独立归一化，再由门控加权合并读取：
+单一残差流扩展为 4 条并行分支，每条分支独立归一化，再由门控加权合并读取：
 
 $$\text{Read}: \quad h = \sum_{i=1}^{n} w_i \odot \mathrm{RMSNorm}(h_i), \qquad w = \sigma\left(\text{LowRank}\big(\mathrm{RMSNorm}(h_{1..n})\big)\right) \tag{8.10}$$
 
-**两个门**：
+两个门分别是读门和写门：
 
-- **读门（Read Gate）**：逐元素、数据相关。在子层读取残差流之前，先用一个**低秩（rank 320）**投影算出逐通道的 sigmoid 门控值，决定该层从残差流中读取多少信息
+- **读门（Read Gate）**：逐元素、数据相关。在子层读取残差流之前，先用一个**低秩（rank 320）** 投影算出逐通道的 sigmoid 门控值，决定该层从残差流中读取多少信息
 - **写门（Write Gate）**：每个分支一个标量门（sigmoid），子层计算完成后决定这次结果以多大强度写回对应分支
 
-官方模型卡里的配置参数：`hc_count = 4`（分支数）、`hc_lowrank = 320`（分支间混合的瓶颈秩）、`output_gate_type = sigmoid`。
+官方模型卡里的配置参数`hc_count = 4`（分支数）、`hc_lowrank = 320`（分支间混合的瓶颈秩）、`output_gate_type = sigmoid`。
 
-**与 mHC 的差异**：Qwen 去掉了 HC 原有的 `Hres` 混合算子，因此每条分支成为一个纯粹的历史累加器，可以精确追踪各层信息的最终去向。分析发现：4 条分支里通常有**一条**专门负责跨越很多层传递早期信息（如第 0 层的输出被第 15、19 层大量读取），另外三条主要负责相邻层之间的短程传递。这一分工由训练得到，并非预先设定。
+Qwen 去掉了 HC 原有的 `Hres` 混合算子，因此每条分支成为一个纯粹的历史累加器，可以精确追踪各层信息的最终去向。分析发现4 条分支里通常有**一条**专门负责跨越很多层传递早期信息（如第 0 层的输出被第 15、19 层大量读取），另外三条主要负责相邻层之间的短程传递。这一分工由训练得到，并非预先设定。
 
-**两项消融结论**：
+根据消融实验得出两个结论：
 
 1. 数据依赖的读写机制只让训练损失多降了 0.002，但下游基准分数提升了 1.98 分。仅依据损失曲线评估架构改动，会低估这类设计的价值
 2. 团队试过让每层**只读取门控值最高的两条分支**而非全部四条，以省下推理时的显存搬运。预训练阶段损失和基准分数几乎不受影响，但微调后生成质量明显下滑，最终未采用。这类优化的代价可能要到后期训练阶段才显现
 
-去掉 `Hres` 也有工程理由：`Hres` 需要额外读一遍完整的残差状态，在参数量固定的推理场景下这是主导性的内存搬运开销。
+去掉 `Hres` 的工程理由是`Hres` 需要额外读一遍完整的残差状态，在参数量固定的推理场景下这是主导性的内存搬运开销。
 
 代码：
 
@@ -3146,10 +3129,11 @@ class GatedResidual(nn.Module):
 ```
 
 Gated Residual 与 mHC 同属“加宽残差流 + 动态门控”，但 Qwen 用低秩门控（rank 320，远小于隐层维度）换取细粒度控制，并去掉分支混合以提高推理效率。残差结构在保留恒等映射之外，又增加了数据相关的阀门。
+残差连接的改动轨迹为恒等映射（ResNet）→ 可学习映射（Hyper-Connections）→ 流形约束的可学习映射（mHC）→ 跨层注意力检索（AttnRes）。共同点是让深层信息流不再局限于顺序累加。
 
 # 9. 模型结构
 
-前几章按组件讨论注意力、归一化、位置编码、FFN、激活函数与残差连接。本章回到整机视角：现代大模型的结构变化集中在两处，一是**记忆的分离**（知识存储从计算通路剥离，成为与 MoE 互补的稀疏轴，9.2 节），二是**资源的跨层复用**（相邻层注意力分布相似，索引与 KV Cache 不必逐层各存一份，9.3、9.4 节）。两者都使层与层不再承担相同角色。
+前几章按组件讨论注意力、归一化、位置编码、FFN、激活函数与残差连接。本章回到整机视角，现代大模型的结构变化集中在两处，一是**记忆的分离**（知识存储从计算通路剥离，成为与 MoE 互补的稀疏轴，9.2 节），二是**资源的跨层复用**（相邻层注意力分布相似，索引与 KV Cache 不必逐层各存一份，9.3、9.4 节）。两者都使层与层不再承担相同角色。
 
 ## 9.1 从同质堆叠到异构结构
 
@@ -3161,21 +3145,21 @@ Gated Residual 与 mHC 同属“加宽残差流 + 动态门控”，但 Qwen 用
 2. **记忆的分化**。知识存储被移出计算通路：Engram 模块只插入少数层，用 O(1) 查表替代逐层的模式重构（见 9.2 节）。
 3. **资源的分化**。稀疏注意力的索引与 KV Cache 按层划分角色，少数“全量层”负责计算索引与主 KV，其余层直接借用：CSA2 的 Full/Reindex/Reuse、LSA 的 owner/reuse 都是这一思路的实现（见 9.3、9.4 节）。
 
-以 DeepSeek-V4.1-Flash 为例：40 层 CED 布局里，encoder 的 2—19 层按“1 Full + 5 Reuse”分三组，decoder 的 20—23 层为“1 Full + 3 Reuse”，24—39 层按“1 Reindex + 3 Reuse”分四组；Engram 的两个模块放在第 1、14 层。“层”的含义，从“同一结构的第 $l$ 次重复”变成了“资源的生产者或消费者”。以下分别讨论这两类异构化：记忆模块（9.2 节）与跨层复用（9.3、9.4 节）。
+以 DeepSeek-V4.1-Flash 为例，40 层 CED 布局里，encoder 的 2—19 层按“1 Full + 5 Reuse”分三组，decoder 的 20—23 层为“1 Full + 3 Reuse”，24—39 层按“1 Reindex + 3 Reuse”分四组；Engram 的两个模块放在第 1、14 层。“层”的含义，从“同一结构的第 $l$ 次重复”变成了“资源的生产者或消费者”。以下分别讨论这两类异构化，记忆模块（9.2 节）与跨层复用（9.3、9.4 节）。
 
 ## 9.2 Engram 条件记忆
 
-Engram 是 **记忆与计算分离** 的代表。语言模型的参数同时承担两项职责：存储事实性知识，以及执行推理计算。MoE 用条件计算解决了计算一侧的稀疏性（每个 token 只激活少数专家），记忆一侧则长期缺少对应机制：Transformer 没有原生的知识查找原语，只能以计算模拟检索。解析一个常见多词实体要消耗多层注意力与 FFN，相当于在运行时反复重建一张静态查找表。Engram 论文用实体识别的逐层表示分析支持了这一判断：基线模型到较深层才拼出完整实体指称，而实体、固定短语与句式模板属于可直接查得的局部静态模式。
+Engram 是 **记忆与计算分离** 的代表。语言模型的参数同时承担两项职责，存储事实性知识，以及执行推理计算。MoE 用条件计算解决了计算一侧的稀疏性（每个 token 只激活少数专家），记忆一侧则长期缺少对应机制，Transformer 没有原生的知识查找原语，只能以计算模拟检索。解析一个常见多词实体要消耗多层注意力与 FFN，相当于在运行时反复重建一张静态查找表。Engram 论文用实体识别的逐层表示分析支持了这一判断，基线模型到较深层才拼出完整实体指称，而实体、固定短语与句式模板属于可直接查得的局部静态模式。
 
 Engram 给出的答案是**条件记忆（conditional memory）**，即与 MoE 的条件计算互补的第二根稀疏轴。它以局部上下文为键，从大规模可学习嵌入表中做 $O(1)$ 查找，把静态模式的重构改为取用，让骨干网络的深度更多用于推理计算。
 
-**机制**。Engram 的流水线分四步：tokenizer 压缩、多头哈希查表、上下文门控、残差注入。
+Engram 的流水线分四步，tokenizer 压缩、多头哈希查表、上下文门控、残差注入。
 
 首先对 token ID 做规范化压缩（NFKC 归一、大小写折叠等，128k 词表上有效词表缩小约 23%），再取后缀 N-gram 作为查找键：
 
 $$x'_t = P(x_t), \qquad g_{t,n} = (x'_{t-n+1},\ \ldots,\ x'_t) \tag{9.1}$$
 
-所有 N-gram 的组合空间不可穷举，Engram 用多头哈希把它映射进固定大小的嵌入表：每个 N-gram 阶数 $n$ 配 $K$ 个独立哈希头，第 $k$ 个头用确定性函数 $\varphi_{n,k}$（乘法-XOR 哈希）把上下文映到规模为素数 $M_{n,k}$ 的表 $E_{n,k}$ 中：
+所有 N-gram 的组合空间不可穷举，Engram 用多头哈希把它映射进固定大小的嵌入表，每个 N-gram 阶数 $n$ 配 $K$ 个独立哈希头，第 $k$ 个头用确定性函数 $\varphi_{n,k}$（乘法-XOR 哈希）把上下文映到规模为素数 $M_{n,k}$ 的表 $E_{n,k}$ 中：
 
 $$z_{t,n,k} = \varphi_{n,k}(g_{t,n}), \qquad e_{t,n,k} = E_{n,k}[z_{t,n,k}] \tag{9.2}$$
 
@@ -3183,13 +3167,13 @@ $$z_{t,n,k} = \varphi_{n,k}(g_{t,n}), \qquad e_{t,n,k} = E_{n,k}[z_{t,n,k}] \tag
 
 $$e_t = \mathop{\|}_{n=2}^{N} \mathop{\|}_{k=1}^{K} e_{t,n,k} \tag{9.3}$$
 
-检索结果是上下文无关的先验，可能带哈希碰撞或多义噪声。Engram 用上下文门控决定取用比例：当前隐藏状态 $h_t$（已经过前置注意力层聚合全局上下文）充当查询，检索向量同时给出键与值：
+检索结果是上下文无关的先验，可能带哈希碰撞或多义噪声。Engram 用上下文门控决定取用比例，当前隐藏状态 $h_t$（已经过前置注意力层聚合全局上下文）充当查询，检索向量同时给出键与值：
 
 $$k_t = W^K e_t, \qquad v_t = W^V e_t \tag{9.4}$$
 
 $$\alpha_t = \sigma\left(\frac{\mathrm{RMSNorm}(h_t)^{\top}\ \mathrm{RMSNorm}(k_t)}{\sqrt{d}}\right) \tag{9.5}$$
 
-门控输出 $\tilde{v}_t = \alpha_t \cdot v_t$：若检索到的记忆与当前语境矛盾，$\alpha_t$ 趋于 0，噪声被抑制。最后用一层短的深度因果卷积扩大感受野并增加非线性，经残差注入骨干，再进入标准的 Attention 与 MoE：
+门控输出 $\tilde{v}_t = \alpha_t \cdot v_t$ ，若检索到的记忆与当前语境矛盾，$\alpha_t$ 趋于 0，噪声被抑制。最后用一层短的深度因果卷积扩大感受野并增加非线性，经残差注入骨干，再进入标准的 Attention 与 MoE：
 
 $$Y = \mathrm{SiLU}\big(\mathrm{Conv1D}(\mathrm{RMSNorm}(\tilde{V}))\big) + \tilde{V}, \qquad H^{(l)} \leftarrow H^{(l)} + Y \tag{9.6}$$
 
@@ -3197,19 +3181,19 @@ $$Y = \mathrm{SiLU}\big(\mathrm{Conv1D}(\mathrm{RMSNorm}(\tilde{V}))\big) + \til
 
 $$\alpha_t^{(m)} = \sigma\left(\frac{\mathrm{RMSNorm}(h_t^{(m)})^{\top}\ \mathrm{RMSNorm}(W_K^{(m)} e_t)}{\sqrt{d}}\right) \tag{9.7}$$
 
-![38.png](/assets/images/transformer/38.png)
+![39.png](/assets/images/transformer/39.png)
 
 > 图 9.1　Engram 条件记忆模块（依据 Engram 论文 Figure 1、Figure 2 重绘）。(a) 哈希 N-gram 查表与上下文门控的数据流；(b) 模块在骨干中的放置与系统实现——查找索引只依赖输入 token，预取与前置层计算可重叠。
 
-**稀疏分配**。Engram 与 MoE 争夺同一份“非激活参数”预算。定义分配比 $\rho \in [0,1]$ 为划给 MoE 专家容量的比例：
+Engram 与 MoE 争夺同一份“非激活参数”预算。定义分配比 $\rho \in [0,1]$ 为划给 MoE 专家容量的比例：
 
 $$P_{\mathrm{MoE}}^{(\mathrm{sparse})} = \rho\, P^{(\mathrm{sparse})}, \qquad P_{\mathrm{Engram}} = (1-\rho)\, P^{(\mathrm{sparse})} \tag{9.8}$$
 
-其中 $P^{(\mathrm{sparse})} = P_{\mathrm{tot}} - P_{\mathrm{act}}$ 是不产生 FLOPs 的稀疏参数预算。实验呈 U 形曲线：纯 MoE（$\rho = 1$）与重记忆配置均劣于混合分配。两根稀疏轴各自承担一部分：记忆存静态知识，专家做动态推理。在放开记忆预算的设定下，验证损失随嵌入槽数量呈对数线性下降，说明这根轴还有相当的扩展余量。
+其中 $P^{(\mathrm{sparse})} = P_{\mathrm{tot}} - P_{\mathrm{act}}$ 是不产生 FLOPs 的稀疏参数预算。实验呈 U 形曲线，纯 MoE（$\rho = 1$）与重记忆配置均劣于混合分配。两根稀疏轴各自承担一部分，记忆存静态知识，专家做动态推理。在放开记忆预算的设定下，验证损失随嵌入槽数量呈对数线性下降，说明这根轴还有相当的扩展余量。
 
-**系统实现**。Engram 的查找索引只依赖输入 token 序列，前向开始前即可确定，这带来 MoE 路由所没有的系统自由度：训练期嵌入表按行分片到各 GPU，用 All-to-All 聚合活跃行；推理期表整体卸载到 Host DRAM，确定性寻址使后台 RDMA 预取与前置层计算重叠，GPU 无需等待。自然语言 N-gram 服从 Zipf 分布，高频条目可缓存在 HBM/DRAM，长尾条目落在 NVMe——记忆容量因此可以脱离 HBM 的约束独立扩展。DeepSeek-V4.1-Flash 配置 2 个 Engram 模块（共 196B 参数，表与投影均用 FP8），N-gram 阶数取 {2, 3, 4}，每阶 8 个哈希头、总嵌入维度 2048，每头约 16M 条目（各表规模取互异素数），置于第 1、14 层；推理栈省略了原始设计中的短因果卷积，训练改用动量更新加 Sinkhorn 行列均衡来稳定巨表的更新。
+Engram 的查找索引只依赖输入 token 序列，前向开始前即可确定，这带来 MoE 路由所没有的系统自由度，训练期嵌入表按行分片到各 GPU，用 All-to-All 聚合活跃行；推理期表整体卸载到 Host DRAM，确定性寻址使后台 RDMA 预取与前置层计算重叠，GPU 无需等待。自然语言 N-gram 服从 Zipf 分布，高频条目可缓存在 HBM/DRAM，长尾条目落在 NVMe——记忆容量因此可以脱离 HBM 的约束独立扩展。DeepSeek-V4.1-Flash 配置 2 个 Engram 模块（共 196B 参数，表与投影均用 FP8），N-gram 阶数取 {2, 3, 4}，每阶 8 个哈希头、总嵌入维度 2048，每头约 16M 条目（各表规模取互异素数），置于第 1、14 层；推理栈省略了原始设计中的短因果卷积，训练改用动量更新加 Sinkhorn 行列均衡来稳定巨表的更新。
 
-**效果**。在同参数、同算力（激活参数均为 3.8B、262B token）的对照下，Engram-27B 全面优于纯 MoE-27B：
+在同参数、同算力（激活参数均为 3.8B、262B token）的对照下，Engram-27B 全面优于纯 MoE-27B。
 
 表 9.1　Engram-27B 与 MoE-27B 的同参同算力对照（Engram 论文主结果表摘录）
 
@@ -3227,7 +3211,7 @@ $$P_{\mathrm{MoE}}^{(\mathrm{sparse})} = \rho\, P^{(\mathrm{sparse})}, \qquad P_
 
 表中语言建模指标沿用原文的 loss（token 平均负对数似然），按 $\mathrm{PPL}=\exp(\mathcal L)$ 换算约为 8.09 → 7.10（Pile）与 5.86 → 5.12（验证集）。
 
-收益不限于知识型任务：BBH、ARC-Challenge 等推理基准同样提升，长上下文检索的 needle-in-a-haystack 准确率从 84.2% 升至 97%。论文用 CKA 做层间对齐分析，发现 Engram 模型第 5 层的表示已接近基线第 12 层，即同等深度下每层承担了更多计算。参数代价集中在查找表：27B 配置中 5.7B Engram 参数贡献的 FLOPs 很少。
+收益不限于知识型任务，BBH、ARC-Challenge 等推理基准同样提升，长上下文检索的 needle-in-a-haystack 准确率从 84.2% 升至 97%。论文用 CKA 做层间对齐分析，发现 Engram 模型第 5 层的表示已接近基线第 12 层，即同等深度下每层承担了更多计算。参数代价集中在查找表，27B 配置中 5.7B Engram 参数贡献的 FLOPs 很少。
 
 Engram 模块的示意实现如下：
 
@@ -3265,15 +3249,15 @@ class Engram(nn.Module):
         return alpha.unsqueeze(-1) * self.w_v(e_t)                # 注入前的记忆增量
 ```
 
-**小结**。Engram 把知识查找从神经计算剥离为 $O(1)$ 表访问，用上下文门控处理碰撞与多义；确定性寻址带来的系统自由度使大表可以放在 HBM 之外。条件记忆与条件计算（MoE）由此构成稀疏性的两根轴。
+Engram 把知识查找从神经计算剥离为 $O(1)$ 表访问，用上下文门控处理碰撞与多义；确定性寻址带来的系统自由度使大表可以放在 HBM 之外。条件记忆与条件计算（MoE）由此构成稀疏性的两根轴。
 
 ## 9.3 跨层 index KV
 
-**层间相似性**。3.5 节的稀疏注意力大多配一个索引器：先给可见上下文打分，再选 Top-K 做精确注意力。索引器虽轻，逐层计算的开销仍随层数线性累积。LSA 论文实测相邻层 Top-K 集合成对重叠 57.4%，沿用相邻层索引仍可覆盖目标层 93.2% 的注意力质量，逐层重算因此存在冗余。
+3.5 节的稀疏注意力大多配一个索引器，先给可见上下文打分，再选 Top-K 做精确注意力。索引器虽轻，逐层计算的开销仍随层数线性累积。LSA 论文实测相邻层 Top-K 集合成对重叠 57.4%，沿用相邻层索引仍可覆盖目标层 93.2% 的注意力质量，逐层重算因此存在冗余。
 
-跨层共享的思路早于稀疏注意力。2024 年的两项工作把它写入架构：CLA（Cross-Layer Attention）让相邻层共享整套 K/V 投影，KV Cache 在 MQA 之上再减一半；YOCO 让 self-decoder 产出全局 KV，上方 cross-decoder 全层复用，整个模型只需缓存一份。2026 年的 CSA2 与 LSA 把共享对象从“整套 KV”细化到“索引与压缩 KV”，并给出层角色的静态指派。
+跨层共享的思路早于稀疏注意力。2024 年的两项工作，CLA（Cross-Layer Attention）让相邻层共享整套 K/V 投影，KV Cache 在 MQA 之上再减一半；YOCO 让 self-decoder 产出全局 KV，上方 cross-decoder 全层复用，整个模型只需缓存一份。2026 年的 CSA2 与 LSA 把共享对象从“整套 KV”细化到“索引与压缩 KV”，并给出层角色的静态指派。
 
-**CSA2 的三种层角色**。每个注意力层被静态指派为 Full、Reindex、Reuse 之一，差别在主 KV $\mathbf{C}$、索引键 $\mathbf{K}^I$、Top-K 索引 $\mathcal{I}_t$ 三项资源的来源（机制细节见 3.5.3 节）。Full 层三项全算；Reindex 层借前序 Full 层 $l'$ 的主 KV 与索引键，用自己的索引查询重算选择结果：
+**CSA2 采用了三种层角色**。每个注意力层被静态指派为 Full、Reindex、Reuse 之一，差别在主 KV $\mathbf{C}$、索引键 $\mathbf{K}^I$、Top-K 索引 $\mathcal{I}_t$ 三项资源的来源（机制细节见 3.5.3 节）。Full 层三项全算；Reindex 层借前序 Full 层 $l'$ 的主 KV 与索引键，用自己的索引查询重算选择结果：
 
 $$\mathcal{I}^{(l)}_t = \mathrm{TopK}\big( q^{I,(l)}_t\, (\mathbf{K}^{I,(l')})^{\top} \big) \tag{9.9}$$
 
@@ -3281,11 +3265,11 @@ Reuse 层连选择结果一并沿用：
 
 $$\mathcal{I}^{(l)}_t = \mathcal{I}^{(l')}_t \tag{9.10}$$
 
-静态指派使推理期无需运行时决策：借用关系在编译期确定，缓存格式与预取流水可据此优化。V4.1-Flash 的层级稀疏索引器进一步让第一个 Full 层在完成自己的 Top-512 之外，按块产出粗排分数下发给组内 Reuse 层，索引成本从“每层一份”摊薄到“每组一份”。
+静态指派使推理期无需运行时决策，借用关系在编译期确定，缓存格式与预取流水可据此优化。V4.1-Flash 的层级稀疏索引器进一步让第一个 Full 层在完成自己的 Top-512 之外，按块产出粗排分数下发给组内 Reuse 层，索引成本从“每层一份”摊薄到“每组一份”。
 
-**LSA 的跨层索引（CLI）**。LSA 走的是“分组 + 蒸馏”路线：连续 $N$ 层编为一组，组首（owner）执行索引器，其余（reuse）层直接沿用选出的 token 集合（3.5.6 节）。缺少训练配合的纯复用会造成质量损失（$N = 2$ 时 128K 针检索准确率降到 70%），LSA 因而在训练时加入一项跨层蒸馏损失，把共享索引器的输出对齐到组内各层自己的注意力分布，准确率回到 96%，甚至优于无蒸馏的 $N = 4$。由此，跨层复用有两种实现：相邻层相似性足够强时可采用架构级的静态指派（CSA2）；相似性不足时，用蒸馏在训练中提高它（LSA）。
+**LSA 的跨层索引（CLI）** 走的是“分组 + 蒸馏”路线，连续 $N$ 层编为一组，组首（owner）执行索引器，其余（reuse）层直接沿用选出的 token 集合（3.5.6 节）。缺少训练配合的纯复用会造成质量损失（$N = 2$ 时 128K 针检索准确率降到 70%），LSA 因而在训练时加入一项跨层蒸馏损失，把共享索引器的输出对齐到组内各层自己的注意力分布，准确率回到 96%，甚至优于无蒸馏的 $N = 4$。由此，跨层复用有两种实现，相邻层相似性足够强时可采用架构级的静态指派（CSA2）；相似性不足时，用蒸馏在训练中提高它（LSA）。
 
-![39.png](/assets/images/transformer/39.png)
+![40.png](/assets/images/transformer/40.png)
 
 > 图 9.2　跨层 index KV 与 KV 重用的层角色指派（CSA2 式）。Full 层写入共享资源；Reindex 层借索引键、用自己的查询重算 Top-K；Reuse 层全盘沿用。共享的是历史（K/V 与索引），不是 Q——每层保留自己的全局 Q 与 SWA KV。
 
@@ -3309,7 +3293,7 @@ def cross_layer_index(layer, cache):
     return cache[owner]                          # reuse：全盘沿用
 ```
 
-**小结**。索引开销的摊薄依赖层间注意力相似性。CSA2 把复用固定进架构与缓存格式（静态指派、无运行时决策），LSA 把相似性写入训练目标（跨层蒸馏）；前者省去运行时开销，后者保住质量，两者可以叠加。
+索引开销的摊薄依赖层间注意力相似性。CSA2 把复用固定进架构与缓存格式（静态指派、无运行时决策），LSA 把相似性写入训练目标（跨层蒸馏）；前者省去运行时开销，后者保住质量，两者可以叠加。
 
 ## 9.4 跨层 KV 重用
 
@@ -3324,17 +3308,16 @@ def cross_layer_index(layer, cache):
 | CSA2（2026） | 主 KV + 索引键 + Top-K | Full 层 | 无（静态指派） | 1 Full + 3~5 Reuse；FP4 主 KV 下每 token 890 字节 |
 | LSA CLI（2026） | Top-K token 集合 | owner 层 | 跨层蒸馏 | $N = 2$：覆盖目标层 93.2% 的注意力质量 |
 
-**CSA2 的主 KV 借用**。与索引键一样，压缩主 KV 也只由 Full 层生产：
+**CSA2 的主 KV 复用** 减少了计算量和存储量。与索引键一样，压缩主 KV 也只由 Full 层生产：
 
 $$(C^{(l)},\ K^{I,(l)}) = (C^{(l')},\ K^{I,(l')}) \tag{9.11}$$
 
-配合 FP4 量化主 KV（每 16 个通道共享一个 E4M3 缩放因子），V4.1-Flash 的全局 KV Cache 降至每 token 890 字节，约为 V4-Flash 的四分之一。借用有明确边界：只发生在“向后看”的历史缓存上，每层仍保留自己的全局 Q 与 SWA KV，因此不影响各层查询的个性化表达。CSA2 的三种运行模式（Full / Reindex / Reuse）与这套借用规则的完整对照见 3.5.3 节。
+配合 FP4 量化主 KV（每 16 个通道共享一个 E4M3 缩放因子），V4.1-Flash 的全局 KV Cache 降至每 token 890 字节，约为 V4-Flash 的四分之一。复用只发生在“向后看”的历史缓存上，每层仍保留自己的全局 Q 与 SWA KV，因此不影响各层查询的个性化表达。CSA2 的三种运行模式（Full / Reindex / Reuse）与这套借用规则的完整对照见 3.5.3 节。
 
-**LSA 的访存视角**。LSA 除复用索引外，还让 owner 层选出的区域布局被 reuse 层原样沿用，以保持 HBM 读取的连续性。CSA2 侧则把缓存格式一并纳入设计（FP4 主 KV、回放重建）。跨层复用因此涉及缓存格式、指派策略与 kernel 三者的协同。
+LSA 除复用索引外，还让 owner 层选出的区域布局被 reuse 层原样沿用，以保持 HBM 读取的连续性。CSA2 侧则把缓存格式一并纳入设计（FP4 主 KV、回放重建）。跨层复用因此涉及缓存格式、指派策略与 kernel 三者的协同。
 
-**与 Engram 的关系**。9.2 节与 9.3、9.4 节处理的是同一类冗余：Engram 避免逐层重构静态知识，跨层复用避免逐层重算索引、各存一份缓存。规模扩大之后，重复计算与重复存储都成为需要消除的开销。
+9.2 节与 9.3、9.4 节处理的是同一类冗余，Engram 避免逐层重构静态知识，跨层复用避免逐层重算索引、各存一份缓存。规模扩大之后，重复计算与重复存储都成为需要消除的开销。
 
-各组件的变与不变汇总见第 10 章。
 
 # 10. 十年变与不变
 
@@ -3351,7 +3334,7 @@ $$(C^{(l)},\ K^{I,(l)}) = (C^{(l')},\ K^{I,(l')}) \tag{9.11}$$
 | 残差连接 | $y = F(x)+x$，单行道累加 | 底座仍是 $y = F(x)+x$，但 HC/mHC、AttnRes、Gated Residual 等改造了残差流 | 有变 | 恒等映射之外，还要可控的深层信息流 |
 | 训练目标 | 下一词预测 | 下一词预测（+多模态扩展） | 基本不变 | 简单有效 |
 
-贯穿这十年改动的主线是规模：模型参数、序列长度与部署成本同时增长，多数结构调整都在回答同一个问题：如何让结构在更大尺度上仍然可训练、可推理、可容纳。相对稳定的部分是堆叠方式、注意力与 FFN 的交替，以及下一词预测目标；2017 年确立的骨架在这些约束下依然适用。残差连接是其中的例外：基本形式 $y=F(x)+x$ 保留至今，但 HC、mHC、AttnRes 与 Gated Residual 先后改造了残差流的宽度与信息流动方式。第 9 章讨论的模型结构异构化，则把改动从单个组件推进到层与层之间的分工。
+贯穿这十年改动的主线是规模，包括模型参数、序列长度与部署成本同时增长，多数结构调整都在回答同一个问题，即如何让结构在更大尺度上仍然可训练、可推理、可容纳。相对稳定的部分是堆叠方式、注意力与 FFN 的交替，以及下一词预测目标；2017 年确立的骨架在这些约束下依然适用。残差连接的基本形式 $y=F(x)+x$ 保留至今，但 HC、mHC、AttnRes 与 Gated Residual 先后改造了残差流的宽度与信息流动方式。第 9 章讨论的模型结构异构化，则把改动从单个组件推进到层与层之间的分工。
 
 # 附录 FlashAttention
 
@@ -3361,7 +3344,7 @@ FlashAttention（Dao et al., 2022）不改变注意力的数学形式，只调�
 
 FlashAttention 利用 GPU 的存储层级（SRAM 快但小，HBM 大但慢），用 tiling + online softmax 把注意力分块计算，避免将 $N \times N$ 的注意力矩阵写入 HBM。
 
-![40.png](/assets/images/transformer/40.png)
+![41.png](/assets/images/transformer/41.png)
 
 > 图 A.1　GPU 存储层级与 FlashAttention 的 tiling 策略（FlashAttention 论文 Figure 1）。
 
@@ -3387,7 +3370,7 @@ out = flash_attn_func(q, k, v, causal=True)   # 因果掩码解码
 
 ## A.2 从 FA1 到 FA4
 
-FA1 至 FA4 的演进体现了软硬件协同：FA1 指出 IO 是瓶颈，FA2 优化 warp 调度与寄存器分配，FA3 针对 Hopper 架构（TMA、WGMMA）重写，FA4 面向 Blackwell。数学形式始终未变，改动集中在如何把同一计算映射到新一代硬件。
+FA1 至 FA4 的演进体现了软硬件协同，FA1 指出 IO 是瓶颈，FA2 优化 warp 调度与寄存器分配，FA3 针对 Hopper 架构（TMA、WGMMA）重写，FA4 面向 Blackwell。数学形式始终未变，改动集中在如何把同一计算映射到新一代硬件。
 
 # 参考文献
 

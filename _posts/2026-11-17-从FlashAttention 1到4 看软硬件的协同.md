@@ -1,17 +1,23 @@
-# 从 FlashAttention 到 FlashAttention-4：注意力算法与 GPU 硬件的协同演进
+
 
 > 工欲善其事，必先利其器。  
 > ——《论语·卫灵公》
 
-**摘要**：注意力机制是 Transformer 架构的核心组件，其计算量与显存占用随序列长度二次增长，是长序列建模的主要瓶颈。FlashAttention 系列算法将注意力计算与 GPU 硬件特性协同设计，在保持数值精确的前提下显著降低显存访问开销，已成为大模型训练与推理的标准实现。本文系统梳理 FlashAttention-1 至 FlashAttention-4 的算法演进：FlashAttention-1 提出基于分块与在线 softmax 的 IO 感知精确注意力；FlashAttention-2 通过改进并行度与工作划分提升 GPU 利用率；FlashAttention-3 面向 Hopper 架构引入异步执行、warp 专用化与 FP8 低精度计算；FlashAttention-4 面向 Blackwell 架构，利用全异步矩阵乘、双 CTA 协作、指数函数的多项式逼近与条件 softmax 重缩放进一步提升算力利用率。四代工作共同表明算法和硬件的协同和持续适配是注意力计算效率提升的主线。
+**摘要**：注意力机制是 Transformer 架构的核心组件，其计算量与显存占用随序列长度二次增长，是长序列建模的主要瓶颈。
 
 **关键词**：注意力机制；FlashAttention；内存墙；图形处理器；软硬件协同设计；在线 softmax
 
-## 1 引言
+## 1 概述
 
-Transformer 架构自提出以来已成为大语言模型的基础骨架，而自注意力机制是其中计算与显存开销的主要来源。标准注意力需构造并存储 $N\times N$ 的注意力分数矩阵与概率矩阵，其计算量与显存占用均随序列长度 $N$ 二次增长。与此同时，现代 GPU 的算力（FLOPs）增长速度显著快于高带宽显存（HBM）带宽及专用功能单元（如指数运算单元）的提升速度，形成所谓"内存墙"（memory wall）。在这一背景下，单纯降低浮点运算次数并不必然带来端到端加速，算法必须同时优化数据在存储层级之间的搬运。
+Transformer 架构自提出以来已成为大语言模型的基础骨架，而自注意力机制是其中计算与显存开销的主要来源。标准注意力需构造并存储 $N\times N$ 的注意力分数矩阵与概率矩阵，其计算量与显存占用均随序列长度 $N$ 二次增长。与此同时，现代 GPU 的算力（FLOPs）增长速度显著快于高带宽显存（HBM）带宽及专用功能单元（如指数运算单元）的提升速度，形成所谓"内存墙"（memory wall）。在这一背景下，单纯降低浮点运算次数并不必然带来端到端加速，算法必须同时优化数据在存储层级之间的搬运。FlashAttention 系列正是这一思路的代表，在保持注意力数学形式不变的前提下，通过分块计算、在线 softmax 以及对硬件特性的深度适配，逐代降低内存访问开销并提升算力利用率。
 
-FlashAttention 系列正是这一思路的代表：在保持注意力数学形式不变的前提下，通过分块计算、在线 softmax 以及对硬件特性的深度适配，逐代降低内存访问开销并提升算力利用率。本文按代际梳理 FlashAttention-1 至 FlashAttention-4 的算法设计，分析其与 Ampere、Hopper、Blackwell 三代 GPU 架构的协同关系。第 2 节给出注意力计算的标准形式及其 IO 瓶颈；第 3 至 6 节依次讨论四代算法；第 7 节总结软硬件协同的演进规律并展望后续方向。
+FlashAttention 系列算法将注意力计算与 GPU 硬件特性协同设计，在保持数值精确的前提下显著降低显存访问开销，已成为大模型训练与推理的标准实现。本文系统梳理 FlashAttention-1 至 FlashAttention-4 的算法演进：
+* FlashAttention-1 提出基于分块与在线 softmax 的 IO 感知精确注意力；
+* FlashAttention-2 通过改进并行度与工作划分提升 GPU 利用率；
+* FlashAttention-3 面向 Hopper 架构引入异步执行、warp 专用化与 FP8 低精度计算；
+* FlashAttention-4 面向 Blackwell 架构，利用全异步矩阵乘、双 CTA 协作、指数函数的多项式逼近与条件 softmax 重缩放进一步提升算力利用率。
+
+四代工作共同展示了算法和硬件是如何协同并互相影响的。本文按代际梳理 FlashAttention-1 至 FlashAttention-4 的算法设计，分析其与 Ampere、Hopper、Blackwell 三代 GPU 架构的协同关系。第 2 节给出注意力计算的标准形式及其 IO 瓶颈；第 3 至 6 节依次讨论四代算法；第 7 节总结软硬件协同的演进规律并展望后续方向。
 
 ## 2 注意力计算与内存瓶颈
 
@@ -23,7 +29,7 @@ $$\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\!\left(\frac{QK^{\top}}
 
 其中注意力分数矩阵 $S=QK^{\top}\in\mathbb{R}^{N\times N}$，注意力概率矩阵 $P=\operatorname{softmax}(S)\in\mathbb{R}^{N\times N}$。两者规模均随 $N$ 二次增长，构成显存读写的主要来源。
 
-为保证数值稳定性，softmax 通常采用"减最大值"的安全形式：先计算行最大值 $m$，再归一化，即
+为保证数值稳定性，softmax 通常采用"减最大值"的安全形式，先计算行最大值 $m$，再归一化，即
 
 $$m=\operatorname{rowmax}(S),\qquad \ell=\operatorname{rowsum}\!\big(\exp(S-m)\big),\qquad P=\frac{\exp(S-m)}{\ell}. \tag{2}$$
 
