@@ -1,153 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="408" viewBox="0 0 680 408" font-family="Georgia, 'Times New Roman', serif">
-<rect x="0" y="0" width="680" height="408" fill="#ffffff"/>
-<text x="12" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（a）61 层：前 3 层稠密，其后 58 层为 MoE</text>
-<rect x="12.0" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
-<rect x="17.24590163934426" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
-<rect x="22.491803278688522" y="26" width="4.945901639344262" height="16" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.6"/>
-<rect x="27.737704918032787" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="32.983606557377044" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="38.22950819672131" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="43.47540983606557" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="48.721311475409834" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="53.967213114754095" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="59.213114754098356" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="64.45901639344262" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="69.70491803278688" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="74.95081967213115" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="80.1967213114754" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="85.44262295081967" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="90.68852459016392" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="95.93442622950819" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="101.18032786885246" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="106.42622950819671" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="111.67213114754098" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="116.91803278688523" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="122.1639344262295" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="127.40983606557376" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="132.655737704918" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="137.9016393442623" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="143.14754098360655" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="148.3934426229508" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="153.63934426229508" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="158.88524590163934" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="164.1311475409836" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="169.37704918032784" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="174.62295081967213" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="179.86885245901638" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="185.11475409836063" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="190.36065573770492" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="195.60655737704917" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="200.85245901639342" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="206.09836065573768" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="211.34426229508196" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="216.59016393442622" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="221.83606557377047" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="227.08196721311475" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="232.327868852459" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="237.57377049180326" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="242.8196721311475" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="248.0655737704918" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="253.31147540983605" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="258.55737704918033" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="263.8032786885246" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="269.04918032786884" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="274.2950819672131" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="279.54098360655735" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="284.7868852459016" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="290.03278688524586" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="295.27868852459017" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="300.5245901639344" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="305.7704918032787" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="311.0163934426229" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="316.2622950819672" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="321.50819672131144" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<rect x="326.7540983606557" y="26" width="4.945901639344262" height="16" fill="#e8f0e2" stroke="#55702f" stroke-width="0.6"/>
-<text x="12" y="58" font-size="7.2" fill="#5a6675">1</text>
-<text x="332" y="58" font-size="7.2" fill="#5a6675" text-anchor="end">61</text>
-<text x="172.0" y="58" font-size="7.2" fill="#5a6675" text-anchor="middle">3 + 58</text>
-<text x="12" y="74" font-size="7.6" fill="#33414f">灰：稠密 FFN（中间维 16384），3 层；绿：MoE（128 选 4 + 1 共享），58 层。</text>
-<text x="12" y="86" font-size="7.6" fill="#33414f">KV 只存 512 维潜向量加 64 维 RoPE 分量，每层每 token 约 1.2 KB，</text>
-<text x="12" y="98" font-size="7.6" fill="#33414f">61 层合计约 70 KB/token，294,912 上下文约 20 GB。</text>
-<text x="12" y="120" font-size="8.6" fill="#1b2430" font-weight="bold">放大第 1–4 层</text>
-<rect x="12.0" y="126" width="76.25" height="30" fill="#f1f2f4" stroke="#8b8f99" stroke-width="0.85"/>
-<text x="50.125" y="139" font-size="8.0" fill="#111111" text-anchor="middle">稠密 + MLA</text>
-<text x="50.125" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">稠密 16384</text>
-<text x="50.125" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 1</text>
-<rect x="93.25" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
-<text x="131.375" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
-<text x="131.375" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
-<text x="131.375" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 2</text>
-<rect x="174.5" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
-<text x="212.625" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
-<text x="212.625" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
-<text x="212.625" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 3</text>
-<rect x="255.75" y="126" width="76.25" height="30" fill="#e8f0e2" stroke="#55702f" stroke-width="0.85"/>
-<text x="293.875" y="139" font-size="8.0" fill="#111111" text-anchor="middle">MoE + MLA</text>
-<text x="293.875" y="150" font-size="7.2" fill="#5a6675" text-anchor="middle">→ MoE</text>
-<text x="293.875" y="168" font-size="7.2" fill="#5a6675" text-anchor="middle">层 4</text>
-<text x="12" y="180" font-size="7.6" fill="#33414f">注意力逐层同构，只有前馈分两档：这与 V3 的排布一致。</text>
-<text x="12" y="192" font-size="7.6" fill="#33414f">MLA 使 KV 与头数解耦，128 个头仍只缓存 576 维。</text>
-<text x="348" y="16" font-size="9.8" fill="#1b2430" font-weight="bold">（b）两类块的内部：同一 MLA，两种前馈</text>
-<rect x="348" y="26" width="320" height="99" fill="#ffffff" stroke="#446084" stroke-width="1.0"/>
-<text x="356" y="40" font-size="9.0" fill="#446084" font-weight="bold">MLA 块（61 层一律）</text>
-<text x="660" y="40" font-size="7.4" fill="#5a6675" text-anchor="end">潜注意力，576 维缓存</text>
-<text x="356" y="62" font-size="7.8" fill="#33414f">① 输入归一 + Q 低秩</text>
-<text x="660" y="62" font-size="7.6" fill="#5a6675" text-anchor="end">7168 → 1536 → 128 × 192</text>
-<text x="356" y="75" font-size="7.8" fill="#33414f">② KV 低秩压缩</text>
-<text x="660" y="75" font-size="7.6" fill="#5a6675" text-anchor="end">7168 → 576（512 + RoPE 64）</text>
-<text x="356" y="88" font-size="7.8" fill="#33414f">③ 上投影</text>
-<text x="660" y="88" font-size="7.6" fill="#5a6675" text-anchor="end">k 升至 192 维，v 升至 128 维</text>
-<text x="356" y="101" font-size="7.8" fill="#33414f">④ 打分与聚合</text>
-<text x="660" y="101" font-size="7.6" fill="#5a6675" text-anchor="end">128 头共用一份潜向量</text>
-<text x="356" y="114" font-size="7.8" fill="#33414f">⑤ 输出投影</text>
-<text x="660" y="114" font-size="7.6" fill="#5a6675" text-anchor="end">128 × 128 → 7168</text>
-<rect x="348" y="133" width="320" height="99" fill="#ffffff" stroke="#55702f" stroke-width="1.0"/>
-<text x="356" y="147" font-size="9.0" fill="#55702f" font-weight="bold">MoE 块（58 层）</text>
-<text x="660" y="147" font-size="7.4" fill="#5a6675" text-anchor="end">细粒度路由，top-4</text>
-<text x="356" y="169" font-size="7.8" fill="#33414f">① 路由</text>
-<text x="660" y="169" font-size="7.6" fill="#5a6675" text-anchor="end">sigmoid 打分，全局取 top-4</text>
-<text x="356" y="182" font-size="7.8" fill="#33414f">② 专家 FFN</text>
-<text x="660" y="182" font-size="7.6" fill="#5a6675" text-anchor="end">128 个专家，中间维 4096，SwiGLU</text>
-<text x="356" y="195" font-size="7.8" fill="#33414f">③ 共享专家</text>
-<text x="660" y="195" font-size="7.6" fill="#5a6675" text-anchor="end">1 个，与路由专家并列</text>
-<text x="356" y="208" font-size="7.8" fill="#33414f">④ 合并</text>
-<text x="660" y="208" font-size="7.6" fill="#5a6675" text-anchor="end">y = Σ ŝ_i h_i + E_s(x)</text>
-<text x="356" y="221" font-size="7.8" fill="#33414f">⑤ 稠密替代</text>
-<text x="660" y="221" font-size="7.6" fill="#5a6675" text-anchor="end">前 3 层为稠密，中间维 16384</text>
-<line x1="12" y1="248" x2="668" y2="248" stroke="#c9cfd8" stroke-width="0.9"/>
-<text x="12" y="264" font-size="9.8" fill="#1b2430" font-weight="bold">（c）官方 params.json：规模、头配置与数值格式</text>
-<rect x="12" y="272" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
-<rect x="13" y="276" width="318" height="15" fill="#f1f2f4"/>
-<text x="19" y="287" font-size="7.6" fill="#33414f">总参 / 激活</text>
-<text x="325" y="287" font-size="7.6" fill="#1b2430" text-anchor="end">675B / 41B</text>
-<text x="19" y="302" font-size="7.6" fill="#33414f">主干 / 视觉</text>
-<text x="325" y="302" font-size="7.6" fill="#1b2430" text-anchor="end">673B / 2.5B</text>
-<rect x="13" y="306" width="318" height="15" fill="#f1f2f4"/>
-<text x="19" y="317" font-size="7.6" fill="#33414f">隐藏维 / 层数</text>
-<text x="325" y="317" font-size="7.6" fill="#1b2430" text-anchor="end">7168 / 61</text>
-<text x="19" y="332" font-size="7.6" fill="#33414f">词表</text>
-<text x="325" y="332" font-size="7.6" fill="#1b2430" text-anchor="end">131,072</text>
-<rect x="13" y="336" width="318" height="15" fill="#f1f2f4"/>
-<text x="19" y="347" font-size="7.6" fill="#33414f">上下文</text>
-<text x="325" y="347" font-size="7.6" fill="#1b2430" text-anchor="end">294,912</text>
-<text x="19" y="362" font-size="7.6" fill="#33414f">位置编码</text>
-<text x="325" y="362" font-size="7.6" fill="#1b2430" text-anchor="end">YaRN ×36，β 0.1</text>
-<rect x="348" y="272" width="320" height="94" fill="#ffffff" stroke="#c9cfd8" stroke-width="0.8"/>
-<rect x="349" y="276" width="318" height="15" fill="#f1f2f4"/>
-<text x="355" y="287" font-size="7.6" fill="#33414f">注意力头数</text>
-<text x="661" y="287" font-size="7.6" fill="#1b2430" text-anchor="end">128</text>
-<text x="355" y="302" font-size="7.6" fill="#33414f">Q 低秩</text>
-<text x="661" y="302" font-size="7.6" fill="#1b2430" text-anchor="end">1536</text>
-<rect x="349" y="306" width="318" height="15" fill="#f1f2f4"/>
-<text x="355" y="317" font-size="7.6" fill="#33414f">KV 低秩</text>
-<text x="661" y="317" font-size="7.6" fill="#1b2430" text-anchor="end">512</text>
-<text x="355" y="332" font-size="7.6" fill="#33414f">qk 维</text>
-<text x="661" y="332" font-size="7.6" fill="#1b2430" text-anchor="end">128 + RoPE 64</text>
-<rect x="349" y="336" width="318" height="15" fill="#f1f2f4"/>
-<text x="355" y="347" font-size="7.6" fill="#33414f">v 头维</text>
-<text x="661" y="347" font-size="7.6" fill="#1b2430" text-anchor="end">128</text>
-<text x="355" y="362" font-size="7.6" fill="#33414f">专家</text>
-<text x="661" y="362" font-size="7.6" fill="#1b2430" text-anchor="end">128 选 4 + 1 共享</text>
-<text x="12" y="384" font-size="7.6" fill="#33414f">视觉编码器另计：48 层、宽 1664、patch 14、最大输入 1540，经 2 × 2 空间合并接入。</text>
-<text x="12" y="396" font-size="7.6" fill="#33414f">FP8 以 128 × 128 分块量化，嵌入、视觉、低秩投影、门控与输出头豁免；另有 NVFP4 与 BF16 两版。</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 460" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="680" height="460" fill="#ffffff"/>
+  <text x="340" y="24" text-anchor="middle" font-size="15" fill="#111">Step 5 Preview 结构示意图（据官方 config.json 与模型卡绘制）</text>
+
+  <!-- inputs -->
+  <rect x="14" y="58" width="78" height="26" fill="#eef2f7" stroke="#555"/>
+  <text x="53" y="76" text-anchor="middle" font-size="11" fill="#111">文本</text>
+  <rect x="14" y="92" width="78" height="26" fill="#eef2f7" stroke="#555"/>
+  <text x="53" y="110" text-anchor="middle" font-size="11" fill="#111">图像</text>
+  <rect x="14" y="126" width="78" height="26" fill="#eef2f7" stroke="#555"/>
+  <text x="53" y="144" text-anchor="middle" font-size="11" fill="#111">视频</text>
+
+  <!-- multimodal encoder -->
+  <rect x="108" y="52" width="100" height="108" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="158" y="74" text-anchor="middle" font-size="11" fill="#111">多模态编码器</text>
+  <text x="158" y="90" text-anchor="middle" font-size="9.5" fill="#333">47 层 · 宽 1536</text>
+  <text x="158" y="106" text-anchor="middle" font-size="9.5" fill="#333">728² · patch 14</text>
+  <text x="158" y="122" text-anchor="middle" font-size="9.5" fill="#333">16 头 · 169 token</text>
+  <text x="158" y="140" text-anchor="middle" font-size="9" fill="#555">projector stride 2</text>
+
+  <line x1="92" y1="71" x2="104" y2="71" stroke="#555" marker-end="url(#a)"/>
+  <line x1="92" y1="105" x2="104" y2="105" stroke="#555" marker-end="url(#a)"/>
+  <line x1="92" y1="139" x2="104" y2="139" stroke="#555" marker-end="url(#a)"/>
+  <line x1="208" y1="106" x2="218" y2="106" stroke="#555" marker-end="url(#a)"/>
+
+  <!-- backbone -->
+  <rect x="222" y="44" width="292" height="306" fill="#f7f9fc" stroke="#333"/>
+  <text x="368" y="66" text-anchor="middle" font-size="12" fill="#111">语言主干 92 层 · 隐藏维 4096</text>
+
+  <rect x="238" y="78" width="260" height="56" fill="#dde7f5" stroke="#446084"/>
+  <text x="368" y="97" text-anchor="middle" font-size="10.5" fill="#111">GQA 64 Q / 4 KV · 头维 192</text>
+  <text x="368" y="113" text-anchor="middle" font-size="9.5" fill="#333">69 层滑窗（窗口 512）/ 23 层全局</text>
+  <text x="368" y="128" text-anchor="middle" font-size="9.5" fill="#333">逐头注意力门控 · 全局层走稀疏索引</text>
+
+  <rect x="238" y="142" width="260" height="44" fill="#fff2dc" stroke="#a9742a"/>
+  <text x="368" y="160" text-anchor="middle" font-size="10.5" fill="#111">Sparse GQA + 块级 token 合并</text>
+  <text x="368" y="176" text-anchor="middle" font-size="9.5" fill="#333">索引器 16 头 · top-512 · 块 8 · proxy 256</text>
+
+  <rect x="238" y="194" width="260" height="58" fill="#e8f0e2" stroke="#55702f"/>
+  <text x="368" y="213" text-anchor="middle" font-size="10.5" fill="#111">MoE 前馈（第 3 至 90 层）</text>
+  <text x="368" y="229" text-anchor="middle" font-size="9.5" fill="#333">352 路由专家 top-8 加 1 共享</text>
+  <text x="368" y="244" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 1536；88 层 MoE 另 4 层稠密</text>
+
+  <rect x="238" y="260" width="260" height="30" fill="#f3e8ef" stroke="#7a4468"/>
+  <text x="368" y="280" text-anchor="middle" font-size="10.5" fill="#111">MTP × 3 层（投机解码）</text>
+
+  <text x="368" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 600B / 每 token 激活 27B</text>
+  <text x="368" y="328" text-anchor="middle" font-size="10" fill="#111">词表 128,896 · 上下文 1M</text>
+  <text x="368" y="344" text-anchor="middle" font-size="9" fill="#666">FP32 残差连接</text>
+
+  <!-- output -->
+  <line x1="514" y1="149" x2="520" y2="149" stroke="#555" marker-end="url(#a)"/>
+  <rect x="520" y="132" width="62" height="34" fill="#eef2f7" stroke="#555"/>
+  <text x="551" y="153" text-anchor="middle" font-size="11" fill="#111">输出</text>
+
+  <!-- notes -->
+  <text x="340" y="378" text-anchor="middle" font-size="10.5" fill="#333">69 层滑窗与 23 层全局稀疏注意力交替，KV Cache 只由滑窗窗口与全局层构成</text>
+  <text x="340" y="400" text-anchor="middle" font-size="10.5" fill="#333">索引与 top-k 选择成本约为稠密基线的八分之一；块压缩粒度 8</text>
+  <text x="340" y="422" text-anchor="middle" font-size="10.5" fill="#333">92 层窄深设计意在拉长信息传播路径，代价是解码逐层穿行的延迟</text>
+  <text x="340" y="442" text-anchor="middle" font-size="9.5" fill="#666">数值 BF16（约 1.2TB）/ FP8（约 600GB）；许可 StepFun Model License 1.0</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
+    </marker>
+  </defs>
 </svg>

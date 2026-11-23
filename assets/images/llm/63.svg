@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="700" viewBox="0 0 940 700" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="940" height="700" fill="#ffffff"/>
+<text x="24" y="34" font-size="16" fill="#16202c" text-anchor="start" font-weight="700">Ling-2.6-1T 的层组合与算子序列</text>
+<text x="24" y="56" font-size="10.8" fill="#4d5866" text-anchor="start">两类注意力块按 7 比 1 交替，专家段沿用 2.0；线性块以定长状态替代 KV，MLA 块保留低秩潜向量缓存</text>
+<line x1="24" y1="70" x2="916" y2="70" stroke="#dfe4ea"/>
+
+<text x="24" y="96" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">（a）Lightning Attention 块（70 层）</text>
+
+<rect x="24" y="106" width="92" height="60" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="70" y="128" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">RMSNorm</text>
+<text x="70" y="146" font-size="8.4" fill="#4d5866" text-anchor="middle">FP32 累加</text>
+<text x="70" y="160" font-size="8.4" fill="#4d5866" text-anchor="middle">8192 维</text>
+
+<rect x="128" y="106" width="100" height="60" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="178" y="126" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">q / k / v 投影</text>
+<text x="178" y="143" font-size="8.4" fill="#4d5866" text-anchor="middle">各 64 头 × 128</text>
+<text x="178" y="157" font-size="8.4" fill="#4d5866" text-anchor="middle">输出送衰减累积</text>
+
+<rect x="240" y="106" width="120" height="60" rx="6" fill="#dce8f6" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="300" y="126" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">衰减累积</text>
+<text x="300" y="143" font-size="8.4" fill="#2c4a6b" text-anchor="middle">S_t = λ ⊙ S_t−1</text>
+<text x="300" y="157" font-size="8.4" fill="#2c4a6b" text-anchor="middle">　　 + k_t v_tᵀ</text>
+
+<rect x="372" y="106" width="112" height="60" rx="6" fill="#dce8f6" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="428" y="126" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">状态读出</text>
+<text x="428" y="143" font-size="8.4" fill="#2c4a6b" text-anchor="middle">o_t = q_t · S_t</text>
+<text x="428" y="157" font-size="8.4" fill="#2c4a6b" text-anchor="middle">128 × 128 / 头</text>
+
+<rect x="496" y="106" width="96" height="60" rx="6" fill="#fbeef0" stroke="#b8566a" stroke-width="1.1"/>
+<text x="544" y="126" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">输出门控</text>
+<text x="544" y="143" font-size="8.4" fill="#6b3540" text-anchor="middle">σ(W_g x) ⊙ o</text>
+<text x="544" y="157" font-size="8.4" fill="#6b3540" text-anchor="middle">逐通道</text>
+
+<rect x="604" y="106" width="96" height="60" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="652" y="128" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">W_o 投影</text>
+<text x="652" y="146" font-size="8.4" fill="#4d5866" text-anchor="middle">回 8192 维</text>
+<text x="652" y="160" font-size="8.4" fill="#4d5866" text-anchor="middle">残差相加</text>
+
+<path d="M116,136 L128,136" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M228,136 L240,136" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M360,136 L372,136" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M484,136 L496,136" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M592,136 L604,136" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+
+<rect x="716" y="106" width="200" height="60" rx="6" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1"/>
+<text x="730" y="124" font-size="8.8" fill="#3d4a56" text-anchor="start">· 无 KV Cache，状态与长度无关</text>
+<text x="730" y="141" font-size="8.8" fill="#3d4a56" text-anchor="start">· 每层状态 4 MB（FP32）</text>
+<text x="730" y="157" font-size="8.8" fill="#3d4a56" text-anchor="start">· 预填分块累积，解码逐 token</text>
+
+<text x="24" y="190" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">（b）MLA 块（10 层）</text>
+
+<rect x="24" y="200" width="92" height="60" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="70" y="222" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">RMSNorm</text>
+<text x="70" y="240" font-size="8.4" fill="#5d6878" text-anchor="middle">无 QK-Norm</text>
+<text x="70" y="254" font-size="8.4" fill="#5d6878" text-anchor="middle">迁移时已移除</text>
+
+<rect x="128" y="200" width="100" height="60" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="178" y="220" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">q / kv 低秩</text>
+<text x="178" y="237" font-size="8.4" fill="#5d6878" text-anchor="middle">q 升维至 64 头</text>
+<text x="178" y="251" font-size="8.4" fill="#5d6878" text-anchor="middle">kv 潜向量共享</text>
+
+<rect x="240" y="200" width="120" height="60" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="300" y="220" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">Partial-RoPE</text>
+<text x="300" y="237" font-size="8.4" fill="#5d6878" text-anchor="middle">仅头维前 64 维</text>
+<text x="300" y="251" font-size="8.4" fill="#5d6878" text-anchor="middle">θ = 6×10⁵</text>
+
+<rect x="372" y="200" width="112" height="60" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="428" y="220" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">打分与聚合</text>
+<text x="428" y="237" font-size="8.4" fill="#5d6878" text-anchor="middle">64 Q / 8 KV × 128</text>
+<text x="428" y="251" font-size="8.4" fill="#5d6878" text-anchor="middle">全序列聚合</text>
+
+<rect x="496" y="200" width="96" height="60" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="544" y="222" font-size="9.4" fill="#1b2430" text-anchor="middle" font-weight="700">W_o 投影</text>
+<text x="544" y="240" font-size="8.4" fill="#5d6878" text-anchor="middle">残差相加</text>
+<text x="544" y="254" font-size="8.4" fill="#5d6878" text-anchor="middle">与线性块同构</text>
+
+<path d="M116,230 L128,230" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M228,230 L240,230" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M360,230 L372,230" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M484,230 L496,230" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+
+<rect x="604" y="200" width="312" height="60" rx="6" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1"/>
+<text x="618" y="218" font-size="8.8" fill="#3d4a56" text-anchor="start">· 每 token 每层 4 KB（8 头 × 128 维 × 键值 × 2 B）</text>
+<text x="618" y="235" font-size="8.8" fill="#3d4a56" text-anchor="start">· 10 层合计 40 KB/token，256K 约 10.5 GB</text>
+<text x="618" y="252" font-size="8.8" fill="#3d4a56" text-anchor="start">· 全模型仅这 10 层产生 KV Cache</text>
+
+<text x="24" y="284" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">（c）从 2.0 基座迁移的四阶段（合计约 400B token）</text>
+
+<rect x="24" y="294" width="200" height="66" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="36" y="314" font-size="9.6" fill="#1b2430" text-anchor="start" font-weight="700">① 层替换</text>
+<text x="36" y="332" font-size="8.6" fill="#3d4a56" text-anchor="start">部分 GQA 层改为</text>
+<text x="36" y="347" font-size="8.6" fill="#3d4a56" text-anchor="start">Lightning Attention</text>
+
+<path d="M224,327 L244,327" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+
+<rect x="248" y="294" width="200" height="66" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="260" y="314" font-size="9.6" fill="#1b2430" text-anchor="start" font-weight="700">② Linear Warmup</text>
+<text x="260" y="332" font-size="8.6" fill="#3d4a56" text-anchor="start">对齐新增参数，</text>
+<text x="260" y="347" font-size="8.6" fill="#3d4a56" text-anchor="start">使新层的输出尺度可比</text>
+
+<path d="M448,327 L468,327" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+
+<rect x="472" y="294" width="220" height="66" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="484" y="314" font-size="9.6" fill="#1b2430" text-anchor="start" font-weight="700">③ MLA 转换</text>
+<text x="484" y="332" font-size="8.6" fill="#5d6878" text-anchor="start">移除 QK-Norm、适配</text>
+<text x="484" y="347" font-size="8.6" fill="#5d6878" text-anchor="start">Partial-RoPE</text>
+
+<path d="M692,327 L712,327" stroke="#7c8794" stroke-width="1.2" marker-end="url(#a)"/>
+
+<rect x="716" y="294" width="200" height="66" rx="6" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="728" y="314" font-size="9.6" fill="#1b2430" text-anchor="start" font-weight="700">④ MLA Warmup</text>
+<text x="728" y="332" font-size="8.6" fill="#3d4a56" text-anchor="start">把 loss 拉回迁移前</text>
+<text x="728" y="347" font-size="8.6" fill="#3d4a56" text-anchor="start">水平，转入继续预训练</text>
+
+<text x="24" y="378" font-size="9.2" fill="#7c8794" text-anchor="start">迁移之后，400B token 迁移 + 8T token 的 4K 继续预训练 + 1.2T token 中期训练（4K → 32K → 256K），合计约 9.6T token。</text>
+
+<text x="24" y="400" font-size="11.4" fill="#2f6b47" text-anchor="start" font-weight="700">（d）256 选 8 加 1 共享的专家与 1 层 MTP</text>
+<rect x="24" y="410" width="892" height="72" rx="6" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.1"/>
+<text x="40" y="430" font-size="9" fill="#2f6b47" text-anchor="start">专家段 76 层，各 256 个路由专家取 top-8，另加 1 个共享，中间维 2048；迁移未改动路由与专家粒度，改动只在注意力。</text>
+<text x="40" y="450" font-size="9" fill="#2f6b47" text-anchor="start">末端接 1 层 MTP，与 13.1 节的配置相同。专家段每层一次 all-to-all，通信量与 2.0-1T 同级。</text>
+<text x="40" y="470" font-size="9" fill="#7c8794" text-anchor="start">专家权重不因注意力替换而改变，故这一段的显存与互联需求与 2.0-1T 一致。</text>
+
+<line x1="24" y1="496" x2="916" y2="496" stroke="#dfe4ea"/>
+<text x="24" y="516" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">核算</text>
+<text x="24" y="538" font-size="10" fill="#243447" text-anchor="start">KV：仅 10 层 MLA 产生缓存，40 KB/token；256K 上下文约 10.5 GB。若 80 层全为 MLA，同一长度需 84 GB，差 8 倍。</text>
+<text x="24" y="556" font-size="10" fill="#243447" text-anchor="start">状态：70 层 × 4 MB ≈ 293 MB（FP32），与序列长度无关；两笔相加，256K 的容量需求约 10.8 GB。</text>
+<text x="24" y="574" font-size="10" fill="#243447" text-anchor="start">权重：约 1.04 TB，张量并行度不低于 8；专家段 76 层各 256 个专家，每层一次 all-to-all，通信量与 2.0-1T 同级。</text>
+<text x="24" y="592" font-size="10" fill="#243447" text-anchor="start">串行：70 层线性层的状态更新串行成链，链长与层数成正比；预填可在块内并行，解码不可。</text>
+
+<text x="24" y="616" font-size="11.4" fill="#2f6b47" text-anchor="start" font-weight="700">对加速器的含义</text>
+<text x="24" y="638" font-size="10" fill="#243447" text-anchor="start">同一模型内并存两类注意力核，按层型分派。线性核吃定长状态、访存连续；MLA 核吃潜向量缓存、依赖 gather。核间切换发生在</text>
+<text x="24" y="657" font-size="10" fill="#243447" text-anchor="start">层边界，调度可按 7 比 1 的节拍预先分配缓冲。状态须在解码全程驻留，293 MB 对单卡可容纳，张量并行下每卡各持一份分片。</text>
+<text x="24" y="676" font-size="10" fill="#243447" text-anchor="start">迁移说明结构替换可在已有权重上完成，代价是约 400B token 的对齐训练，比从头训练的 20T token 低两个量级。</text>
+</svg>

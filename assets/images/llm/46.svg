@@ -1,64 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" font-family="Georgia, 'Times New Roman', serif">
-  <rect width="680" height="440" fill="#ffffff"/>
-  <text x="340" y="26" text-anchor="middle" font-size="15" fill="#111">Hunyuan Hy4 结构示意图（据官方模型卡绘制）</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="700" viewBox="0 0 940 700" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c8794"/></marker></defs>
+<rect width="940" height="700" fill="#ffffff"/>
+<text x="24" y="34" font-size="16" fill="#16202c" text-anchor="start" font-weight="700">GLM-5.4 结构示意：循环深度替代参数规模</text>
+<text x="24" y="56" font-size="10.8" fill="#4d5866" text-anchor="start">744B 总参 / 激活 40B · 78 层参数，层执行 106 次 · 中段 28 层共享权重循环 2 轮 · MLA + DSA · 上下文 1M</text>
+<line x1="24" y1="70" x2="916" y2="70" stroke="#dfe4ea"/>
 
-  <!-- inputs -->
-  <rect x="20" y="60" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="80" text-anchor="middle" font-size="11" fill="#111">文本</text>
-  <rect x="20" y="105" width="86" height="30" fill="#eef2f7" stroke="#555"/>
-  <text x="63" y="125" text-anchor="middle" font-size="10.5" fill="#111">图像 / 界面</text>
+<rect x="24" y="86" width="368" height="452" rx="7" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="38" y="108" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">执行顺序</text>
+<text x="38" y="126" font-size="9.2" fill="#5d6878" text-anchor="start">78 层参数按顺序执行，中段 28 层走两遍</text>
 
-  <line x1="106" y1="75" x2="292" y2="75" stroke="#555" marker-end="url(#a)"/>
-  <line x1="106" y1="120" x2="148" y2="120" stroke="#555" marker-end="url(#a)"/>
-  <rect x="148" y="102" width="112" height="36" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="204" y="118" text-anchor="middle" font-size="10.5" fill="#111">视觉通路</text>
-  <text x="204" y="131" text-anchor="middle" font-size="9" fill="#555">正式版新增</text>
-  <line x1="260" y1="120" x2="292" y2="106" stroke="#555" marker-end="url(#a)"/>
+<rect x="38" y="140" width="340" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="52" y="162" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">第 1–25 层</text>
+<text x="52" y="180" font-size="9.4" fill="#33414f" text-anchor="start">各执行 1 次 · 25 次</text>
 
-  <!-- residual streams -->
-  <rect x="292" y="48" width="46" height="300" fill="#f0ecf6" stroke="#6a5486"/>
-  <text x="315" y="70" text-anchor="middle" font-size="10.5" fill="#111">4 路</text>
-  <text x="315" y="86" text-anchor="middle" font-size="10.5" fill="#111">iHC</text>
-  <text x="315" y="104" text-anchor="middle" font-size="9" fill="#555">残差流</text>
-  <line x1="315" y1="120" x2="315" y2="320" stroke="#6a5486" stroke-dasharray="3 3"/>
-  <text x="315" y="338" text-anchor="middle" font-size="9" fill="#555">恒等映射</text>
+<rect x="38" y="206" width="340" height="72" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="52" y="228" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">第 26–53 层 · 第一轮</text>
+<text x="52" y="246" font-size="9.4" fill="#5d6878" text-anchor="start">门控偏小，建立全局上下文状态</text>
+<text x="52" y="264" font-size="9.4" fill="#5d6878" text-anchor="start">同时产出稀疏 KV 与 top-k 索引</text>
 
-  <!-- backbone -->
-  <rect x="346" y="48" width="234" height="300" fill="#f7f9fc" stroke="#333"/>
-  <text x="463" y="70" text-anchor="middle" font-size="12" fill="#111">主干 78 层 · 隐藏维 6144</text>
+<rect x="38" y="286" width="340" height="72" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="52" y="308" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">第 26–53 层 · 第二轮</text>
+<text x="52" y="326" font-size="9.4" fill="#5d6878" text-anchor="start">同一份权重，门控放开完成精炼</text>
+<text x="52" y="344" font-size="9.4" fill="#5d6878" text-anchor="start">复用第一轮索引，窗口内读新 KV</text>
 
-  <rect x="362" y="84" width="202" height="60" fill="#dde7f5" stroke="#446084"/>
-  <text x="463" y="103" text-anchor="middle" font-size="11" fill="#111">Gated DSA（64 头）</text>
-  <text x="463" y="119" text-anchor="middle" font-size="9.5" fill="#333">q 压缩 2048 / kv 压缩 512</text>
-  <text x="463" y="135" text-anchor="middle" font-size="9.5" fill="#333">索引器 32 头 / 128 维 / top-2048</text>
+<rect x="38" y="366" width="340" height="58" rx="7" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.2"/>
+<text x="52" y="388" font-size="10.8" fill="#1b2430" text-anchor="start" font-weight="700">第 54–78 层</text>
+<text x="52" y="406" font-size="9.4" fill="#33414f" text-anchor="start">各执行 1 次 · 25 次</text>
 
-  <rect x="362" y="152" width="202" height="30" fill="#fff2dc" stroke="#a9742a"/>
-  <text x="463" y="172" text-anchor="middle" font-size="10.5" fill="#111">IndexCache：跨层复用稀疏索引</text>
+<rect x="38" y="432" width="340" height="52" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="52" y="454" font-size="10.4" fill="#2f6b47" text-anchor="start" font-weight="700">合计 25 + 28 + 28 + 25 = 106</text>
+<text x="52" y="472" font-size="9.2" fill="#3d4a56" text-anchor="start">参数仍是 78 层，层执行数增 35.9%</text>
 
-  <rect x="362" y="190" width="202" height="58" fill="#e8f0e2" stroke="#55702f"/>
-  <text x="463" y="209" text-anchor="middle" font-size="11" fill="#111">MoE 前馈（77 层）</text>
-  <text x="463" y="226" text-anchor="middle" font-size="9.5" fill="#333">256 路由专家 top-8 + 1 共享</text>
-  <text x="463" y="241" text-anchor="middle" font-size="9.5" fill="#333">专家中间维 2048；首层 FFN 18432</text>
+<rect x="38" y="492" width="340" height="34" rx="6" fill="#ffffff" stroke="#b9c4d2" stroke-width="1"/>
+<text x="52" y="514" font-size="9.2" fill="#4d5866" text-anchor="start">前 3 层稠密 MLP 与末端 1 层 MTP 不在循环段内</text>
 
-  <rect x="362" y="256" width="202" height="34" fill="#f3e8ef" stroke="#7a4468"/>
-  <text x="463" y="277" text-anchor="middle" font-size="10.5" fill="#111">原生 MTP × 1（10B / 0.7B 激活）</text>
+<rect x="408" y="86" width="252" height="452" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="422" y="108" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">三项工程改动</text>
 
-  <text x="463" y="310" text-anchor="middle" font-size="10.5" fill="#111">总参数 770B / 每 token 激活 49B</text>
-  <text x="463" y="330" text-anchor="middle" font-size="10" fill="#111">词表 120,832 · 上下文 1M</text>
+<rect x="422" y="122" width="224" height="126" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="434" y="142" font-size="10.4" fill="#1b2430" text-anchor="start" font-weight="700">一是门控渐进更新</text>
+<text x="434" y="160" font-size="9.2" fill="#5d6878" text-anchor="start">每轮一组逐 token 门控，按比例把</text>
+<text x="434" y="176" font-size="9.2" fill="#5d6878" text-anchor="start">候选变化写回残差流，不直接覆盖</text>
+<text x="434" y="196" font-size="9.2" fill="#5d6878" text-anchor="start">h ← h + g_t ⊙ (h′ − h)</text>
+<text x="434" y="216" font-size="9.2" fill="#5d6878" text-anchor="start">第一轮 g 小以稳住尺度，第二轮放开</text>
+<text x="434" y="236" font-size="9.2" fill="#5d6878" text-anchor="start">步长随 token 难度调整</text>
 
-  <!-- output -->
-  <line x1="580" y1="190" x2="600" y2="190" stroke="#555" marker-end="url(#a)"/>
-  <rect x="600" y="172" width="60" height="36" fill="#eef2f7" stroke="#555"/>
-  <text x="630" y="194" text-anchor="middle" font-size="11" fill="#111">输出</text>
+<rect x="422" y="260" width="224" height="126" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="434" y="280" font-size="10.4" fill="#1b2430" text-anchor="start" font-weight="700">二是混合 KV Cache</text>
+<text x="434" y="298" font-size="9.2" fill="#5d6878" text-anchor="start">窗口之内，两轮各持一份 KV</text>
+<text x="434" y="314" font-size="9.2" fill="#5d6878" text-anchor="start">窗口之外，跨轮共享第一轮稀疏 KV</text>
+<text x="434" y="334" font-size="9.2" fill="#5d6878" text-anchor="start">两路可覆盖同一位置</text>
+<text x="434" y="354" font-size="9.2" fill="#5d6878" text-anchor="start">多一轮的代价只是一个窗口的 KV</text>
+<text x="434" y="374" font-size="9.2" fill="#5d6878" text-anchor="start">而非一份全上下文缓存</text>
 
-  <!-- notes -->
-  <text x="340" y="382" text-anchor="middle" font-size="10.5" fill="#333">与 Hy3 相比：GQA 全注意力 → Gated DSA，常规残差 → 4 路 iHC，上下文 256K → 1M</text>
-  <text x="340" y="404" text-anchor="middle" font-size="10.5" fill="#333">结构规格以 Hy4 preview 模型卡为准；正式版增视觉理解与 Computer Use</text>
-  <text x="340" y="424" text-anchor="middle" font-size="9.5" fill="#666">数值格式 BF16 / FP8；许可 Apache 2.0</text>
+<rect x="422" y="398" width="224" height="126" rx="7" fill="#fffdf6" stroke="#c2a03c" stroke-width="1.2"/>
+<text x="434" y="418" font-size="10.4" fill="#1b2430" text-anchor="start" font-weight="700">三是稀疏索引复用</text>
+<text x="434" y="436" font-size="9.2" fill="#5d6878" text-anchor="start">第二轮直接沿用第一轮的 top-k</text>
+<text x="434" y="452" font-size="9.2" fill="#5d6878" text-anchor="start">索引器不重算，零新增开销</text>
+<text x="434" y="472" font-size="9.2" fill="#5d6878" text-anchor="start">报告称与逐轮重算效果几乎相同</text>
+<text x="434" y="492" font-size="9.2" fill="#5d6878" text-anchor="start">索引器仍为 32 头 × 128 维</text>
+<text x="434" y="512" font-size="9.2" fill="#5d6878" text-anchor="start">top-2048 不变</text>
 
-  <defs>
-    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 z" fill="#555"/>
-    </marker>
-  </defs>
+<rect x="676" y="86" width="240" height="452" rx="7" fill="#eef7f1" stroke="#3d8b5f" stroke-width="1.2"/>
+<text x="690" y="108" font-size="11.4" fill="#2f6b47" text-anchor="start" font-weight="700">三组约束下的账</text>
+<text x="690" y="132" font-size="9.6" fill="#3d4a56" text-anchor="start">容量　权重仍 744B，约 756 GB（FP8 计）</text>
+<text x="690" y="150" font-size="9.6" fill="#3d4a56" text-anchor="start">　　　循环不增参数，容量不变</text>
+<text x="690" y="174" font-size="9.6" fill="#3d4a56" text-anchor="start">算力　106 / 78 = 1.36，每 token 乘加 +36%</text>
+<text x="690" y="198" font-size="9.6" fill="#3d4a56" text-anchor="start">带宽　循环段 28 层占 28/78，解码读两遍</text>
+<text x="690" y="216" font-size="9.6" fill="#3d4a56" text-anchor="start">　　　每步权重流量约 756 → 1027 GB</text>
+<text x="690" y="240" font-size="9.6" fill="#3d4a56" text-anchor="start">缓存　主 KV 约 90 KB/token（1M 约 90 GB）</text>
+<text x="690" y="258" font-size="9.6" fill="#3d4a56" text-anchor="start">　　　窗口增量 28 × w × 576 B，w=512 时</text>
+<text x="690" y="276" font-size="9.6" fill="#3d4a56" text-anchor="start">　　　约 8 MB，不足主 KV 的万分之一</text>
+<text x="690" y="300" font-size="9.6" fill="#3d4a56" text-anchor="start">延迟　等效深度 78 → 106，依赖链 +36%</text>
+<line x1="690" y1="316" x2="902" y2="316" stroke="#cfe3d6"/>
+<text x="690" y="338" font-size="9.6" fill="#2f6b47" text-anchor="start" font-weight="700">以带宽与串行换容量</text>
+<text x="690" y="360" font-size="9.4" fill="#3d4a56" text-anchor="start">与 7.4 节「以结构换缓存」方向相反。</text>
+<text x="690" y="378" font-size="9.4" fill="#3d4a56" text-anchor="start">5.4 不减缓存，只在不加参数的前提下</text>
+<text x="690" y="396" font-size="9.4" fill="#3d4a56" text-anchor="start">把有效深度抬高三成六。</text>
+<text x="690" y="424" font-size="9.4" fill="#3d4a56" text-anchor="start">两次读取同一份权重之间隔着数十层</text>
+<text x="690" y="442" font-size="9.4" fill="#3d4a56" text-anchor="start">的权重流量，片上缓存无法命中，</text>
+<text x="690" y="460" font-size="9.4" fill="#3d4a56" text-anchor="start">只能按两遍访存配带宽。</text>
+
+<line x1="24" y1="558" x2="916" y2="558" stroke="#dfe4ea"/>
+<text x="24" y="580" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">对硬件的含义</text>
+<text x="24" y="602" font-size="10.4" fill="#243447" text-anchor="start">不新增算子，改动全在调度。同一段 kernel 序列要在一步之内执行两次，中间隔着一次门控写回，调度器需为循环段预留</text>
+<text x="24" y="622" font-size="10.4" fill="#243447" text-anchor="start">两倍的时间片与访存带宽。若要收回那 36% 的重复读取，须做权重驻留或按块重算，代价是片上容量至少容下一层专家。</text>
+<text x="24" y="642" font-size="10.4" fill="#243447" text-anchor="start">浅层收益来自可并行的 token 维度。预填可把循环段的两轮串在同一批内，解码则完全受制于 106 步的依赖链。</text>
+<text x="24" y="668" font-size="9.6" fill="#7c8794" text-anchor="start">图源：文献 [39]。窗口长 w 未公布，图中按 512 计。</text>
 </svg>

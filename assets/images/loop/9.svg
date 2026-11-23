@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="Georgia, 'Times New Roman', 'Songti SC', serif">
+  <rect x="0" y="0" width="800" height="340" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">GLM-5.4：28 个共享层循环两轮</text>
+
+  <!-- Loop module (28 layers) -->
+  <g>
+    <rect x="80" y="50" width="280" height="150" rx="8" fill="#fff7ed" stroke="#f97316" stroke-width="1.6"/>
+    <text x="220" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#7c2d12">共享循环模块（28 层）</text>
+    <g font-size="10.5" text-anchor="middle" fill="#9a3412">
+      <text x="220" y="92">第 1 轮：建立全局上下文</text>
+      <text x="220" y="108">门控温和写回（稳定尺度）</text>
+      <line x1="110" y1="118" x2="330" y2="118" stroke="#fdba74" stroke-dasharray="3 3"/>
+      <text x="220" y="134">第 2 轮：复用状态完成精炼</text>
+      <text x="220" y="150">放开门控、充分写回</text>
+      <text x="220" y="176" fill="#c2410c">门控根据 token 难度动态调节步长</text>
+    </g>
+  </g>
+
+  <!-- loop back arrow -->
+  <path d="M 360 140 C 410 140, 410 90, 368 90" fill="none" stroke="#f97316" stroke-width="2" marker-end="url(#arro)"/>
+  <text x="432" y="120" font-size="11" fill="#c2410c">第 1 轮输出 → 第 2 轮输入</text>
+
+  <!-- KV cache strategy -->
+  <rect x="480" y="50" width="290" height="150" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="625" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a8a">KV Cache：全局共享 + 滑窗独立</text>
+  <g font-size="10.5" text-anchor="middle" fill="#1e40af">
+    <text x="625" y="94">跨轮共享：第二轮复用第一轮的稀疏 KV</text>
+    <text x="625" y="112">滑窗独立：窗口内保留第二轮新生成的 KV</text>
+    <line x1="510" y1="122" x2="740" y2="122" stroke="#93c5fd" stroke-dasharray="3 3"/>
+    <text x="625" y="140">多一轮循环，仅多一个窗口的 KV</text>
+    <text x="625" y="158">（而非一整份全上下文缓存）</text>
+    <text x="625" y="176" fill="#1d4ed8">稀疏注意力索引跨轮复用，零额外开销</text>
+  </g>
+
+  <!-- bottom annotation -->
+  <text x="400" y="230" text-anchor="middle" font-size="12.5" fill="#334155">三项工程改动：① 门控渐进更新　② KV Cache 全局共享 + 滑窗独立　③ 复用稀疏注意力索引</text>
+
+  <!-- flow line -->
+  <g stroke="#94a3b8" stroke-width="1.4" fill="none">
+    <line x1="60" y1="125" x2="80" y2="125"/>
+    <line x1="360" y1="125" x2="480" y2="125"/>
+  </g>
+  <text x="60" y="118" text-anchor="middle" font-size="11" fill="#64748b">输入</text>
+  <text x="770" y="118" text-anchor="middle" font-size="11" fill="#64748b">输出</text>
+
+  <defs>
+    <marker id="arro" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#f97316"/>
+    </marker>
+  </defs>
+</svg>

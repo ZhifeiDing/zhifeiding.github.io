@@ -3,13 +3,9 @@
 > 工欲善其事，必先利其器。  
 > ——《论语·卫灵公》
 
-**摘要**：注意力机制是 Transformer 架构的核心组件，其计算量与显存占用随序列长度二次增长，是长序列建模的主要瓶颈。
-
-**关键词**：注意力机制；FlashAttention；内存墙；图形处理器；软硬件协同设计；在线 softmax
-
 ## 1 概述
 
-Transformer 架构自提出以来已成为大语言模型的基础骨架，而自注意力机制是其中计算与显存开销的主要来源。标准注意力需构造并存储 $N\times N$ 的注意力分数矩阵与概率矩阵，其计算量与显存占用均随序列长度 $N$ 二次增长。与此同时，现代 GPU 的算力（FLOPs）增长速度显著快于高带宽显存（HBM）带宽及专用功能单元（如指数运算单元）的提升速度，形成所谓"内存墙"（memory wall）。在这一背景下，单纯降低浮点运算次数并不必然带来端到端加速，算法必须同时优化数据在存储层级之间的搬运。FlashAttention 系列正是这一思路的代表，在保持注意力数学形式不变的前提下，通过分块计算、在线 softmax 以及对硬件特性的深度适配，逐代降低内存访问开销并提升算力利用率。
+Transformer 架构自提出以来已成为大语言模型的基础骨架，而自注意力机制是其中计算与显存开销的主要来源。标准注意力需构造并存储 $N\times N$ 的注意力分数矩阵与概率矩阵，其计算量与显存占用均随序列长度 $N$ 二次增长。与此同时，现代 GPU 的算力（FLOPs）增长速度显著快于高带宽显存（HBM）带宽及专用功能单元（如指数运算单元）的提升速度，形成所谓"内存墙"（memory wall）。在这一背景下，算法必须同时优化数据在存储层级之间的搬运和计算单元之间的差异。FlashAttention 系列正是这一思路的代表，在保持注意力数学形式不变的前提下，通过分块计算、在线 softmax 以及对硬件特性的深度适配，逐代降低内存访问开销并提升算力利用率。
 
 FlashAttention 系列算法将注意力计算与 GPU 硬件特性协同设计，在保持数值精确的前提下显著降低显存访问开销，已成为大模型训练与推理的标准实现。本文系统梳理 FlashAttention-1 至 FlashAttention-4 的算法演进：
 * FlashAttention-1 提出基于分块与在线 softmax 的 IO 感知精确注意力；
@@ -17,7 +13,7 @@ FlashAttention 系列算法将注意力计算与 GPU 硬件特性协同设计，
 * FlashAttention-3 面向 Hopper 架构引入异步执行、warp 专用化与 FP8 低精度计算；
 * FlashAttention-4 面向 Blackwell 架构，利用全异步矩阵乘、双 CTA 协作、指数函数的多项式逼近与条件 softmax 重缩放进一步提升算力利用率。
 
-四代工作共同展示了算法和硬件是如何协同并互相影响的。本文按代际梳理 FlashAttention-1 至 FlashAttention-4 的算法设计，分析其与 Ampere、Hopper、Blackwell 三代 GPU 架构的协同关系。第 2 节给出注意力计算的标准形式及其 IO 瓶颈；第 3 至 6 节依次讨论四代算法；第 7 节总结软硬件协同的演进规律并展望后续方向。
+四代工作共同展示了算法和硬件是如何协同并互相影响的，软件算法在现有硬件的约束下进行优化，同时硬件根据软件算法的反馈的瓶颈进行提升，从而达到性能的螺旋式增长。本文按代际梳理 FlashAttention-1 至 FlashAttention-4 的算法设计，分析其与 Ampere、Hopper、Blackwell 三代 GPU 架构的协同关系。第 2 节给出注意力计算的标准形式及其 IO 瓶颈；第 3 至 6 节依次讨论四代算法；第 7 节总结软硬件协同的演进规律并展望后续方向。
 
 ## 2 注意力计算与内存瓶颈
 
@@ -65,7 +61,7 @@ def standard_attention(Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor) -> tor
 
 ## 3 FlashAttention-1：IO 感知的精确注意力
 
-FlashAttention-1[1] 利用 GPU 的存储层级结构：片上 SRAM 带宽高而容量小，HBM 容量大而带宽低。其核心思想是将 $S$、$P$ 的计算限制在 SRAM 内的分块上，避免中间矩阵写回 HBM，从而在不改变注意力数学形式的前提下降低显存访问开销。图 1 给出了其总体设计。
+FlashAttention-1[1] 利用 GPU 的存储层级结构，片上 SRAM 带宽高而容量小，HBM 容量大而带宽低。其核心思想是将 $S$、$P$ 的计算限制在 SRAM 内的分块上，避免中间矩阵写回 HBM，从而在不改变注意力数学形式的前提下降低显存访问开销。图 1 给出了其总体设计。
 
 ![0.svg](/assets/images/flash/0.svg)
 
@@ -74,11 +70,8 @@ FlashAttention-1[1] 利用 GPU 的存储层级结构：片上 SRAM 带宽高而�
 该算法将 HBM 访问量由 $\Theta(N^{2}+Nd)$ 降至 $\Theta(N^{2}d^{2}/M)$（$M$ 为 SRAM 容量），在典型设置下可显著减少显存读写。其关键技术包括四点：
 
 （1）**分块计算（tiling）**。沿查询与键/值方向分别按 $B_r$、$B_c$ 分块，将两次矩阵乘与一次 softmax 融合为单一核函数，使中间结果 $S$、$P$ 仅驻留于 SRAM。
-
 （2）**在线 softmax（online softmax）**。由于 softmax 含行最大值与行求和两个全局归约，分块后仅能得到局部结果。在线 softmax 在扫描各块时增量维护运行最大值 $m$ 与运行和 $\ell$，并在出现更大最大值时对既有累加结果重缩放（rescale），所得结果与全局 softmax 严格等价。重缩放引入了额外计算，该开销在 FlashAttention-4 中通过条件重缩放进一步抑制。
-
 （3）**反向重计算（recomputation）**。训练阶段为求梯度需要 $S$、$P$，算法选择在前向不保存二者，而在反向时依据缓存的统计量重新计算，以额外算力换取显存占用的降低。
-
 （4）**归约复用**。前向输出的 $m$、$\ell$ 直接供反向复用，避免重复归约及其校正计算。
 
 ### 3.1 前向算法
@@ -87,7 +80,7 @@ FlashAttention-1[1] 利用 GPU 的存储层级结构：片上 SRAM 带宽高而�
 
 算法 1　FlashAttention 前向计算
 
-```text
+```c
 输入：Q, K, V ∈ R^{N×d}；块大小 Br, Bc
 输出：O ∈ R^{N×d}
 1  将 Q 分为 Q1..Q_Tr，K 分为 K1..K_Tc，V 分为 V1..V_Tc
@@ -113,7 +106,7 @@ FlashAttention-1[1] 利用 GPU 的存储层级结构：片上 SRAM 带宽高而�
 
 算法 2　FlashAttention 反向计算
 
-```text
+```c
 输入：Q, K, V, O, dO 及前向缓存的 m、ℓ
 输出：dQ, dK, dV
 1  将 Q、dQ 分为 Tr 块，K、V、dK、dV 分为 Tc 块
@@ -132,9 +125,7 @@ FlashAttention-1[1] 利用 GPU 的存储层级结构：片上 SRAM 带宽高而�
 FlashAttention-2[2] 在保持 IO 复杂度不变的前提下，针对 GPU 占用率不足的问题提出三项改进：
 
 （1）**沿序列长度维度并行**。前向改为查询块外层、键/值块内层的循环结构，使线程块可同时在 batch、注意力头与序列长度三个维度并行，负载更均衡，并减少 $O$、$m$、$\ell$ 的重复读写；反向仍保持键/值块外层，以减少梯度累加引起的重复访存。
-
 （2）**减少非矩阵乘运算**。将 $O/\ell$ 归一化延迟至内层循环之外，避免在线 softmax 更新中的反复除法。
-
 （3）**采用对数和指数（log-sum-exp, LSE）**。以 $L=m+\log\ell$ 合并存储 $m$ 与 $\ell$，将反向 softmax 中的 $\exp(x-\max)/\mathrm{sum}$ 简化为 $\exp(x-L)$，同时降低存储与计算开销。
 
 图 2 与图 3 分别给出前向分块与前/反向的并行划分；图 4 对比了两代算法在 warp 间的工作划分。
@@ -159,12 +150,10 @@ FlashAttention-2[2] 在保持 IO 复杂度不变的前提下，针对 GPU 占用
 FlashAttention-3[3] 面向 Hopper H100 架构，将内存搬运与 Tensor Core 计算并行化，主要技术包括：
 
 （1）**基于 warp 专用化的生产者-消费者模式**。利用 Tensor Core 的异步性与张量内存加速器（TMA），使数据搬运与计算重叠执行。
-
 （2）**Pingpong 调度**。在两个 warpgroup 之间交替调度矩阵乘与 softmax，缓解特殊功能单元（SFU）瓶颈。
-
 （3）**FP8 块量化与 FP32 累加**。利用硬件对 FP8 低精度的支持提升有效算力。
 
-Hopper 引入的关键硬件特性包括：TMA（在全局内存与共享内存间进行硬件加速的数据搬运）、线程块集群与 WGMMA（支持生产者-消费者异步执行）以及分布式共享内存（DSMEM）。由于 H100 的 FP16 算力已提升至约 1 PFLOPS，内存瓶颈更为突出。论文报告，借助 TMA、WGMMA 与 FP8，FlashAttention-3 在 H100 上达到约 75% 的算力利用率，而 FlashAttention-2 仅约 35%。需要指出，此阶段 Tensor Core 与 CUDA Core 尚未完全并行，仍依赖 warp 调度，直至 Blackwell 架构才实现完全并行。
+Hopper 引入的关键硬件特性包括，TMA（在全局内存与共享内存间进行硬件加速的数据搬运）、线程块集群与 WGMMA（支持生产者-消费者异步执行）以及分布式共享内存（DSMEM）。由于 H100 的 FP16 算力已提升至约 1 PFLOPS，内存瓶颈更为突出。论文报告，借助 TMA、WGMMA 与 FP8，FlashAttention-3 在 H100 上达到约 75% 的算力利用率，而 FlashAttention-2 仅约 35%。需要指出，此阶段 Tensor Core 与 CUDA Core 尚未完全并行，仍依赖 warp 调度，直至 Blackwell 架构才实现完全并行。
 
 ![5.png](/assets/images/flash/5.png)
 
@@ -183,14 +172,11 @@ Hopper 引入的关键硬件特性包括：TMA（在全局内存与共享内存�
 FlashAttention-4[4] 面向 Blackwell 架构。相较 Hopper，Blackwell 的 Tensor Core 算力约翻倍（FP16 约 2.2 PFLOPS），而共享内存带宽与指数运算单元几乎不变，导致非矩阵乘单元成为新的瓶颈。算法据此提出四项技术：
 
 （1）**全异步矩阵乘（MMA）**。使 Tensor Core、softmax 与内存操作完全重叠，形成三级流水线。
-
 （2）**反向双 CTA（2-CTA）MMA 模式**。通过两个 CTA 协作，每个 CTA 仅加载一半数据，从而减少共享内存带宽占用，并将 $dQ$ 的原子操作减半。
-
 （3）**指数函数的多项式逼近**。以低阶多项式在小区间上逼近 $2^{x}$，结合区间规约，将指数运算转化为以乘加（FMA）为主的序列，提高指数计算吞吐。
-
 （4）**条件 softmax 重缩放**。仅当运行最大值更新幅度较大时才对累加结果重缩放，跳过不必要的重缩放以减少 FMA 操作。
 
-Blackwell 的关键硬件特性包括：更大的 MMA 分块（由 $64\times128$ 增至 $128\times128$）、256 KB 张量内存（TMEM）、完全异步的 Tensor Core，以及基于 DSMEM 与 mbarrier 同步的 2-CTA 模式。上述设计的共同目标，是尽可能重叠内存、FMA 与 MMA 操作，将 Tensor Core 算力发挥至更高水平。
+Blackwell 的关键硬件特性包括，更大的 MMA 分块（由 $64\times128$ 增至 $128\times128$）、256 KB 张量内存（TMEM）、完全异步的 Tensor Core，以及基于 DSMEM 与 mbarrier 同步的 2-CTA 模式。上述设计的共同目标，是尽可能重叠内存、FMA 与 MMA 操作，将 Tensor Core 算力发挥至更高水平。
 
 ![8.png](/assets/images/flash/8.png)
 
@@ -228,7 +214,7 @@ $$2^{f}\approx c_{0}+c_{1}f+c_{2}f^{2}, \tag{6}$$
 
 ## 7 总结与展望
 
-四代 FlashAttention 的演进呈现清晰主线：FlashAttention-1 确立"减少显存访问"的算法范式，FlashAttention-2 优化并行度与工作划分，FlashAttention-3、FlashAttention-4 分别针对 Hopper 与 Blackwell 的新硬件特性，以更彻底的异步与流水线设计提升算力利用率。表 2 汇总了四代工作的对比。
+四代 FlashAttention 的演进呈现清晰主线，FlashAttention-1 确立"减少显存访问"的算法范式，FlashAttention-2 优化并行度与工作划分，FlashAttention-3、FlashAttention-4 分别针对 Hopper 与 Blackwell 的新硬件特性，以更彻底的异步与流水线设计提升算力利用率。表 2 汇总了四代工作的对比。
 
 表 2　FlashAttention-1 至 FlashAttention-4 的演进对比
 

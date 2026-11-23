@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 300" font-family="Georgia, 'Times New Roman', 'Songti SC', serif">
+  <rect x="0" y="0" width="780" height="300" fill="#ffffff"/>
+
+  <!-- Input -->
+  <rect x="40" y="110" width="120" height="80" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+  <text x="100" y="146" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">输入</text>
+  <text x="100" y="166" text-anchor="middle" font-size="11" fill="#475569">嵌入 + 位置</text>
+
+  <!-- Stack (22 layers) drawn as a column, with pass-1 and pass-2 labels -->
+  <!-- Pass 1 -->
+  <g>
+    <text x="330" y="40" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d4ed8">第一遍遍历（自底向上）</text>
+    <rect x="230" y="55" width="200" height="180" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+    <g font-size="11" text-anchor="middle" fill="#1e3a8a">
+      <rect x="250" y="68" width="160" height="20" rx="3" fill="#dbeafe"/>
+      <text x="330" y="82">层 1</text>
+      <rect x="250" y="92" width="160" height="20" rx="3" fill="#dbeafe"/>
+      <text x="330" y="106">层 2</text>
+      <text x="330" y="128" fill="#93c5fd">⋮</text>
+      <rect x="250" y="140" width="160" height="20" rx="3" fill="#bfdbfe"/>
+      <text x="330" y="154">层 21</text>
+      <rect x="250" y="164" width="160" height="20" rx="3" fill="#bfdbfe"/>
+      <text x="330" y="178">层 22</text>
+    </g>
+    <text x="330" y="218" text-anchor="middle" font-size="11" fill="#64748b">共享权重 θ</text>
+  </g>
+
+  <!-- Loop back arrow -->
+  <path d="M 430 200 C 500 200, 500 60, 440 60" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arr2)"/>
+  <text x="520" y="140" text-anchor="middle" font-size="12" fill="#b91c1c">循环（复用同一组权重）</text>
+
+  <!-- Pass 2 -->
+  <g>
+    <text x="650" y="40" text-anchor="middle" font-size="13" font-weight="bold" fill="#b91c1c">第二遍遍历</text>
+    <rect x="550" y="55" width="200" height="180" rx="6" fill="#fff1f2" stroke="#ef4444"/>
+    <g font-size="11" text-anchor="middle" fill="#7f1d1d">
+      <rect x="570" y="68" width="160" height="20" rx="3" fill="#fee2e2"/>
+      <text x="650" y="82">层 1（复用）</text>
+      <rect x="570" y="92" width="160" height="20" rx="3" fill="#fee2e2"/>
+      <text x="650" y="106">层 2（复用）</text>
+      <text x="650" y="128" fill="#fca5a5">⋮</text>
+      <rect x="570" y="140" width="160" height="20" rx="3" fill="#fecaca"/>
+      <text x="650" y="154">层 21（复用）</text>
+      <rect x="570" y="164" width="160" height="20" rx="3" fill="#fecaca"/>
+      <text x="650" y="178">层 22（复用）</text>
+    </g>
+    <text x="650" y="218" text-anchor="middle" font-size="11" fill="#64748b">共享权重 θ</text>
+  </g>
+
+  <!-- arrows connecting -->
+  <line x1="140" y1="150" x2="228" y2="150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <line x1="430" y1="150" x2="548" y2="150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrg)"/>
+
+  <!-- Output -->
+  <rect x="680" y="260" width="0" height="0"/>
+  <text x="650" y="262" text-anchor="middle" font-size="12" fill="#64748b">22 层 × 2 遍 = 44 次层计算</text>
+
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#ef4444"/>
+    </marker>
+    <marker id="arrg" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+</svg>
