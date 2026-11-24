@@ -1,52 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="Georgia, 'Times New Roman', 'Songti SC', serif">
-  <rect x="0" y="0" width="800" height="340" fill="#ffffff"/>
-
-  <text x="400" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">GLM-5.4：28 个共享层循环两轮</text>
-
-  <!-- Loop module (28 layers) -->
-  <g>
-    <rect x="80" y="50" width="280" height="150" rx="8" fill="#fff7ed" stroke="#f97316" stroke-width="1.6"/>
-    <text x="220" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#7c2d12">共享循环模块（28 层）</text>
-    <g font-size="10.5" text-anchor="middle" fill="#9a3412">
-      <text x="220" y="92">第 1 轮：建立全局上下文</text>
-      <text x="220" y="108">门控温和写回（稳定尺度）</text>
-      <line x1="110" y1="118" x2="330" y2="118" stroke="#fdba74" stroke-dasharray="3 3"/>
-      <text x="220" y="134">第 2 轮：复用状态完成精炼</text>
-      <text x="220" y="150">放开门控、充分写回</text>
-      <text x="220" y="176" fill="#c2410c">门控根据 token 难度动态调节步长</text>
-    </g>
-  </g>
-
-  <!-- loop back arrow -->
-  <path d="M 360 140 C 410 140, 410 90, 368 90" fill="none" stroke="#f97316" stroke-width="2" marker-end="url(#arro)"/>
-  <text x="432" y="120" font-size="11" fill="#c2410c">第 1 轮输出 → 第 2 轮输入</text>
-
-  <!-- KV cache strategy -->
-  <rect x="480" y="50" width="290" height="150" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6"/>
-  <text x="625" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a8a">KV Cache：全局共享 + 滑窗独立</text>
-  <g font-size="10.5" text-anchor="middle" fill="#1e40af">
-    <text x="625" y="94">跨轮共享：第二轮复用第一轮的稀疏 KV</text>
-    <text x="625" y="112">滑窗独立：窗口内保留第二轮新生成的 KV</text>
-    <line x1="510" y1="122" x2="740" y2="122" stroke="#93c5fd" stroke-dasharray="3 3"/>
-    <text x="625" y="140">多一轮循环，仅多一个窗口的 KV</text>
-    <text x="625" y="158">（而非一整份全上下文缓存）</text>
-    <text x="625" y="176" fill="#1d4ed8">稀疏注意力索引跨轮复用，零额外开销</text>
-  </g>
-
-  <!-- bottom annotation -->
-  <text x="400" y="230" text-anchor="middle" font-size="12.5" fill="#334155">三项工程改动：① 门控渐进更新　② KV Cache 全局共享 + 滑窗独立　③ 复用稀疏注意力索引</text>
-
-  <!-- flow line -->
-  <g stroke="#94a3b8" stroke-width="1.4" fill="none">
-    <line x1="60" y1="125" x2="80" y2="125"/>
-    <line x1="360" y1="125" x2="480" y2="125"/>
-  </g>
-  <text x="60" y="118" text-anchor="middle" font-size="11" fill="#64748b">输入</text>
-  <text x="770" y="118" text-anchor="middle" font-size="11" fill="#64748b">输出</text>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="660" viewBox="0 0 820 660" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
   <defs>
-    <marker id="arro" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L6,3 L0,6 Z" fill="#f97316"/>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#000000"/>
     </marker>
   </defs>
+
+  <!-- 深色背景 -->
+  <rect width="820" height="660" fill="#1a1a1a"/>
+
+  <!-- 标题 -->
+  <text x="410" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#f5f5f5">SenseNova Loop-9B · 循环 Transformer</text>
+  <text x="410" y="56" text-anchor="middle" font-size="12.5" fill="#a8a8a8">32 层多模态解码器 · 中间 24 层共享权重循环 2 遍 → 4 + 24×2 + 4 = 56 次层计算 · 混合注意力 3:1 · 双流 mHC · 9B 参数 · 512K 上下文</text>
+
+  <!-- ===================== 左面板：整体循环流程 ===================== -->
+  <rect x="24" y="76" width="316" height="548" rx="14" fill="#f1f1f1" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="40" y="100" font-size="13" font-weight="700" fill="#1a1a1a">整体循环流程</text>
+  <text x="40" y="116" font-size="10.5" fill="#666666">4 + 24×2 + 4 = 56 次层计算，仅存 32 层权重</text>
+
+  <!-- Input Embedding -->
+  <rect x="82" y="560" width="200" height="44" rx="8" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="182" y="578" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">Input Embedding</text>
+  <text x="182" y="594" text-anchor="middle" font-size="9.5" fill="#444444">文本 + 图像 · 248,320</text>
+
+  <!-- L0-3 一次性 -->
+  <line x1="182" y1="560" x2="182" y2="546" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <rect x="82" y="508" width="200" height="38" rx="6" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="182" y="525" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">第 0–3 层 · 一次性</text>
+  <text x="182" y="540" text-anchor="middle" font-size="9" fill="#555555">4 层 · 输入适配</text>
+
+  <!-- 循环模块分组 -->
+  <line x1="182" y1="508" x2="182" y2="492" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <rect x="76" y="300" width="212" height="192" rx="10" fill="#ffffff" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="182" y="318" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">循环模块 B · 第 4–27 层</text>
+  <text x="182" y="332" text-anchor="middle" font-size="9.5" fill="#666666">24 层 · 共享权重 θ · × 2 遍</text>
+
+  <rect x="108" y="348" width="148" height="26" rx="5" fill="#e8e8e8" stroke="#000000" stroke-width="1"/>
+  <text x="182" y="365" text-anchor="middle" font-size="9.5" fill="#1a1a1a">Block（线性 / 全注意力）</text>
+  <text x="182" y="387" text-anchor="middle" font-size="11" fill="#666666">⋯</text>
+  <rect x="108" y="394" width="148" height="26" rx="5" fill="#e8e8e8" stroke="#000000" stroke-width="1"/>
+  <text x="182" y="411" text-anchor="middle" font-size="9.5" fill="#1a1a1a">Block（线性 / 全注意力）</text>
+  <text x="182" y="433" text-anchor="middle" font-size="11" fill="#666666">⋯</text>
+  <rect x="108" y="440" width="148" height="26" rx="5" fill="#e8e8e8" stroke="#000000" stroke-width="1"/>
+  <text x="182" y="457" text-anchor="middle" font-size="9.5" fill="#1a1a1a">Block（线性 / 全注意力）</text>
+
+  <line x1="182" y1="492" x2="182" y2="466" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="182" y1="348" x2="182" y2="316" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- 循环回线（第 2 遍） -->
+  <path d="M 240 356 L 268 356 L 268 470 L 240 470" fill="none" stroke="#000000" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <text x="278" y="414" text-anchor="middle" font-size="9" fill="#333333" transform="rotate(-90 278 414)">第 2 遍（复用 θ）</text>
+
+  <!-- L28-31 一次性 -->
+  <line x1="182" y1="300" x2="182" y2="284" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <rect x="82" y="246" width="200" height="38" rx="6" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="182" y="263" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">第 28–31 层 · 一次性</text>
+  <text x="182" y="278" text-anchor="middle" font-size="9" fill="#555555">4 层 · 输出适配</text>
+
+  <!-- Output Head -->
+  <line x1="182" y1="246" x2="182" y2="214" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <rect x="82" y="170" width="200" height="44" rx="8" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="182" y="188" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">Output Head</text>
+  <text x="182" y="203" text-anchor="middle" font-size="9.5" fill="#444444">LM Head · 文本输出</text>
+  <line x1="182" y1="170" x2="182" y2="152" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- ===================== 右面板：混合注意力 + 双流 mHC ===================== -->
+  <rect x="344" y="76" width="468" height="548" rx="14" fill="#f1f1f1" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="360" y="100" font-size="13" font-weight="700" fill="#1a1a1a">循环模块内部：混合注意力 + 双流 mHC</text>
+  <text x="360" y="117" font-size="10.5" fill="#666666">每 4 层一组 · 3 线性注意力 + 1 全注意力 · 两条残差流 Sinkhorn 约束</text>
+
+  <!-- Card A：混合注意力 -->
+  <rect x="360" y="128" width="436" height="214" rx="10" fill="#ffffff" stroke="#000000" stroke-width="1.1"/>
+  <text x="372" y="146" font-size="11" font-weight="700" fill="#1a1a1a">混合注意力（四层一组 · 3 线性 + 1 全注意力）</text>
+
+  <rect x="380" y="158" width="296" height="30" rx="5" fill="#fbf3c9" stroke="#000000" stroke-width="1.1"/>
+  <text x="528" y="177" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">全注意力（Full Attention）· 精确检索兜底</text>
+  <rect x="380" y="198" width="296" height="30" rx="5" fill="#d6e9d6" stroke="#000000" stroke-width="1.1"/>
+  <text x="528" y="217" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">线性注意力（Linear Attention）· 低成本长上下文</text>
+  <rect x="380" y="238" width="296" height="30" rx="5" fill="#d6e9d6" stroke="#000000" stroke-width="1.1"/>
+  <text x="528" y="257" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">线性注意力（Linear Attention）· 低成本长上下文</text>
+  <rect x="380" y="278" width="296" height="30" rx="5" fill="#d6e9d6" stroke="#000000" stroke-width="1.1"/>
+  <text x="528" y="297" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">线性注意力（Linear Attention）· 低成本长上下文</text>
+
+  <text x="692" y="228" text-anchor="middle" font-size="11" fill="#333333" font-weight="700">× 6 组</text>
+  <text x="692" y="244" text-anchor="middle" font-size="9" fill="#666666">= 24 层</text>
+  <text x="692" y="258" text-anchor="middle" font-size="9" fill="#666666">循环模块</text>
+  <line x1="686" y1="170" x2="686" y2="300" stroke="#000000" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <text x="380" y="330" font-size="9.5" fill="#555555">循环模块边界恰好落在完整的四层组上，两次遍历保持一致的注意力排列 · 全注意力 16 头 / KV 4 头</text>
+
+  <!-- Card B：双流 mHC -->
+  <rect x="360" y="344" width="436" height="264" rx="10" fill="#ffffff" stroke="#000000" stroke-width="1.1"/>
+  <text x="372" y="362" font-size="11" font-weight="700" fill="#1a1a1a">双流流形约束超连接（mHC）</text>
+
+  <!-- 两条残差流 -->
+  <line x1="392" y1="388" x2="392" y2="588" stroke="#3b82f6" stroke-width="2.4"/>
+  <text x="380" y="382" font-size="9.5" font-weight="700" fill="#2563eb">流 A</text>
+  <line x1="430" y1="388" x2="430" y2="588" stroke="#f97316" stroke-width="2.4"/>
+  <text x="418" y="382" font-size="9.5" font-weight="700" fill="#ea580c">流 B</text>
+
+  <!-- 读取箭头 -->
+  <line x1="392" y1="430" x2="470" y2="430" stroke="#000000" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="430" y1="452" x2="470" y2="452" stroke="#000000" stroke-width="1.2" marker-end="url(#arr)"/>
+
+  <!-- Decoder Block -->
+  <rect x="470" y="412" width="150" height="60" rx="7" fill="#fbf3c9" stroke="#000000" stroke-width="1.2"/>
+  <text x="545" y="436" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">Decoder Block</text>
+  <text x="545" y="452" text-anchor="middle" font-size="9" fill="#333333">注意力 + FFN</text>
+
+  <!-- 混合节点 -->
+  <rect x="470" y="500" width="150" height="34" rx="7" fill="#c9cfea" stroke="#000000" stroke-width="1.1"/>
+  <text x="545" y="521" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1a1a">Sinkhorn ×20 混合</text>
+
+  <!-- 写回箭头 -->
+  <line x1="620" y1="430" x2="730" y2="430" stroke="#000000" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="620" y1="452" x2="730" y2="452" stroke="#000000" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="620" y1="517" x2="730" y2="517" stroke="#000000" stroke-width="1.2" marker-end="url(#arr)"/>
+
+  <line x1="730" y1="388" x2="730" y2="588" stroke="#3b82f6" stroke-width="2.4"/>
+  <text x="740" y="382" font-size="9.5" font-weight="700" fill="#2563eb">流 A′</text>
+  <line x1="764" y1="388" x2="764" y2="588" stroke="#f97316" stroke-width="2.4"/>
+  <text x="774" y="382" font-size="9.5" font-weight="700" fill="#ea580c">流 B′</text>
+
+  <text x="392" y="580" font-size="9.5" fill="#555555">可学习映射决定每层从残差流读取 / 混合 / 写回；Sinkhorn 归一化稳定信号传播</text>
+
+  <!-- 脚注 -->
+  <text x="410" y="646" text-anchor="middle" font-size="10.5" fill="#8a8a8a">图 10 · SenseNova Loop-9B：中间 24 层共享权重循环两次，配合 3:1 混合注意力与双流 mHC（据 SenseTime, 2026，SenseNova Loop-9B 技术博客绘制）</text>
 </svg>

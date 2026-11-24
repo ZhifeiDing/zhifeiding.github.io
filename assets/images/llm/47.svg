@@ -61,24 +61,24 @@
 
 <text x="24" y="196" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">（b）106 次层执行的排布（按比例绘制）</text>
 
-<rect x="24" y="208" width="210" height="50" rx="5" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
-<text x="129" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">第 1–25 层</text>
-<text x="129" y="248" font-size="8.8" fill="#4d5866" text-anchor="middle">25 次 · 单轮</text>
+<rect x="24" y="208" width="218" height="50" rx="5" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="133" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">L1–26 · Prelude</text>
+<text x="133" y="248" font-size="8.8" fill="#4d5866" text-anchor="middle">26 次 · 单轮</text>
 
-<rect x="234" y="208" width="236" height="50" rx="5" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
-<text x="352" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">第 26–53 层 · 第一轮</text>
-<text x="352" y="248" font-size="8.8" fill="#5d6878" text-anchor="middle">28 次 · 门控偏小</text>
+<rect x="242" y="208" width="236" height="50" rx="5" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.1"/>
+<text x="360" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">L27–54 · 第一轮</text>
+<text x="360" y="248" font-size="8.8" fill="#5d6878" text-anchor="middle">28 次 · 门控偏小</text>
 
-<rect x="470" y="208" width="236" height="50" rx="5" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2" stroke-dasharray="4 3"/>
-<text x="588" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">第 26–53 层 · 第二轮</text>
-<text x="588" y="248" font-size="8.8" fill="#5d6878" text-anchor="middle">28 次 · 权重相同</text>
+<rect x="478" y="208" width="236" height="50" rx="5" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="596" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">L27–54 · 第二轮</text>
+<text x="596" y="248" font-size="8.8" fill="#5d6878" text-anchor="middle">28 次 · 权重相同</text>
 
-<rect x="706" y="208" width="210" height="50" rx="5" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
-<text x="811" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">第 54–78 层</text>
-<text x="811" y="248" font-size="8.8" fill="#4d5866" text-anchor="middle">25 次 · 单轮</text>
+<rect x="714" y="208" width="202" height="50" rx="5" fill="#edf3fb" stroke="#3f6fa8" stroke-width="1.1"/>
+<text x="815" y="230" font-size="9.8" fill="#1b2430" text-anchor="middle" font-weight="700">L55–78 · Coda</text>
+<text x="815" y="248" font-size="8.8" fill="#4d5866" text-anchor="middle">24 次 · 单轮</text>
 
-<path d="M588,260 C588,280 352,280 352,262" stroke="#c2a03c" stroke-width="1.2" fill="none" marker-end="url(#a)"/>
-<text x="470" y="292" font-size="8.8" fill="#8a6d1f" text-anchor="middle">回环处第二轮读同一份权重，索引与窗口外 KV 复用第一轮</text>
+<path d="M596,260 C596,280 360,280 360,262" stroke="#c2a03c" stroke-width="1.2" fill="none" marker-end="url(#a)"/>
+<text x="478" y="292" font-size="8.8" fill="#8a6d1f" text-anchor="middle">回环处第二轮读同一份权重，不设索引器，窗口外 KV 复用第一轮</text>
 
 <text x="24" y="316" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">（c）第二轮注意力的两路 KV</text>
 
@@ -93,14 +93,14 @@
 <text x="206" y="411" font-size="9" fill="#4d5866" text-anchor="start">不随轮数增长。</text>
 
 <rect x="476" y="328" width="440" height="92" rx="6" fill="#fbfcfe" stroke="#b9c4d2" stroke-width="1.1"/>
-<text x="492" y="348" font-size="9.8" fill="#1b2430" text-anchor="start" font-weight="700">窗口之内，每轮独立</text>
+<text x="492" y="348" font-size="9.8" fill="#1b2430" text-anchor="start" font-weight="700">窗口之内，另持 128 token</text>
 <rect x="492" y="358" width="110" height="24" rx="3" fill="#dce8f6"/>
 <text x="547" y="375" font-size="8.6" fill="#2c4a6b" text-anchor="middle">第一轮窗口 KV</text>
 <rect x="492" y="388" width="110" height="24" rx="3" fill="#fdf0d9" stroke="#c2a03c"/>
 <text x="547" y="405" font-size="8.6" fill="#8a6d1f" text-anchor="middle">第二轮新生成</text>
-<text x="616" y="375" font-size="9" fill="#4d5866" text-anchor="start">近处上下文是两轮差异最大的部分，</text>
-<text x="616" y="393" font-size="9" fill="#4d5866" text-anchor="start">故各自保留，两路允许同一位置重叠，</text>
-<text x="616" y="411" font-size="9" fill="#4d5866" text-anchor="start">多一轮的代价只是一个窗口的 KV。</text>
+<text x="616" y="375" font-size="9" fill="#4d5866" text-anchor="start">近处是两轮差异最大之处，故各自保留；</text>
+<text x="616" y="393" font-size="9" fill="#4d5866" text-anchor="start">两路可同位置重叠，由一次 softmax 同时</text>
+<text x="616" y="411" font-size="9" fill="#4d5866" text-anchor="start">覆盖前缀与窗口，多一轮只多一窗。</text>
 
 <text x="24" y="440" font-size="11.4" fill="#3f6fa8" text-anchor="start" font-weight="700">（d）两轮的逐 token 门控与步长</text>
 <rect x="24" y="452" width="440" height="84" rx="6" fill="#fbeef0" stroke="#b8566a" stroke-width="1.1"/>
@@ -119,8 +119,8 @@
 <line x1="24" y1="552" x2="916" y2="552" stroke="#dfe4ea"/>
 <text x="24" y="574" font-size="11.4" fill="#8a6d1f" text-anchor="start" font-weight="700">核算</text>
 <text x="24" y="596" font-size="10" fill="#243447" text-anchor="start">权重：78 层一份，约 756 GB（FP8 计）；循环段 28 层占 28/78，解码一步内被读两遍，每步权重流量按 106/78 计约 1.03 TB。</text>
-<text x="24" y="616" font-size="10" fill="#243447" text-anchor="start">KV：主 KV 与 5.3 同量级，约 90 KB/token，1M 上下文约 90 GB；窗口增量 28 × w × 576 B，w 取 512 时约 8.2 MB。</text>
-<text x="24" y="636" font-size="10" fill="#243447" text-anchor="start">算力与串行：每 token 乘加增 35.9%，索引器不重算；依赖链由 78 步增至 106 步，张量并行摊不平这一段。</text>
+<text x="24" y="616" font-size="10" fill="#243447" text-anchor="start">KV：主 KV 与 5.3 同量级，约 90 KB/token，1M 上下文约 90 GB；第二轮另持 128 token 滑窗，增量约 4 MB。</text>
+<text x="24" y="636" font-size="10" fill="#243447" text-anchor="start">算力与串行：每 token 乘加增 35.9%，第二轮不设索引器；依赖链由 78 步增至 106 步，张量并行摊不平这一段。</text>
 
 <line x1="24" y1="648" x2="916" y2="648" stroke="#dfe4ea"/>
 <text x="24" y="668" font-size="11.4" fill="#2f6b47" text-anchor="start" font-weight="700">对 kernel 的要求</text>
