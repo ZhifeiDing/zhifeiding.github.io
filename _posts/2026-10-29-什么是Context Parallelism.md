@@ -20,100 +20,152 @@ CP 与 TP、PP、DP、EP 正交，可以组合成 4D/5D 混合并行。实践中
 
 因果注意力下，如果按 rank 顺序对序列连续切分，前段 rank 可见的历史 KV 少、计算量小，后段 rank 的历史 KV 多、计算量大，整体产生约两倍的不均衡，而慢的 rank 决定整体速度。通用的解决办法是 zigzag（首尾配对）切分，即将序列切成 $2C$ 个块，rank $r$ 持有块 $r$ 与块 $2C-1-r$，以一个轻载的前段块搭配一个重载的后段块，各 rank 的计算量由此趋于均衡。下图以 C=4 为例给出切分矩阵与因果 mask 矩阵的对应关系。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 550" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="550" fill="#ffffff"/>
-<text x="340" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">zigzag 切分：切分矩阵与因果 mask 矩阵（C=4，序列切成 2C=8 块）</text>
-<rect x="16" y="40" width="648" height="230" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="32" y="62" font-size="13" font-weight="bold" fill="#334155">① 顺序切分：rank r 拿块 2r、2r+1 —— 后段 rank 越背越重</text>
-<text x="32" y="92" font-size="11" fill="#475569">切分矩阵</text>
-<text x="32" y="108" font-size="10" fill="#94a3b8">query 块 → rank</text>
-<g font-size="9" text-anchor="middle">
-<rect x="200" y="82" width="17" height="17" fill="#93c5fd" stroke="#2563eb"/><text x="208.5" y="94" fill="#0f172a">B0</text>
-<rect x="218" y="82" width="17" height="17" fill="#93c5fd" stroke="#2563eb"/><text x="226.5" y="94" fill="#0f172a">B1</text>
-<rect x="236" y="82" width="17" height="17" fill="#86efac" stroke="#16a34a"/><text x="244.5" y="94" fill="#0f172a">B2</text>
-<rect x="254" y="82" width="17" height="17" fill="#86efac" stroke="#16a34a"/><text x="262.5" y="94" fill="#0f172a">B3</text>
-<rect x="272" y="82" width="17" height="17" fill="#fcd34d" stroke="#d97706"/><text x="280.5" y="94" fill="#0f172a">B4</text>
-<rect x="290" y="82" width="17" height="17" fill="#fcd34d" stroke="#d97706"/><text x="298.5" y="94" fill="#0f172a">B5</text>
-<rect x="308" y="82" width="17" height="17" fill="#fca5a5" stroke="#dc2626"/><text x="316.5" y="94" fill="#0f172a">B6</text>
-<rect x="326" y="82" width="17" height="17" fill="#fca5a5" stroke="#dc2626"/><text x="334.5" y="94" fill="#0f172a">B7</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 590" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg0" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot0" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<filter id="gl0" x="-40%" y="-40%" width="180%" height="180%">
+<feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="680" height="590" fill="url(#bg0)"/>
+<rect width="680" height="590" fill="url(#dot0)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">zigzag 切分：把因果负载摊平</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">C = 4 个 rank，序列切成 2C = 8 块；块的颜色表示由哪个 rank 持有</text>
+
+<rect x="24" y="70" width="632" height="232" rx="12" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="46" cy="92" r="9" fill="#F4D345"/>
+<text x="46" y="96" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0B0D12">1</text>
+<text x="62" y="96" font-size="12.5" fill="#E6E8EC">顺序切分 —— rank 连续拿两块，后段越背越重</text>
+<text x="640" y="96" text-anchor="end" font-size="11" fill="#FC6255">最重 / 最轻 = 5×</text>
+<g stroke-width="1.2">
+<rect x="60" y="108" width="64" height="26" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="124" y="108" width="64" height="26" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="188" y="108" width="64" height="26" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="252" y="108" width="64" height="26" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="316" y="108" width="64" height="26" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="380" y="108" width="64" height="26" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="444" y="108" width="64" height="26" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/>
+<rect x="508" y="108" width="64" height="26" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/>
 </g>
-<text x="352" y="94" font-size="9" fill="#94a3b8">← 同时是 mask 的列（key 块）</text>
-<text x="32" y="170" font-size="11" fill="#475569">因果 mask 矩阵</text>
-<text x="32" y="186" font-size="10" fill="#94a3b8">行 = query 块</text>
-<text x="32" y="200" font-size="10" fill="#94a3b8">着色 = 参与计算</text>
-<text x="32" y="214" font-size="10" fill="#94a3b8">灰 = 因果屏蔽</text>
-<text x="32" y="232" font-size="10" fill="#94a3b8">行着色 = 该行归属 rank</text>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="200" y="112" width="18" height="18" fill="#bfdbfe"/><rect x="218" y="112" width="126" height="18" fill="#e2e8f0"/>
-<rect x="200" y="130" width="36" height="18" fill="#bfdbfe"/><rect x="236" y="130" width="108" height="18" fill="#e2e8f0"/>
-<rect x="200" y="148" width="54" height="18" fill="#bbf7d0"/><rect x="254" y="148" width="90" height="18" fill="#e2e8f0"/>
-<rect x="200" y="166" width="72" height="18" fill="#bbf7d0"/><rect x="272" y="166" width="72" height="18" fill="#e2e8f0"/>
-<rect x="200" y="184" width="90" height="18" fill="#fde68a"/><rect x="290" y="184" width="54" height="18" fill="#e2e8f0"/>
-<rect x="200" y="202" width="108" height="18" fill="#fde68a"/><rect x="308" y="202" width="36" height="18" fill="#e2e8f0"/>
-<rect x="200" y="220" width="126" height="18" fill="#fecaca"/><rect x="326" y="220" width="18" height="18" fill="#e2e8f0"/>
-<rect x="200" y="238" width="144" height="18" fill="#fecaca"/>
+<g font-size="10" text-anchor="middle" fill="#DDE3EC">
+<text x="92" y="125">B0</text><text x="156" y="125">B1</text><text x="220" y="125">B2</text><text x="284" y="125">B3</text>
+<text x="348" y="125">B4</text><text x="412" y="125">B5</text><text x="476" y="125">B6</text><text x="540" y="125">B7</text>
 </g>
-<g font-size="9" text-anchor="end" fill="#64748b">
-<text x="196" y="125">B0</text><text x="196" y="143">B1</text><text x="196" y="161">B2</text><text x="196" y="179">B3</text>
-<text x="196" y="197">B4</text><text x="196" y="215">B5</text><text x="196" y="233">B6</text><text x="196" y="251">B7</text>
+<g font-size="10" text-anchor="middle">
+<text x="124" y="150" fill="#58C4DD">R0</text><text x="252" y="150" fill="#5CD0B3">R1</text>
+<text x="380" y="150" fill="#F4D345">R2</text><text x="508" y="150" fill="#FC6255">R3</text>
 </g>
-<text x="430" y="118" font-size="11" fill="#475569">各 rank 负载（着色格数）</text>
-<g font-size="10">
-<text x="442" y="148" text-anchor="end" fill="#334155">R0</text>
-<rect x="450" y="136" width="34" height="16" fill="#93c5fd" stroke="#2563eb"/><text x="490" y="148" fill="#334155">3</text>
-<text x="442" y="174" text-anchor="end" fill="#334155">R1</text>
-<rect x="450" y="162" width="79" height="16" fill="#86efac" stroke="#16a34a"/><text x="535" y="174" fill="#334155">7</text>
-<text x="442" y="200" text-anchor="end" fill="#334155">R2</text>
-<rect x="450" y="188" width="125" height="16" fill="#fcd34d" stroke="#d97706"/><text x="581" y="200" fill="#334155">11</text>
-<text x="442" y="226" text-anchor="end" fill="#334155">R3</text>
-<rect x="450" y="214" width="170" height="16" fill="#fca5a5" stroke="#dc2626"/><text x="626" y="226" fill="#334155">15</text>
+<g stroke="#0B0D12" stroke-width="0.8">
+<rect x="70" y="160" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/>
+<rect x="87" y="160" width="17" height="17" fill="#141A24"/><rect x="104" y="160" width="17" height="17" fill="#141A24"/><rect x="121" y="160" width="17" height="17" fill="#141A24"/>
+<rect x="138" y="160" width="17" height="17" fill="#141A24"/><rect x="155" y="160" width="17" height="17" fill="#141A24"/><rect x="172" y="160" width="17" height="17" fill="#141A24"/><rect x="189" y="160" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="177" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="87" y="177" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/>
+<rect x="104" y="177" width="17" height="17" fill="#141A24"/><rect x="121" y="177" width="17" height="17" fill="#141A24"/><rect x="138" y="177" width="17" height="17" fill="#141A24"/><rect x="155" y="177" width="17" height="17" fill="#141A24"/><rect x="172" y="177" width="17" height="17" fill="#141A24"/><rect x="189" y="177" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="194" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="87" y="194" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="104" y="194" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/>
+<rect x="121" y="194" width="17" height="17" fill="#141A24"/><rect x="138" y="194" width="17" height="17" fill="#141A24"/><rect x="155" y="194" width="17" height="17" fill="#141A24"/><rect x="172" y="194" width="17" height="17" fill="#141A24"/><rect x="189" y="194" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="211" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="87" y="211" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="104" y="211" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="121" y="211" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/>
+<rect x="138" y="211" width="17" height="17" fill="#141A24"/><rect x="155" y="211" width="17" height="17" fill="#141A24"/><rect x="172" y="211" width="17" height="17" fill="#141A24"/><rect x="189" y="211" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="228" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="87" y="228" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="104" y="228" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="121" y="228" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="138" y="228" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/>
+<rect x="155" y="228" width="17" height="17" fill="#141A24"/><rect x="172" y="228" width="17" height="17" fill="#141A24"/><rect x="189" y="228" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="87" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="104" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="121" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="138" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="155" y="245" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/>
+<rect x="172" y="245" width="17" height="17" fill="#141A24"/><rect x="189" y="245" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="87" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="104" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="121" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="138" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="155" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="172" y="262" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/>
+<rect x="189" y="262" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="87" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="104" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="121" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="138" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="155" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="172" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="189" y="279" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/>
 </g>
-<text x="340" y="262" text-anchor="middle" font-size="10" fill="#64748b">rank 负载 = 其拥有的 query 行在下三角中的着色格数（∝ 计算量）：3 / 7 / 11 / 15，约 5 倍不均衡</text>
-<rect x="16" y="280" width="648" height="230" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="32" y="302" font-size="13" font-weight="bold" fill="#334155">② zigzag：rank r 拿块 r 与块 2C−1−r —— 首尾配对，负载相等</text>
-<text x="32" y="332" font-size="11" fill="#475569">切分矩阵</text>
-<text x="32" y="348" font-size="10" fill="#94a3b8">query 块 → rank</text>
-<g font-size="9" text-anchor="middle">
-<rect x="200" y="322" width="17" height="17" fill="#93c5fd" stroke="#2563eb"/><text x="208.5" y="334" fill="#0f172a">B0</text>
-<rect x="218" y="322" width="17" height="17" fill="#86efac" stroke="#16a34a"/><text x="226.5" y="334" fill="#0f172a">B1</text>
-<rect x="236" y="322" width="17" height="17" fill="#fcd34d" stroke="#d97706"/><text x="244.5" y="334" fill="#0f172a">B2</text>
-<rect x="254" y="322" width="17" height="17" fill="#fca5a5" stroke="#dc2626"/><text x="262.5" y="334" fill="#0f172a">B3</text>
-<rect x="272" y="322" width="17" height="17" fill="#fca5a5" stroke="#dc2626"/><text x="280.5" y="334" fill="#0f172a">B4</text>
-<rect x="290" y="322" width="17" height="17" fill="#fcd34d" stroke="#d97706"/><text x="298.5" y="334" fill="#0f172a">B5</text>
-<rect x="308" y="322" width="17" height="17" fill="#86efac" stroke="#16a34a"/><text x="316.5" y="334" fill="#0f172a">B6</text>
-<rect x="326" y="322" width="17" height="17" fill="#93c5fd" stroke="#2563eb"/><text x="334.5" y="334" fill="#0f172a">B7</text>
+<text x="206" y="164" font-size="9" fill="#5B6678">负载（格）</text>
+<g font-size="10" fill="#8B96A8">
+<text x="213" y="190">R0</text><text x="213" y="224">R1</text><text x="213" y="258">R2</text><text x="213" y="292">R3</text>
 </g>
-<text x="352" y="334" font-size="9" fill="#94a3b8">R0←B0+B7，R1←B1+B6，R2←B2+B5，R3←B3+B4</text>
-<text x="32" y="410" font-size="11" fill="#475569">因果 mask 矩阵</text>
-<text x="32" y="426" font-size="10" fill="#94a3b8">行 = query 块</text>
-<text x="32" y="440" font-size="10" fill="#94a3b8">着色 = 参与计算</text>
-<text x="32" y="454" font-size="10" fill="#94a3b8">灰 = 因果屏蔽</text>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="200" y="352" width="18" height="18" fill="#bfdbfe"/><rect x="218" y="352" width="126" height="18" fill="#e2e8f0"/>
-<rect x="200" y="370" width="36" height="18" fill="#bbf7d0"/><rect x="236" y="370" width="108" height="18" fill="#e2e8f0"/>
-<rect x="200" y="388" width="54" height="18" fill="#fde68a"/><rect x="254" y="388" width="90" height="18" fill="#e2e8f0"/>
-<rect x="200" y="406" width="72" height="18" fill="#fecaca"/><rect x="272" y="406" width="72" height="18" fill="#e2e8f0"/>
-<rect x="200" y="424" width="90" height="18" fill="#fecaca"/><rect x="290" y="424" width="54" height="18" fill="#e2e8f0"/>
-<rect x="200" y="442" width="108" height="18" fill="#fde68a"/><rect x="308" y="442" width="36" height="18" fill="#e2e8f0"/>
-<rect x="200" y="460" width="126" height="18" fill="#bbf7d0"/><rect x="326" y="460" width="18" height="18" fill="#e2e8f0"/>
-<rect x="200" y="478" width="144" height="18" fill="#bfdbfe"/>
+<g font-size="15" fill="#E6E8EC" text-anchor="end">
+<text x="246" y="190">3</text><text x="246" y="224">7</text><text x="246" y="258">11</text><text x="246" y="292" fill="#FC6255">15</text>
 </g>
-<g font-size="9" text-anchor="end" fill="#64748b">
-<text x="196" y="365">B0</text><text x="196" y="383">B1</text><text x="196" y="401">B2</text><text x="196" y="419">B3</text>
-<text x="196" y="437">B4</text><text x="196" y="455">B5</text><text x="196" y="473">B6</text><text x="196" y="491">B7</text>
+
+<g stroke="#2A3444" stroke-width="1">
+<line x1="207" y1="172" x2="207" y2="300"/>
+<line x1="202" y1="186" x2="210" y2="186"/><line x1="202" y1="220" x2="210" y2="220"/>
+<line x1="202" y1="254" x2="210" y2="254"/><line x1="202" y1="288" x2="210" y2="288"/>
 </g>
-<text x="430" y="358" font-size="11" fill="#475569">各 rank 负载（着色格数）</text>
-<g font-size="10">
-<text x="442" y="388" text-anchor="end" fill="#334155">R0</text>
-<rect x="450" y="376" width="102" height="16" fill="#93c5fd" stroke="#2563eb"/><text x="558" y="388" fill="#334155">9</text>
-<text x="442" y="414" text-anchor="end" fill="#334155">R1</text>
-<rect x="450" y="402" width="102" height="16" fill="#86efac" stroke="#16a34a"/><text x="558" y="414" fill="#334155">9</text>
-<text x="442" y="440" text-anchor="end" fill="#334155">R2</text>
-<rect x="450" y="428" width="102" height="16" fill="#fcd34d" stroke="#d97706"/><text x="558" y="440" fill="#334155">9</text>
-<text x="442" y="466" text-anchor="end" fill="#334155">R3</text>
-<rect x="450" y="454" width="102" height="16" fill="#fca5a5" stroke="#dc2626"/><text x="558" y="466" fill="#334155">9</text>
+<text x="312" y="196" font-size="10.5" fill="#8B96A8">灰色格被因果 mask 屏蔽，</text>
+<text x="312" y="212" font-size="10.5" fill="#8B96A8">不计入负载；R3 的 15 格</text>
+<text x="312" y="228" font-size="10.5" fill="#FC6255">决定了其他 rank 的空等时间</text>
+<g stroke="#FC6255" stroke-width="1.2" fill="none" marker-end="url(#ar0r)">
+<line x1="252" y1="288" x2="304" y2="278"/>
 </g>
-<text x="340" y="502" text-anchor="middle" font-size="10" fill="#64748b">轻载前段块（行短）配重载后段块（行长），每个 rank 的着色格数均为 9，慢 rank 不再拖累整体</text>
+
+<rect x="24" y="310" width="632" height="232" rx="12" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="46" cy="332" r="9" fill="#F4D345"/>
+<text x="46" y="336" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0B0D12">2</text>
+<text x="62" y="336" font-size="12.5" fill="#E6E8EC">zigzag 切分 —— rank r 拿块 r 与块 2C−1−r，首尾配对</text>
+<g stroke-width="1.2">
+<rect x="60" y="348" width="64" height="26" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="124" y="348" width="64" height="26" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/>
+<rect x="188" y="348" width="64" height="26" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="252" y="348" width="64" height="26" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="316" y="348" width="64" height="26" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="380" y="348" width="64" height="26" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="444" y="348" width="64" height="26" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/>
+<rect x="508" y="348" width="64" height="26" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+</g>
+<g font-size="10" text-anchor="middle" fill="#DDE3EC">
+<text x="92" y="365">B0</text><text x="156" y="365">B1</text><text x="220" y="365">B2</text><text x="284" y="365">B3</text>
+<text x="348" y="365">B4</text><text x="412" y="365">B5</text><text x="476" y="365">B6</text><text x="540" y="365">B7</text>
+</g>
+<g stroke="#0B0D12" stroke-width="0.8">
+<rect x="70" y="398" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/>
+<rect x="87" y="398" width="17" height="17" fill="#141A24"/><rect x="104" y="398" width="17" height="17" fill="#141A24"/><rect x="121" y="398" width="17" height="17" fill="#141A24"/>
+<rect x="138" y="398" width="17" height="17" fill="#141A24"/><rect x="155" y="398" width="17" height="17" fill="#141A24"/><rect x="172" y="398" width="17" height="17" fill="#141A24"/>
+<rect x="189" y="398" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/>
+<rect x="70" y="415" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="87" y="415" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/>
+<rect x="104" y="415" width="17" height="17" fill="#141A24"/><rect x="121" y="415" width="17" height="17" fill="#141A24"/><rect x="138" y="415" width="17" height="17" fill="#141A24"/><rect x="155" y="415" width="17" height="17" fill="#141A24"/>
+<rect x="172" y="415" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="189" y="415" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/>
+<rect x="70" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="87" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="104" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/>
+<rect x="121" y="432" width="17" height="17" fill="#141A24"/><rect x="138" y="432" width="17" height="17" fill="#141A24"/>
+<rect x="155" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="172" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="189" y="432" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/>
+<rect x="70" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="87" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="104" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="121" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/>
+<rect x="138" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="155" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="172" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="189" y="449" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/>
+<rect x="70" y="466" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="87" y="466" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="104" y="466" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="121" y="466" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/><rect x="138" y="466" width="17" height="17" fill="#FC6255" fill-opacity="0.5"/>
+<rect x="155" y="466" width="17" height="17" fill="#141A24"/><rect x="172" y="466" width="17" height="17" fill="#141A24"/><rect x="189" y="466" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="87" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="104" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="121" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="138" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/>
+<rect x="155" y="483" width="17" height="17" fill="#F4D345" fill-opacity="0.5"/><rect x="172" y="483" width="17" height="17" fill="#141A24"/><rect x="189" y="483" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="87" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="104" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="121" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="138" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/>
+<rect x="155" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="172" y="500" width="17" height="17" fill="#5CD0B3" fill-opacity="0.5"/><rect x="189" y="500" width="17" height="17" fill="#141A24"/>
+<rect x="70" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="87" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="104" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="121" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="138" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="155" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="172" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/><rect x="189" y="517" width="17" height="17" fill="#58C4DD" fill-opacity="0.5"/>
+</g>
+<text x="206" y="402" font-size="9" fill="#5B6678">负载（格）</text>
+<g font-size="15" fill="#83C167" text-anchor="end">
+<text x="246" y="429">9</text><text x="246" y="463">9</text><text x="246" y="497">9</text><text x="246" y="531">9</text>
+</g>
+<g stroke="#2A3444" stroke-width="1">
+<line x1="207" y1="404" x2="207" y2="540"/>
+<line x1="203" y1="428" x2="211" y2="428"/><line x1="203" y1="462" x2="211" y2="462"/>
+<line x1="203" y1="496" x2="211" y2="496"/><line x1="203" y1="530" x2="211" y2="530"/>
+</g>
+<text x="312" y="430" font-size="10.5" fill="#83C167">四个 rank 各 9 格，负载完全相等，</text>
+<text x="312" y="446" font-size="10.5" fill="#83C166">慢 rank 不再决定整体速度</text>
+<text x="312" y="472" font-size="10.5" fill="#8B96A8">代价只是块的归属被打乱，</text>
+<text x="312" y="488" font-size="10.5" fill="#8B96A8">后续按 rank 做 AllGather 时要还原顺序</text>
+
+<g font-size="10" fill="#8B96A8">
+<rect x="36" y="556" width="10" height="10" fill="#58C4DD" fill-opacity="0.5" stroke="#58C4DD" stroke-width="1"/>
+<text x="52" y="565">R0</text>
+<rect x="96" y="556" width="10" height="10" fill="#5CD0B3" fill-opacity="0.5" stroke="#5CD0B3" stroke-width="1"/>
+<text x="112" y="565">R1</text>
+<rect x="156" y="556" width="10" height="10" fill="#F4D345" fill-opacity="0.5" stroke="#F4D345" stroke-width="1"/>
+<text x="172" y="565">R2</text>
+<rect x="216" y="556" width="10" height="10" fill="#FC6255" fill-opacity="0.5" stroke="#FC6255" stroke-width="1"/>
+<text x="232" y="565">R3</text>
+<rect x="292" y="556" width="10" height="10" fill="#141A24" stroke="#2C3748" stroke-width="1"/>
+<text x="308" y="565">因果 mask 屏蔽，不计负载</text>
+</g>
+<defs>
+<marker id="ar0r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FC6255"/></marker>
+</defs>
+</g>
 </svg>
 
 ▲ 切分矩阵与因果 mask 矩阵：切分矩阵给出每个 query 块所属的 rank；mask 矩阵以 query 块为行、key 块为列，下三角（着色）参与计算，上三角（灰）被因果 mask 屏蔽。顺序切分下各 rank 负载为 3/7/11/15，zigzag 首尾配对后各 rank 均为 9
@@ -148,104 +200,113 @@ CP 的通信集中于注意力，已有方案之间的本质差别在于 rank �
 
 Ring Attention 中 Q 留在本地，KV 块沿环形拓扑以 P2P send/recv 传递一圈。第 $t$ 轮，每个 rank 用手中的 KV 块计算本地 Q 的部分注意力结果，同时把该块发往下一个 rank、从上一个 rank 接收新块，中间结果用 FlashAttention 的 LSE 累加技巧合并，最终结果与单卡稠密注意力精确等价。只要单块的计算时间能够覆盖单块的传输时间，通信即可被完全隐藏。Megatron `cp_comm_type=p2p` 的默认实现就属于这一类，它在 zigzag 切分的基础上引入双 CUDA stream 重叠与 FlashAttention-2 集成，是工业级 Ring Attention 的代表。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 430" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480" style="width:100%;height:auto">
 <defs>
-<marker id="ringA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
+<linearGradient id="bg1" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot1" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a1o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+<marker id="a1g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#5B6678"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="430" fill="#ffffff"/>
-<text x="340" y="22" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">Ring Attention 每轮通信日程（C=4）：KV 块顺时针 P2P，一轮一跳</text>
-<rect x="23" y="36" width="142" height="132" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="94" y="54" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">第 0 轮（初始）</text>
-<g font-size="9" text-anchor="middle">
-<rect x="33" y="62" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="60" y="75" fill="#1e3a8a">GPU 0</text>
-<rect x="93" y="62" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="119" y="75" fill="#7c2d12">K₀</text>
-<rect x="33" y="84" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="60" y="97" fill="#14532d">GPU 1</text>
-<rect x="93" y="84" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="119" y="97" fill="#7c2d12">K₁</text>
-<rect x="33" y="106" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="60" y="119" fill="#92400e">GPU 2</text>
-<rect x="93" y="106" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="119" y="119" fill="#7c2d12">K₂</text>
-<rect x="33" y="128" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="60" y="141" fill="#7f1d1d">GPU 3</text>
-<rect x="93" y="128" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="119" y="141" fill="#7c2d12">K₃</text>
+<rect width="680" height="480" fill="url(#bg1)"/>
+<rect width="680" height="480" fill="url(#dot1)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">Ring Attention：Q 留在原地，KV 块绕环走一圈</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">C = 4。每轮各 rank 用手中的 K 块算一个 tile，同时把块 P2P 发给下家、从上家收新块</text>
+
+<rect x="24" y="68" width="142" height="146" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="95" y="86" text-anchor="middle" font-size="10.5" fill="#E6E8EC">第 0 轮（初始）</text>
+<rect x="28" y="108" width="3" height="16" fill="#58C4DD"/><text x="36" y="120" font-size="9" fill="#58C4DD">R0</text>
+<rect x="74" y="108" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="102" y="120" text-anchor="middle" font-size="9" fill="#F0C39B">K0</text>
+<rect x="28" y="128" width="3" height="16" fill="#5CD0B3"/><text x="36" y="140" font-size="9" fill="#5CD0B3">R1</text>
+<rect x="74" y="128" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="102" y="140" text-anchor="middle" font-size="9" fill="#F0C39B">K1</text>
+<rect x="28" y="148" width="3" height="16" fill="#F4D345"/><text x="36" y="160" font-size="9" fill="#F4D345">R2</text>
+<rect x="74" y="148" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="102" y="160" text-anchor="middle" font-size="9" fill="#F0C39B">K2</text>
+<rect x="28" y="168" width="3" height="16" fill="#FC6255"/><text x="36" y="180" font-size="9" fill="#FC6255">R3</text>
+<rect x="74" y="168" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="102" y="180" text-anchor="middle" font-size="9" fill="#F0C39B">K3</text>
+<text x="95" y="202" text-anchor="middle" font-size="9" fill="#F4D345">本轮 tile：i − j = 0</text>
+
+<rect x="184" y="68" width="142" height="146" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="255" y="86" text-anchor="middle" font-size="10.5" fill="#E6E8EC">第 1 轮</text>
+<rect x="188" y="108" width="3" height="16" fill="#58C4DD"/><text x="196" y="120" font-size="9" fill="#58C4DD">R0</text>
+<rect x="234" y="108" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="262" y="120" text-anchor="middle" font-size="9" fill="#F0C39B">K3</text>
+<rect x="188" y="128" width="3" height="16" fill="#5CD0B3"/><text x="196" y="140" font-size="9" fill="#5CD0B3">R1</text>
+<rect x="234" y="128" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="262" y="140" text-anchor="middle" font-size="9" fill="#F0C39B">K0</text>
+<rect x="188" y="148" width="3" height="16" fill="#F4D345"/><text x="196" y="160" font-size="9" fill="#F4D345">R2</text>
+<rect x="234" y="148" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="262" y="160" text-anchor="middle" font-size="9" fill="#F0C39B">K1</text>
+<rect x="188" y="168" width="3" height="16" fill="#FC6255"/><text x="196" y="180" font-size="9" fill="#FC6255">R3</text>
+<rect x="234" y="168" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="262" y="180" text-anchor="middle" font-size="9" fill="#F0C39B">K2</text>
+<text x="255" y="202" text-anchor="middle" font-size="9" fill="#F4D345">本轮 tile：i − j = 1</text>
+
+<rect x="344" y="68" width="142" height="146" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="415" y="86" text-anchor="middle" font-size="10.5" fill="#E6E8EC">第 2 轮</text>
+<rect x="348" y="108" width="3" height="16" fill="#58C4DD"/><text x="356" y="120" font-size="9" fill="#58C4DD">R0</text>
+<rect x="394" y="108" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="422" y="120" text-anchor="middle" font-size="9" fill="#F0C39B">K2</text>
+<rect x="348" y="128" width="3" height="16" fill="#5CD0B3"/><text x="356" y="140" font-size="9" fill="#5CD0B3">R1</text>
+<rect x="394" y="128" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="422" y="140" text-anchor="middle" font-size="9" fill="#F0C39B">K3</text>
+<rect x="348" y="148" width="3" height="16" fill="#F4D345"/><text x="356" y="160" font-size="9" fill="#F4D345">R2</text>
+<rect x="394" y="148" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="422" y="160" text-anchor="middle" font-size="9" fill="#F0C39B">K0</text>
+<rect x="348" y="168" width="3" height="16" fill="#FC6255"/><text x="356" y="180" font-size="9" fill="#FC6255">R3</text>
+<rect x="394" y="168" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="422" y="180" text-anchor="middle" font-size="9" fill="#F0C39B">K1</text>
+<text x="415" y="202" text-anchor="middle" font-size="9" fill="#F4D345">本轮 tile：i − j = 2</text>
+
+<rect x="504" y="68" width="142" height="146" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="575" y="86" text-anchor="middle" font-size="10.5" fill="#E6E8EC">第 3 轮</text>
+<rect x="508" y="108" width="3" height="16" fill="#58C4DD"/><text x="516" y="120" font-size="9" fill="#58C4DD">R0</text>
+<rect x="554" y="108" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="582" y="120" text-anchor="middle" font-size="9" fill="#F0C39B">K1</text>
+<rect x="508" y="128" width="3" height="16" fill="#5CD0B3"/><text x="516" y="140" font-size="9" fill="#5CD0B3">R1</text>
+<rect x="554" y="128" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="582" y="140" text-anchor="middle" font-size="9" fill="#F0C39B">K2</text>
+<rect x="508" y="148" width="3" height="16" fill="#F4D345"/><text x="516" y="160" font-size="9" fill="#F4D345">R2</text>
+<rect x="554" y="148" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="582" y="160" text-anchor="middle" font-size="9" fill="#F0C39B">K3</text>
+<rect x="508" y="168" width="3" height="16" fill="#FC6255"/><text x="516" y="180" font-size="9" fill="#FC6255">R3</text>
+<rect x="554" y="168" width="56" height="16" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1"/><text x="582" y="180" text-anchor="middle" font-size="9" fill="#F0C39B">K0</text>
+<text x="575" y="202" text-anchor="middle" font-size="9" fill="#F4D345">本轮 tile：i − j = 3</text>
+
+<g stroke="#FF862F" stroke-width="1.4" fill="none">
+<line x1="167" y1="146" x2="180" y2="146" marker-end="url(#a1o)"/>
+<line x1="327" y1="146" x2="340" y2="146" marker-end="url(#a1o)"/>
+<line x1="487" y1="146" x2="500" y2="146" marker-end="url(#a1o)"/>
 </g>
-<text x="94" y="162" text-anchor="middle" font-size="8" fill="#64748b">本轮算 tile：i = j（对角）</text>
-<rect x="187" y="36" width="142" height="132" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="258" y="54" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">第 1 轮</text>
-<g font-size="9" text-anchor="middle">
-<rect x="197" y="62" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="224" y="75" fill="#1e3a8a">GPU 0</text>
-<rect x="257" y="62" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="283" y="75" fill="#7c2d12">K₃</text>
-<rect x="197" y="84" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="224" y="97" fill="#14532d">GPU 1</text>
-<rect x="257" y="84" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="283" y="97" fill="#7c2d12">K₀</text>
-<rect x="197" y="106" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="224" y="119" fill="#92400e">GPU 2</text>
-<rect x="257" y="106" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="283" y="119" fill="#7c2d12">K₁</text>
-<rect x="197" y="128" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="224" y="141" fill="#7f1d1d">GPU 3</text>
-<rect x="257" y="128" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="283" y="141" fill="#7c2d12">K₂</text>
+<text x="340" y="232" text-anchor="middle" font-size="10" fill="#8B96A8">每两轮之间，4 对 send/recv 同时发生：块顺时针一跳（上图箭头），与 tile 计算重叠</text>
+
+<text x="36" y="262" font-size="12" fill="#E6E8EC">score tile 矩阵：颜色 = 该 tile 在哪一轮被计算</text>
+<g font-size="9.5" text-anchor="middle" fill="#8B96A8">
+<text x="151" y="286">K0</text><text x="187" y="286">K1</text><text x="223" y="286">K2</text><text x="259" y="286">K3</text>
+<text x="126" y="305" text-anchor="end">Q0</text><text x="126" y="341" text-anchor="end">Q1</text>
+<text x="126" y="377" text-anchor="end">Q2</text><text x="126" y="413" text-anchor="end">Q3</text>
 </g>
-<text x="258" y="162" text-anchor="middle" font-size="8" fill="#64748b">本轮算 tile：i − j = 1</text>
-<rect x="351" y="36" width="142" height="132" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="422" y="54" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">第 2 轮</text>
-<g font-size="9" text-anchor="middle">
-<rect x="361" y="62" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="388" y="75" fill="#1e3a8a">GPU 0</text>
-<rect x="421" y="62" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="447" y="75" fill="#7c2d12">K₂</text>
-<rect x="361" y="84" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="388" y="97" fill="#14532d">GPU 1</text>
-<rect x="421" y="84" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="447" y="97" fill="#7c2d12">K₃</text>
-<rect x="361" y="106" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="388" y="119" fill="#92400e">GPU 2</text>
-<rect x="421" y="106" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="447" y="119" fill="#7c2d12">K₀</text>
-<rect x="361" y="128" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="388" y="141" fill="#7f1d1d">GPU 3</text>
-<rect x="421" y="128" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="447" y="141" fill="#7c2d12">K₁</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="133" y="292" width="36" height="36" fill="#83C167" fill-opacity="0.45"/><rect x="169" y="292" width="36" height="36" fill="#141A24"/><rect x="205" y="292" width="36" height="36" fill="#141A24"/><rect x="241" y="292" width="36" height="36" fill="#141A24"/>
+<rect x="133" y="328" width="36" height="36" fill="#58C4DD" fill-opacity="0.45"/><rect x="169" y="328" width="36" height="36" fill="#83C167" fill-opacity="0.45"/><rect x="205" y="328" width="36" height="36" fill="#141A24"/><rect x="241" y="328" width="36" height="36" fill="#141A24"/>
+<rect x="133" y="364" width="36" height="36" fill="#F4D345" fill-opacity="0.45"/><rect x="169" y="364" width="36" height="36" fill="#58C4DD" fill-opacity="0.45"/><rect x="205" y="364" width="36" height="36" fill="#83C167" fill-opacity="0.45"/><rect x="241" y="364" width="36" height="36" fill="#141A24"/>
+<rect x="133" y="400" width="36" height="36" fill="#FC6255" fill-opacity="0.45"/><rect x="169" y="400" width="36" height="36" fill="#F4D345" fill-opacity="0.45"/><rect x="205" y="400" width="36" height="36" fill="#58C4DD" fill-opacity="0.45"/><rect x="241" y="400" width="36" height="36" fill="#83C167" fill-opacity="0.45"/>
 </g>
-<text x="422" y="162" text-anchor="middle" font-size="8" fill="#64748b">本轮算 tile：i − j = 2</text>
-<rect x="515" y="36" width="142" height="132" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="586" y="54" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">第 3 轮</text>
-<g font-size="9" text-anchor="middle">
-<rect x="525" y="62" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="552" y="75" fill="#1e3a8a">GPU 0</text>
-<rect x="585" y="62" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="611" y="75" fill="#7c2d12">K₁</text>
-<rect x="525" y="84" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="552" y="97" fill="#14532d">GPU 1</text>
-<rect x="585" y="84" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="611" y="97" fill="#7c2d12">K₂</text>
-<rect x="525" y="106" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="552" y="119" fill="#92400e">GPU 3</text>
-<rect x="585" y="106" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="611" y="119" fill="#7c2d12">K₀</text>
-<rect x="525" y="128" width="54" height="18" fill="#e0e7ff" stroke="#6366f1"/><text x="552" y="141" fill="#7f1d1d">GPU 3</text>
-<rect x="585" y="128" width="52" height="18" fill="#fdba74" stroke="#ea580c"/><text x="611" y="141" fill="#7c2d12">K₃</text>
+<g font-size="9" text-anchor="middle" fill="#E6E8EC">
+<text x="151" y="314">轮0</text><text x="151" y="350">轮1</text><text x="151" y="386">轮2</text><text x="151" y="422">轮3</text>
+<text x="187" y="350">轮0</text><text x="187" y="386">轮1</text><text x="187" y="422">轮2</text>
+<text x="223" y="386">轮0</text><text x="223" y="422">轮1</text><text x="259" y="422">轮0</text>
+<text x="187" y="314" fill="#46536A">mask</text><text x="223" y="314" fill="#46536A">mask</text><text x="259" y="314" fill="#46536A">mask</text>
+<text x="223" y="350" fill="#46536A">mask</text><text x="259" y="350" fill="#46536A">mask</text><text x="259" y="386" fill="#46536A">mask</text>
 </g>
-<text x="586" y="162" text-anchor="middle" font-size="8" fill="#64748b">本轮算 tile：i − j = 3</text>
-<g stroke="#ea580c" stroke-width="2" fill="none">
-<line x1="167" y1="100" x2="183" y2="100" marker-end="url(#ringA)"/>
-<line x1="331" y1="100" x2="347" y2="100" marker-end="url(#ringA)"/>
-<line x1="495" y1="100" x2="511" y2="100" marker-end="url(#ringA)"/>
+<g font-size="10" fill="#8B96A8">
+<rect x="316" y="292" width="11" height="11" fill="#83C167" fill-opacity="0.45" stroke="#83C167" stroke-width="1"/>
+<text x="336" y="302">轮 0 —— 对角 tile（i = j）</text>
+<rect x="316" y="318" width="11" height="11" fill="#58C4DD" fill-opacity="0.45" stroke="#58C4DD" stroke-width="1"/>
+<text x="336" y="328">轮 1 —— 次对角（i − j = 1）</text>
+<rect x="316" y="344" width="11" height="11" fill="#F4D345" fill-opacity="0.45" stroke="#F4D345" stroke-width="1"/>
+<text x="336" y="354">轮 2 —— i − j = 2</text>
+<rect x="316" y="370" width="11" height="11" fill="#FC6255" fill-opacity="0.45" stroke="#FC6255" stroke-width="1"/>
+<text x="336" y="380">轮 3 —— i − j = 3</text>
+<text x="316" y="408" font-size="10" fill="#5B6678">下三角被 4 轮扫完，</text>
+<text x="316" y="424" font-size="10" fill="#5B6678">灰格（j &gt; i）被因果 mask 屏蔽，</text>
+<text x="316" y="440" font-size="10" fill="#5B6678">块仍照常流转但不算。</text>
 </g>
-<text x="340" y="186" text-anchor="middle" font-size="9" fill="#c2410c">↑ 每轮的通信：4 对 P2P send/recv 同时进行（各 GPU 把手里的 K 块发给下家、从上家收新块），与本轮 tile 计算重叠</text>
-<text x="120" y="212" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">score tile 矩阵：颜色 = 计算发生的轮次</text>
-<g font-size="10" text-anchor="middle" fill="#64748b">
-<text x="140" y="230">K₀</text><text x="180" y="230">K₁</text><text x="220" y="230">K₂</text><text x="260" y="230">K₃</text>
-<text x="112" y="255" text-anchor="end" fill="#1d4ed8">Q₀</text><text x="112" y="295" text-anchor="end" fill="#15803d">Q₁</text>
-<text x="112" y="335" text-anchor="end" fill="#b45309">Q₂</text><text x="112" y="375" text-anchor="end" fill="#b91c1c">Q₃</text>
+<rect x="24" y="452" width="632" height="20" rx="6" fill="#121826" stroke="#232C3A"/>
+<text x="340" y="466" text-anchor="middle" font-size="10" fill="#9AA4B2">通信量 O(T)：KV 沿环走一遍。转满 C 轮后每个 rank 拿齐自己整行 → LSE 合并为精确结果</text>
 </g>
-<g stroke="#ffffff" stroke-width="2">
-<rect x="120" y="235" width="40" height="40" fill="#86efac"/><rect x="160" y="235" width="40" height="40" fill="#e2e8f0"/><rect x="200" y="235" width="40" height="40" fill="#e2e8f0"/><rect x="240" y="235" width="40" height="40" fill="#e2e8f0"/>
-<rect x="120" y="275" width="40" height="40" fill="#93c5fd"/><rect x="160" y="275" width="40" height="40" fill="#86efac"/><rect x="200" y="275" width="40" height="40" fill="#e2e8f0"/><rect x="240" y="275" width="40" height="40" fill="#e2e8f0"/>
-<rect x="120" y="315" width="40" height="40" fill="#fcd34d"/><rect x="160" y="315" width="40" height="40" fill="#93c5fd"/><rect x="200" y="315" width="40" height="40" fill="#86efac"/><rect x="240" y="315" width="40" height="40" fill="#e2e8f0"/>
-<rect x="120" y="355" width="40" height="40" fill="#fca5a5"/><rect x="160" y="355" width="40" height="40" fill="#fcd34d"/><rect x="200" y="355" width="40" height="40" fill="#93c5fd"/><rect x="240" y="355" width="40" height="40" fill="#86efac"/>
-</g>
-<g font-size="9" text-anchor="middle" fill="#334155">
-<text x="140" y="259">轮0</text><text x="140" y="299">轮1</text><text x="140" y="339">轮2</text><text x="140" y="379">轮3</text>
-<text x="180" y="299">轮0</text><text x="180" y="339">轮1</text><text x="180" y="379">轮2</text>
-<text x="220" y="339">轮0</text><text x="220" y="379">轮1</text>
-<text x="260" y="379">轮0</text>
-<text x="180" y="259" fill="#94a3b8">mask</text><text x="220" y="259" fill="#94a3b8">mask</text><text x="260" y="259" fill="#94a3b8">mask</text>
-<text x="220" y="299" fill="#94a3b8">mask</text><text x="260" y="299" fill="#94a3b8">mask</text>
-<text x="260" y="339" fill="#94a3b8">mask</text>
-</g>
-<g font-size="9">
-<rect x="310" y="238" width="12" height="12" fill="#86efac" stroke="#16a34a"/><text x="330" y="248" fill="#334155">轮 0：每 rank 用起始 K 块算对角 tile（i=j）</text>
-<rect x="310" y="262" width="12" height="12" fill="#93c5fd" stroke="#2563eb"/><text x="330" y="272" fill="#334155">轮 1：块移一跳后算次对角（i−j=1）</text>
-<rect x="310" y="286" width="12" height="12" fill="#fcd34d" stroke="#d97706"/><text x="330" y="296" fill="#334155">轮 2：算 i−j=2</text>
-<rect x="310" y="310" width="12" height="12" fill="#fca5a5" stroke="#dc2626"/><text x="330" y="320" fill="#334155">轮 3：算 i−j=3，下三角全部算完</text>
-</g>
-<g font-size="9" fill="#64748b">
-<text x="310" y="348">每轮每 rank：① 用手里的 K 块算 1 个 tile → partial (O, LSE)</text>
-<text x="310" y="364">② P2P 发块、收新块（双 CUDA stream 与 ① 重叠）</text>
-<text x="310" y="380">灰 = causal mask 的 tile（j&gt;i），不算；转满 C 轮后 LSE 合并 = 精确注意力</text>
-</g>
-<rect x="40" y="400" width="600" height="22" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="415" text-anchor="middle" font-size="10" fill="#475569">通信量：每轮每链路 1 个 KV 块，共 C 轮 = KV 沿环走一遍 O(T)；zigzag 切分只改行归属，轮转日程不变</text>
 </svg>
 
 ▲ Ring Attention 每轮通信日程：上排为 4 轮中各 GPU 持有的 K 块与每轮的 P2P 跳转；下排为 score tile 矩阵（颜色表示该 tile 被计算的轮次，灰为因果 mask）
@@ -256,120 +317,113 @@ Ring Attention 中 Q 留在本地，KV 块沿环形拓扑以 P2P send/recv 传�
 
 AllGather KV 一次性聚齐完整 KV，本地 Q 对全局 KV 用标准注意力 kernel 计算即可。这一方案实现最简单、不改动 kernel、不受 head 数限制，但需要临时容纳整层的全局 KV，且全量 KV 要在 CP 组内完整传输一遍。由于 MLA、DSA、CSA 等架构把 KV 压缩得非常小（MLA 传 latent，CSA 传压缩条目），先 AllGather KV 再计算往往同时兼顾了效率与实现便利性，SGLang Prefill CP、vLLM PCP 与昇腾 DSA-CP 均采用该方案。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 395" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 452" style="width:100%;height:auto">
 <defs>
-<marker id="m32n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
+<linearGradient id="bg2" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot2" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a2s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#5B6678"/></marker>
+<marker id="a2o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="395" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">AllGather KV：通信前每 rank 只有本地 KV 分片，通信后每 rank 补齐全局 KV</text>
-<text x="160" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">通信前（虚线格 = 缺失的 KV 块）</text>
-<text x="520" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">AllGather 后（颜色深浅 = 来源 rank）</text>
-<g>
-<rect x="20" y="58" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="30" y="73" font-size="9.5" font-weight="bold" fill="#1d4ed8">GPU 0</text>
-<rect x="30" y="80" width="40" height="28" fill="#93c5fd" stroke="#1d4ed8" stroke-width="1.2"/>
-<text x="50" y="98" text-anchor="middle" font-size="9.5" fill="#1e3a8a">Q₀</text>
-<rect x="76" y="80" width="50" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1"/>
-<text x="101" y="98" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₀</text>
-<rect x="132" y="80" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="188" y="80" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="244" y="80" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
+<rect width="680" height="452" fill="url(#bg2)"/>
+<rect width="680" height="452" fill="url(#dot2)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">AllGather KV：三步把 KV 聚齐再算</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">Q 始终按行块不动，变的是每个 rank 手里的 KV —— 从 1/C 变成完整一份</text>
+
+<rect x="24" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="42" cy="96" r="9" fill="#F4D345"/>
+<text x="42" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="58" y="100" font-size="11.5" fill="#E6E8EC">通信前：各持 1/4</text>
+<rect x="34" y="112" width="3" height="20" fill="#58C4DD"/><text x="43" y="126" font-size="9" fill="#58C4DD">R0</text>
+<rect x="86" y="112" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.34" stroke="#FF862F" stroke-width="1"/><text x="98" y="126" text-anchor="middle" font-size="8" fill="#F0C39B">K0</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="115" y="112" width="25" height="20" rx="2"/><rect x="144" y="112" width="25" height="20" rx="2"/><rect x="173" y="112" width="25" height="20" rx="2"/></g>
+<rect x="34" y="142" width="3" height="20" fill="#5CD0B3"/><text x="43" y="156" font-size="9" fill="#5CD0B3">R1</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="86" y="142" width="25" height="20" rx="2"/></g>
+<rect x="115" y="142" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.34" stroke="#FF862F" stroke-width="1"/><text x="127" y="156" text-anchor="middle" font-size="8" fill="#F0C39B">K1</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="144" y="142" width="25" height="20" rx="2"/><rect x="173" y="142" width="25" height="20" rx="2"/></g>
+<rect x="34" y="172" width="3" height="20" fill="#F4D345"/><text x="43" y="186" font-size="9" fill="#F4D345">R2</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="86" y="172" width="25" height="20" rx="2"/><rect x="115" y="172" width="25" height="20" rx="2"/></g>
+<rect x="144" y="172" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.34" stroke="#FF862F" stroke-width="1"/><text x="156" y="186" text-anchor="middle" font-size="8" fill="#F0C39B">K2</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="173" y="172" width="25" height="20" rx="2"/></g>
+<rect x="34" y="202" width="3" height="20" fill="#FC6255"/><text x="43" y="216" font-size="9" fill="#FC6255">R3</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="86" y="202" width="25" height="20" rx="2"/><rect x="115" y="202" width="25" height="20" rx="2"/><rect x="144" y="202" width="25" height="20" rx="2"/></g>
+<rect x="173" y="202" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.34" stroke="#FF862F" stroke-width="1"/><text x="185" y="216" text-anchor="middle" font-size="8" fill="#F0C39B">K3</text>
+<text x="40" y="252" font-size="9.5" fill="#5B6678">虚线格 = 本 rank 没有的 KV</text>
+<text x="40" y="270" font-size="9.5" fill="#5B6678">每行只有 1 块，缺 3 块</text>
+<text x="40" y="292" font-size="9.5" fill="#8B96A8">KV 显存占用 T·d / C</text>
+
+<rect x="250" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="268" cy="96" r="9" fill="#F4D345"/>
+<text x="268" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="284" y="100" font-size="11.5" fill="#E6E8EC">AllGather：补齐</text>
+<rect x="260" y="112" width="3" height="20" fill="#58C4DD"/><text x="269" y="126" font-size="9" fill="#58C4DD">R0</text>
+<g stroke="#FF862F" stroke-width="1">
+<rect x="312" y="112" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.18"/><rect x="341" y="112" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.28"/><rect x="370" y="112" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.38"/><rect x="399" y="112" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.52"/></g>
+<rect x="260" y="142" width="3" height="20" fill="#5CD0B3"/><text x="269" y="156" font-size="9" fill="#5CD0B3">R1</text>
+<g stroke="#FF862F" stroke-width="1">
+<rect x="312" y="142" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.18"/><rect x="341" y="142" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.28"/><rect x="370" y="142" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.38"/><rect x="399" y="142" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.52"/></g>
+<rect x="260" y="172" width="3" height="20" fill="#F4D345"/><text x="269" y="186" font-size="9" fill="#F4D345">R2</text>
+<g stroke="#FF862F" stroke-width="1">
+<rect x="312" y="172" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.18"/><rect x="341" y="172" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.28"/><rect x="370" y="172" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.38"/><rect x="399" y="172" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.52"/></g>
+<rect x="260" y="202" width="3" height="20" fill="#FC6255"/><text x="269" y="216" font-size="9" fill="#FC6255">R3</text>
+<g stroke="#FF862F" stroke-width="1">
+<rect x="312" y="202" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.18"/><rect x="341" y="202" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.28"/><rect x="370" y="202" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.38"/><rect x="399" y="202" width="25" height="20" rx="2" fill="#FF862F" fill-opacity="0.52"/></g>
+<g font-size="8" text-anchor="middle" fill="#F0C39B">
+<text x="324" y="126">K0</text><text x="353" y="126">K1</text><text x="382" y="126">K2</text><text x="411" y="126">K3</text>
+<text x="324" y="156">K0</text><text x="353" y="156">K1</text><text x="382" y="156">K2</text><text x="411" y="156">K3</text>
+<text x="324" y="186">K0</text><text x="353" y="186">K1</text><text x="382" y="186">K2</text><text x="411" y="186">K3</text>
+<text x="324" y="216">K0</text><text x="353" y="216">K1</text><text x="382" y="216">K2</text><text x="411" y="216">K3</text>
 </g>
-<g>
-<rect x="20" y="124" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="30" y="139" font-size="9.5" font-weight="bold" fill="#15803d">GPU 1</text>
-<rect x="30" y="146" width="40" height="28" fill="#86efac" stroke="#15803d" stroke-width="1.2"/>
-<text x="50" y="164" text-anchor="middle" font-size="9.5" fill="#14532d">Q₁</text>
-<rect x="76" y="146" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="132" y="146" width="50" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1"/>
-<text x="157" y="164" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₁</text>
-<rect x="188" y="146" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="244" y="146" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="266" y="252" font-size="9.5" fill="#5B6678">深浅 = 数据来自哪个 rank</text>
+<text x="266" y="270" font-size="9.5" fill="#5B6678">4 块全部到手，每 rank 一份副本</text>
+<text x="266" y="292" font-size="9.5" fill="#8B96A8">KV 显存占用 T·d（每层临时）</text>
+
+<rect x="476" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="494" cy="96" r="9" fill="#F4D345"/>
+<text x="494" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="510" y="100" font-size="11.5" fill="#E6E8EC">计算：整行块一次算完</text>
+<g stroke="#FF862F" stroke-width="0.8">
+<rect x="530" y="116" width="22" height="22" fill="#FF862F" fill-opacity="0.2"/><rect x="552" y="116" width="22" height="22" fill="#FF862F" fill-opacity="0.3"/><rect x="574" y="116" width="22" height="22" fill="#FF862F" fill-opacity="0.4"/><rect x="596" y="116" width="22" height="22" fill="#FF862F" fill-opacity="0.52"/>
+<rect x="530" y="138" width="22" height="22" fill="#FF862F" fill-opacity="0.2"/><rect x="552" y="138" width="22" height="22" fill="#FF862F" fill-opacity="0.3"/><rect x="574" y="138" width="22" height="22" fill="#FF862F" fill-opacity="0.4"/><rect x="596" y="138" width="22" height="22" fill="#FF862F" fill-opacity="0.52"/>
+<rect x="530" y="160" width="22" height="22" fill="#FF862F" fill-opacity="0.2"/><rect x="552" y="160" width="22" height="22" fill="#FF862F" fill-opacity="0.3"/><rect x="574" y="160" width="22" height="22" fill="#FF862F" fill-opacity="0.4"/><rect x="596" y="160" width="22" height="22" fill="#FF862F" fill-opacity="0.52"/>
+<rect x="530" y="182" width="22" height="22" fill="#FF862F" fill-opacity="0.2"/><rect x="552" y="182" width="22" height="22" fill="#FF862F" fill-opacity="0.3"/><rect x="574" y="182" width="22" height="22" fill="#FF862F" fill-opacity="0.4"/><rect x="596" y="182" width="22" height="22" fill="#FF862F" fill-opacity="0.52"/>
 </g>
-<g>
-<rect x="20" y="190" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="30" y="205" font-size="9.5" font-weight="bold" fill="#b45309">GPU 2</text>
-<rect x="30" y="212" width="40" height="28" fill="#fcd34d" stroke="#b45309" stroke-width="1.2"/>
-<text x="50" y="230" text-anchor="middle" font-size="9.5" fill="#78350f">Q₂</text>
-<rect x="76" y="212" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="132" y="212" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="188" y="212" width="50" height="28" fill="#fb923c" stroke="#ea580c" stroke-width="1"/>
-<text x="213" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₂</text>
-<rect x="244" y="212" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="530" y="108" width="88" height="6" rx="3" fill="#58C4DD" fill-opacity="0.75"/>
+<text x="624" y="114" font-size="8.5" fill="#8FC9DC">Q0 行块</text>
+<text x="586" y="222" text-anchor="middle" font-size="8.5" fill="#5B6678">Q0 × KV_full → 一次算完</text>
+<line x1="586" y1="228" x2="586" y2="226" stroke="#5B6678" stroke-width="0"/>
+<rect x="520" y="228" width="132" height="22" rx="4" fill="#58C4DD" fill-opacity="0.18" stroke="#58C4DD" stroke-width="1"/>
+<text x="586" y="243" text-anchor="middle" font-size="9" fill="#BEE7F1">O0 → O3 各行块</text>
+<text x="490" y="268" font-size="9.5" fill="#5B6678">标准 FlashAttention，不用 LSE 合并</text>
+<text x="490" y="286" font-size="9.5" fill="#83C167">不改 kernel、CP 度不受 head 数限制</text>
+
+<line x1="222" y1="200" x2="246" y2="200" stroke="#FF862F" stroke-width="1.5" marker-end="url(#a2o)"/>
+
+<line x1="448" y1="200" x2="472" y2="200" stroke="#FF862F" stroke-width="1.5" marker-end="url(#a2o)"/>
+
+
+<g font-size="10" fill="#8B96A8">
+<rect x="30" y="362" width="11" height="11" fill="#FF862F" fill-opacity="0.34" stroke="#FF862F" stroke-width="1"/>
+<text x="48" y="372">已到手的 KV 块</text>
+<rect x="176" y="362" width="11" height="11" fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="194" y="372">尚未到达</text>
+<rect x="300" y="362" width="11" height="11" fill="#58C4DD" fill-opacity="0.4" stroke="#58C4DD" stroke-width="1"/>
+<text x="318" y="372">本地 Q 行块</text>
 </g>
-<g>
-<rect x="20" y="256" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="30" y="271" font-size="9.5" font-weight="bold" fill="#b91c1c">GPU 3</text>
-<rect x="30" y="278" width="40" height="28" fill="#fca5a5" stroke="#b91c1c" stroke-width="1.2"/>
-<text x="50" y="296" text-anchor="middle" font-size="9.5" fill="#7f1d1d">Q₃</text>
-<rect x="76" y="278" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="132" y="278" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="188" y="278" width="50" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="244" y="278" width="50" height="28" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
-<text x="269" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₃</text>
+<rect x="24" y="392" width="632" height="44" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="410" font-size="10" fill="#9AA4B2">代价：每层临时放下整份 KV（T·d），全量 KV 在组内传一遍；收益：实现简单、不改 kernel、CP 度不受 head 数限制。</text>
+<text x="44" y="427" font-size="10" fill="#9AA4B2">MLA、DSA、CSA 等把 KV 压得很小，先聚齐再算往往同时兼顾效率与实现便利。</text>
 </g>
-<g>
-<rect x="380" y="58" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="390" y="73" font-size="9.5" font-weight="bold" fill="#1d4ed8">GPU 0</text>
-<rect x="390" y="80" width="40" height="28" fill="#93c5fd" stroke="#1d4ed8" stroke-width="1.2"/>
-<text x="410" y="98" text-anchor="middle" font-size="9.5" fill="#1e3a8a">Q₀</text>
-<rect x="436" y="80" width="50" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1"/>
-<text x="461" y="98" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₀</text>
-<rect x="492" y="80" width="50" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1"/>
-<text x="517" y="98" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₁</text>
-<rect x="548" y="80" width="50" height="28" fill="#fb923c" stroke="#ea580c" stroke-width="1"/>
-<text x="573" y="98" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₂</text>
-<rect x="604" y="80" width="50" height="28" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
-<text x="629" y="98" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₃</text>
-</g>
-<g>
-<rect x="380" y="124" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="390" y="139" font-size="9.5" font-weight="bold" fill="#15803d">GPU 1</text>
-<rect x="390" y="146" width="40" height="28" fill="#86efac" stroke="#15803d" stroke-width="1.2"/>
-<text x="410" y="164" text-anchor="middle" font-size="9.5" fill="#14532d">Q₁</text>
-<rect x="436" y="146" width="50" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1"/>
-<text x="461" y="164" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₀</text>
-<rect x="492" y="146" width="50" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1"/>
-<text x="517" y="164" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₁</text>
-<rect x="548" y="146" width="50" height="28" fill="#fb923c" stroke="#ea580c" stroke-width="1"/>
-<text x="573" y="164" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₂</text>
-<rect x="604" y="146" width="50" height="28" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
-<text x="629" y="164" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₃</text>
-</g>
-<g>
-<rect x="380" y="190" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="390" y="205" font-size="9.5" font-weight="bold" fill="#b45309">GPU 2</text>
-<rect x="390" y="212" width="40" height="28" fill="#fcd34d" stroke="#b45309" stroke-width="1.2"/>
-<text x="410" y="230" text-anchor="middle" font-size="9.5" fill="#78350f">Q₂</text>
-<rect x="436" y="212" width="50" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1"/>
-<text x="461" y="230" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₀</text>
-<rect x="492" y="212" width="50" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1"/>
-<text x="517" y="230" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₁</text>
-<rect x="548" y="212" width="50" height="28" fill="#fb923c" stroke="#ea580c" stroke-width="1"/>
-<text x="573" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₂</text>
-<rect x="604" y="212" width="50" height="28" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
-<text x="629" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₃</text>
-</g>
-<g>
-<rect x="380" y="256" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="390" y="271" font-size="9.5" font-weight="bold" fill="#b91c1c">GPU 3</text>
-<rect x="390" y="278" width="40" height="28" fill="#fca5a5" stroke="#b91c1c" stroke-width="1.2"/>
-<text x="410" y="296" text-anchor="middle" font-size="9.5" fill="#7f1d1d">Q₃</text>
-<rect x="436" y="278" width="50" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1"/>
-<text x="461" y="296" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₀</text>
-<rect x="492" y="278" width="50" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1"/>
-<text x="517" y="296" text-anchor="middle" font-size="9.5" fill="#7c2d12">KV₁</text>
-<rect x="548" y="278" width="50" height="28" fill="#fb923c" stroke="#ea580c" stroke-width="1"/>
-<text x="573" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₂</text>
-<rect x="604" y="278" width="50" height="28" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
-<text x="629" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">KV₃</text>
-</g>
-<line x1="306" y1="185" x2="374" y2="185" stroke="#ea580c" stroke-width="2.5" marker-end="url(#m32n)"/>
-<text x="340" y="160" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">AllGather KV</text>
-<text x="340" y="212" text-anchor="middle" font-size="9" fill="#c2410c">沿 T 维聚齐</text>
-<text x="340" y="336" text-anchor="middle" font-size="11" fill="#334155">通信后：每 rank 用本地 Q 行块对全局 KV 做标准 FlashAttention，整行块一次算完，无需 LSE 合并</text>
-<rect x="60" y="350" width="560" height="28" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="368" text-anchor="middle" font-size="10.5" fill="#475569">KV 占用 T/C·d → T·d（逐层聚合、用完即弃）；通信量 = 全量 KV 在 CP 组内传一遍；不改 kernel，CP 度不受 head 数限制</text>
 </svg>
 
 ▲ AllGather KV 示意图：通信前每 rank 只持有自己的 KV 分片（虚线格为缺失块），AllGather 后每 rank 补齐全局 KV 矩阵（颜色深浅区分来源 rank），Q 行块始终不动
@@ -382,130 +436,119 @@ AllGather KV 一次性聚齐完整 KV，本地 Q 对全局 KV 用标准注意力
 
 该形态用一次集合通信把 Q 聚齐到每个 rank。当 DCP 组与 TP 组重叠时，各 rank 只持有自己那部分 head 的 Q 分片，需要先沿 head 维 AllGather 得到完整 Q；当 DCP 组独立时，Q 本来就在各 rank 复制，一次 broadcast 即可。随后各 rank 用完整 Q 对本地 KV 分片计算 score 列段 $S_j$ 并得到 $(O_j, L_j)$，再做一次 LSE 感知的归并（all-reduce 或 gather，例如 vLLM 的 `cp_lse_ag_out_rs`）。全程只需两个集合通信步骤，延迟低，是 SGLang Decode CP（all-gather Q）、vLLM DCP 与 Helix KV Parallelism 的共同选择。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 452" style="width:100%;height:auto">
 <defs>
-<marker id="m33a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
-<marker id="m33ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker>
+<linearGradient id="bg3" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot3" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a3q" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#58C4DD"/></marker>
+<marker id="a3g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="400" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">AllGather / Broadcast Q：通信前 Q 按 head 维分片，通信后每 rank 持有完整 Q</text>
-<text x="160" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">通信前（虚线格 = 缺失的 head 分片）</text>
-<text x="520" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">AllGather Q 后（颜色深浅 = 来源 rank）</text>
-<g>
-<rect x="20" y="58" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="28" y="73" font-size="9.5" font-weight="bold" fill="#1d4ed8">GPU 0</text>
-<rect x="28" y="80" width="44" height="28" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
-<text x="50" y="98" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₀</text>
-<rect x="76" y="80" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="124" y="80" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="172" y="80" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="224" y="80" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="258" y="98" text-anchor="middle" font-size="9" fill="#7c2d12">KV₀ 常驻</text>
+<rect width="680" height="452" fill="url(#bg3)"/>
+<rect width="680" height="452" fill="url(#dot3)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">AllGather Q：KV 不动，把小 Q 聚齐到每个 rank</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">三步走完 decode 的一次注意力。通信量只与 q·d 有关，与上下文长度无关</text>
+
+<rect x="24" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="42" cy="96" r="9" fill="#F4D345"/>
+<text x="42" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="58" y="100" font-size="11.5" fill="#E6E8EC">通信前：只有 1/4 head</text>
+<text x="70" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h0</text><text x="99" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h1</text>
+<text x="128" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h2</text><text x="157" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h3</text>
+<rect x="34" y="128" width="3" height="22" fill="#58C4DD"/><text x="43" y="143" font-size="9" fill="#58C4DD">R0</text>
+<rect x="58" y="128" width="25" height="22" rx="2" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD" stroke-width="1"/>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="87" y="128" width="25" height="22" rx="2"/><rect x="116" y="128" width="25" height="22" rx="2"/><rect x="145" y="128" width="25" height="22" rx="2"/></g>
+<rect x="34" y="162" width="3" height="22" fill="#5CD0B3"/><text x="43" y="177" font-size="9" fill="#5CD0B3">R1</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="58" y="162" width="25" height="22" rx="2"/></g>
+<rect x="87" y="162" width="25" height="22" rx="2" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3" stroke-width="1"/>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="116" y="162" width="25" height="22" rx="2"/><rect x="145" y="162" width="25" height="22" rx="2"/></g>
+<rect x="34" y="196" width="3" height="22" fill="#F4D345"/><text x="43" y="211" font-size="9" fill="#F4D345">R2</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="58" y="196" width="25" height="22" rx="2"/><rect x="87" y="196" width="25" height="22" rx="2"/></g>
+<rect x="116" y="196" width="25" height="22" rx="2" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345" stroke-width="1"/>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="145" y="196" width="25" height="22" rx="2"/></g>
+<rect x="34" y="230" width="3" height="22" fill="#FC6255"/><text x="43" y="245" font-size="9" fill="#FC6255">R3</text>
+<g fill="none" stroke="#39445A" stroke-width="1" stroke-dasharray="2 3">
+<rect x="58" y="230" width="25" height="22" rx="2"/><rect x="87" y="230" width="25" height="22" rx="2"/><rect x="116" y="230" width="25" height="22" rx="2"/></g>
+<rect x="145" y="230" width="25" height="22" rx="2" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255" stroke-width="1"/>
+<text x="40" y="276" font-size="9.5" fill="#5B6678">DCP 组与 TP 组重叠时，Q 按 head</text>
+<text x="40" y="292" font-size="9.5" fill="#5B6678">分片；不重叠时 Q 本有副本，</text>
+<text x="40" y="308" font-size="9.5" fill="#5B6678">一次 broadcast 即可</text>
+<text x="40" y="330" font-size="9.5" fill="#8B96A8">KV 分片常驻不动</text>
+
+<rect x="250" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="268" cy="96" r="9" fill="#F4D345"/>
+<text x="268" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="284" y="100" font-size="11.5" fill="#E6E8EC">AllGather：补齐 Q</text>
+<text x="296" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h0</text><text x="325" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h1</text>
+<text x="354" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h2</text><text x="383" y="122" text-anchor="middle" font-size="8.5" fill="#5B6678">h3</text>
+<rect x="260" y="128" width="3" height="22" fill="#58C4DD"/><text x="269" y="143" font-size="9" fill="#58C4DD">R0</text>
+<g stroke-width="1">
+<rect x="284" y="128" width="25" height="22" rx="2" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="313" y="128" width="25" height="22" rx="2" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="342" y="128" width="25" height="22" rx="2" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="371" y="128" width="25" height="22" rx="2" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/></g>
+<rect x="260" y="162" width="3" height="22" fill="#5CD0B3"/><text x="269" y="177" font-size="9" fill="#5CD0B3">R1</text>
+<g stroke-width="1">
+<rect x="284" y="162" width="25" height="22" rx="2" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="313" y="162" width="25" height="22" rx="2" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="342" y="162" width="25" height="22" rx="2" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="371" y="162" width="25" height="22" rx="2" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/></g>
+<rect x="260" y="196" width="3" height="22" fill="#F4D345"/><text x="269" y="211" font-size="9" fill="#F4D345">R2</text>
+<g stroke-width="1">
+<rect x="284" y="196" width="25" height="22" rx="2" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="313" y="196" width="25" height="22" rx="2" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="342" y="196" width="25" height="22" rx="2" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="371" y="196" width="25" height="22" rx="2" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/></g>
+<rect x="260" y="230" width="3" height="22" fill="#FC6255"/><text x="269" y="245" font-size="9" fill="#FC6255">R3</text>
+<g stroke-width="1">
+<rect x="284" y="230" width="25" height="22" rx="2" fill="#58C4DD" fill-opacity="0.38" stroke="#58C4DD"/>
+<rect x="313" y="230" width="25" height="22" rx="2" fill="#5CD0B3" fill-opacity="0.38" stroke="#5CD0B3"/>
+<rect x="342" y="230" width="25" height="22" rx="2" fill="#F4D345" fill-opacity="0.38" stroke="#F4D345"/>
+<rect x="371" y="230" width="25" height="22" rx="2" fill="#FC6255" fill-opacity="0.38" stroke="#FC6255"/></g>
+<text x="266" y="276" font-size="9.5" fill="#5B6678">每个 rank 补齐完整 Q，q·d 量级</text>
+<text x="266" y="292" font-size="9.5" fill="#5B6678">来源用颜色区分</text>
+<text x="266" y="318" font-size="9.5" fill="#8B96A8">通信量 ∝ q·d，与 T 无关</text>
+
+<rect x="476" y="76" width="196" height="270" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="494" cy="96" r="9" fill="#F4D345"/>
+<text x="494" y="100" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="510" y="100" font-size="11.5" fill="#E6E8EC">各算列段，再归并</text>
+<rect x="500" y="116" width="148" height="26" rx="4" fill="#0E131D" stroke="#3A4557"/>
+<text x="510" y="133" font-size="9" fill="#9AA4B2">R0  S₀ = Q·K₀ᵀ</text><text x="642" y="133" text-anchor="end" font-size="9" fill="#58C4DD">(O₀,L₀)</text>
+<rect x="500" y="148" width="148" height="26" rx="4" fill="#0E131D" stroke="#3A4557"/>
+<text x="510" y="165" font-size="9" fill="#9AA4B2">R1  S₁ = Q·K₁ᵀ</text><text x="642" y="165" text-anchor="end" font-size="9" fill="#5CD0B3">(O₁,L₁)</text>
+<rect x="500" y="180" width="148" height="26" rx="4" fill="#0E131D" stroke="#3A4557"/>
+<text x="510" y="197" font-size="9" fill="#9AA4B2">R2  S₂ = Q·K₂ᵀ</text><text x="642" y="197" text-anchor="end" font-size="9" fill="#F4D345">(O₂,L₂)</text>
+<rect x="500" y="212" width="148" height="26" rx="4" fill="#0E131D" stroke="#3A4557"/>
+<text x="510" y="229" font-size="9" fill="#9AA4B2">R3  S₃ = Q·K₃ᵀ</text><text x="642" y="229" text-anchor="end" font-size="9" fill="#FC6255">(O₃,L₃)</text>
+<g stroke="#83C167" stroke-width="1.2" fill="none">
+<line x1="574" y1="240" x2="574" y2="258" marker-end="url(#a3g)"/>
 </g>
-<g>
-<rect x="20" y="124" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="28" y="139" font-size="9.5" font-weight="bold" fill="#15803d">GPU 1</text>
-<rect x="28" y="146" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="76" y="146" width="44" height="28" fill="#93c5fd" stroke="#2563eb" stroke-width="1"/>
-<text x="98" y="164" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₁</text>
-<rect x="124" y="146" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="172" y="146" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="224" y="146" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="258" y="164" text-anchor="middle" font-size="9" fill="#7c2d12">KV₁ 常驻</text>
+<rect x="498" y="264" width="152" height="24" rx="4" fill="#83C167" fill-opacity="0.2" stroke="#83C167" stroke-width="1.2"/>
+<text x="574" y="280" text-anchor="middle" font-size="9.5" fill="#C6E3B6">LSE 归并 → 精确 O</text>
+<text x="490" y="310" font-size="9.5" fill="#5B6678">全程两次集合通信：AllGather Q</text>
+<text x="490" y="326" font-size="9.5" fill="#5B6678">+ LSE 感知归并，延迟低</text>
+
+<line x1="222" y1="190" x2="246" y2="190" stroke="#58C4DD" stroke-width="1.5" marker-end="url(#a3q)"/>
+
+<line x1="448" y1="190" x2="472" y2="190" stroke="#58C4DD" stroke-width="1.5" marker-end="url(#a3q)"/>
+
+
+<rect x="24" y="362" width="632" height="20" rx="6" fill="#121826" stroke="#232C3A"/>
+<text x="340" y="376" text-anchor="middle" font-size="10" fill="#9AA4B2">通信量只与 q·d 成正比，与 KV Cache 大小、上下文长度都无关 —— 这是 decode 阶段首选传 Q 的原因</text>
+<rect x="24" y="392" width="632" height="44" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="410" font-size="10" fill="#9AA4B2">归并时按列段还原顺序：第 j 段对应 K 的第 j 个 T 分片，vocab 维无关，因此只合并 (O_j, L_j) 两个小张量。</text>
+<text x="44" y="427" font-size="10" fill="#9AA4B2">SGLang Decode CP、vLLM DCP（cp_lse_ag_out_rs）、Helix 的 KV Parallelism 都是这一形态。</text>
 </g>
-<g>
-<rect x="20" y="190" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="28" y="205" font-size="9.5" font-weight="bold" fill="#b45309">GPU 2</text>
-<rect x="28" y="212" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="76" y="212" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="124" y="212" width="44" height="28" fill="#60a5fa" stroke="#2563eb" stroke-width="1"/>
-<text x="146" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">q₂</text>
-<rect x="172" y="212" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="224" y="212" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="258" y="230" text-anchor="middle" font-size="9" fill="#7c2d12">KV₂ 常驻</text>
-</g>
-<g>
-<rect x="20" y="256" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="28" y="271" font-size="9.5" font-weight="bold" fill="#b91c1c">GPU 3</text>
-<rect x="28" y="278" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="76" y="278" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="124" y="278" width="44" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>
-<rect x="172" y="278" width="44" height="28" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
-<text x="194" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">q₃</text>
-<rect x="224" y="278" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="258" y="296" text-anchor="middle" font-size="9" fill="#7c2d12">KV₃ 常驻</text>
-</g>
-<g>
-<rect x="380" y="58" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="388" y="73" font-size="9.5" font-weight="bold" fill="#1d4ed8">GPU 0</text>
-<rect x="388" y="80" width="44" height="28" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
-<text x="410" y="98" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₀</text>
-<rect x="436" y="80" width="44" height="28" fill="#93c5fd" stroke="#2563eb" stroke-width="1"/>
-<text x="458" y="98" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₁</text>
-<rect x="484" y="80" width="44" height="28" fill="#60a5fa" stroke="#2563eb" stroke-width="1"/>
-<text x="506" y="98" text-anchor="middle" font-size="9.5" fill="#ffffff">q₂</text>
-<rect x="532" y="80" width="44" height="28" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
-<text x="554" y="98" text-anchor="middle" font-size="9.5" fill="#ffffff">q₃</text>
-<rect x="584" y="80" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="618" y="98" text-anchor="middle" font-size="9" fill="#7c2d12">KV₀ 常驻</text>
-</g>
-<g>
-<rect x="380" y="124" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="388" y="139" font-size="9.5" font-weight="bold" fill="#15803d">GPU 1</text>
-<rect x="388" y="146" width="44" height="28" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
-<text x="410" y="164" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₀</text>
-<rect x="436" y="146" width="44" height="28" fill="#93c5fd" stroke="#2563eb" stroke-width="1"/>
-<text x="458" y="164" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₁</text>
-<rect x="484" y="146" width="44" height="28" fill="#60a5fa" stroke="#2563eb" stroke-width="1"/>
-<text x="506" y="164" text-anchor="middle" font-size="9.5" fill="#ffffff">q₂</text>
-<rect x="532" y="146" width="44" height="28" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
-<text x="554" y="164" text-anchor="middle" font-size="9.5" fill="#ffffff">q₃</text>
-<rect x="584" y="146" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="618" y="164" text-anchor="middle" font-size="9" fill="#7c2d12">KV₁ 常驻</text>
-</g>
-<g>
-<rect x="380" y="190" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="388" y="205" font-size="9.5" font-weight="bold" fill="#b45309">GPU 2</text>
-<rect x="388" y="212" width="44" height="28" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
-<text x="410" y="230" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₀</text>
-<rect x="436" y="212" width="44" height="28" fill="#93c5fd" stroke="#2563eb" stroke-width="1"/>
-<text x="458" y="230" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₁</text>
-<rect x="484" y="212" width="44" height="28" fill="#60a5fa" stroke="#2563eb" stroke-width="1"/>
-<text x="506" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">q₂</text>
-<rect x="532" y="212" width="44" height="28" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
-<text x="554" y="230" text-anchor="middle" font-size="9.5" fill="#ffffff">q₃</text>
-<rect x="584" y="212" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="618" y="230" text-anchor="middle" font-size="9" fill="#7c2d12">KV₂ 常驻</text>
-</g>
-<g>
-<rect x="380" y="256" width="280" height="58" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-<text x="388" y="271" font-size="9.5" font-weight="bold" fill="#b91c1c">GPU 3</text>
-<rect x="388" y="278" width="44" height="28" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
-<text x="410" y="296" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₀</text>
-<rect x="436" y="278" width="44" height="28" fill="#93c5fd" stroke="#2563eb" stroke-width="1"/>
-<text x="458" y="296" text-anchor="middle" font-size="9.5" fill="#1e3a8a">q₁</text>
-<rect x="484" y="278" width="44" height="28" fill="#60a5fa" stroke="#2563eb" stroke-width="1"/>
-<text x="506" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">q₂</text>
-<rect x="532" y="278" width="44" height="28" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
-<text x="554" y="296" text-anchor="middle" font-size="9.5" fill="#ffffff">q₃</text>
-<rect x="584" y="278" width="68" height="28" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="618" y="296" text-anchor="middle" font-size="9" fill="#7c2d12">KV₃ 常驻</text>
-</g>
-<line x1="306" y1="185" x2="374" y2="185" stroke="#2563eb" stroke-width="2.5" marker-end="url(#m33a)"/>
-<text x="340" y="160" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1d4ed8">AllGather Q</text>
-<text x="340" y="212" text-anchor="middle" font-size="9" fill="#1d4ed8">沿 head 维聚齐</text>
-<text x="340" y="334" text-anchor="middle" font-size="11" fill="#334155">之后：各 rank 用完整 Q 对本地 KV 分片算 score 列段 S_j [q, T/C]，得到 (O_j, L_j)</text>
-<g stroke="#ffffff" stroke-width="1.5">
-<rect x="90" y="346" width="80" height="20" fill="#fed7aa"/><rect x="180" y="346" width="80" height="20" fill="#fdba74"/>
-<rect x="270" y="346" width="80" height="20" fill="#fed7aa"/><rect x="360" y="346" width="80" height="20" fill="#fdba74"/>
-</g>
-<g font-size="9" text-anchor="middle" fill="#7c2d12">
-<text x="130" y="359">S₀ (O₀,L₀)</text><text x="220" y="359">S₁ (O₁,L₁)</text><text x="310" y="359">S₂ (O₂,L₂)</text><text x="400" y="359">S₃ (O₃,L₃)</text>
-</g>
-<line x1="446" y1="356" x2="486" y2="356" stroke="#16a34a" stroke-width="2" marker-end="url(#m33ag)"/>
-<rect x="492" y="346" width="122" height="20" rx="6" fill="#dcfce7" stroke="#16a34a"/>
-<text x="553" y="359" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0f172a">LSE 合并 → O</text>
-<text x="340" y="388" text-anchor="middle" font-size="10" fill="#64748b">通信：AllGather Q（∝ q·d）+ 一次 LSE 归并（all-reduce / gather）；与 KV Cache 大小、上下文长度均无关</text>
 </svg>
 
 ▲ AllGather Q 示意图：通信前每 rank 只有 1/C 的 Q head 分片（虚线格为缺失），AllGather 后每 rank 补齐完整 Q（颜色深浅区分来源 rank），KV 分片始终不动；随后各 rank 算 score 列段并 LSE 合并
@@ -514,77 +557,88 @@ AllGather KV 一次性聚齐完整 KV，本地 Q 对全局 KV 用标准注意力
 
 Pass Q 可以看作 Ring 传 KV 的镜像。KV 分片常驻不动，Q 连同运行中的 partial 累加器 $(O_{acc}, L_{acc})$ 沿环逐跳以 P2P 传递。每个 rank 收到后用本地 KV 计算 partial，按在线 softmax 并入累加器，再转发给下一个 rank；转满 $C$ 跳回到源 rank 时，累加器即精确输出，最后的归并通信也随之省去。这一形态的通信量同样只与 $q$ 成正比，但 $C$ 跳串行使延迟高于 AllGather Q，因而更适合 KV 常驻缓存的多轮 decode 与 incremental prefill。Meta 在《Context Parallelism for Scalable Million-Token Inference》中提出的 pass-Q 变体即属此类，它与 pass-KV 之间的动态切换将在 3.5 节讨论。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 462" style="width:100%;height:auto">
 <defs>
-<marker id="m33p2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
-<marker id="m33g3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker>
+<linearGradient id="bg4" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot4" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a4b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#58C4DD"/></marker>
+<marker id="a4g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="420" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">Pass Q：KV 分片常驻，Q 携带 partial 累加器沿环逐 hop 传递</text>
-<text x="160" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">环形拓扑（KV 分片常驻）</text>
-<g font-size="10" text-anchor="middle">
-<rect x="48" y="72" width="84" height="44" rx="7" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="90" y="90" font-weight="bold" fill="#0f172a">GPU 0</text><text x="90" y="106" font-size="9" fill="#334155">KV₀ 常驻</text>
-<rect x="188" y="72" width="84" height="44" rx="7" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="230" y="90" font-weight="bold" fill="#0f172a">GPU 1</text><text x="230" y="106" font-size="9" fill="#334155">KV₁ 常驻</text>
-<rect x="188" y="196" width="84" height="44" rx="7" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="230" y="214" font-weight="bold" fill="#0f172a">GPU 2</text><text x="230" y="230" font-size="9" fill="#334155">KV₂ 常驻</text>
-<rect x="48" y="196" width="84" height="44" rx="7" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="90" y="214" font-weight="bold" fill="#0f172a">GPU 3</text><text x="90" y="230" font-size="9" fill="#334155">KV₃ 常驻</text>
+<rect width="680" height="462" fill="url(#bg4)"/>
+<rect width="680" height="462" fill="url(#dot4)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">Pass Q：让 Q 拖着累加器，沿环走一圈</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">Ring 传 KV 的镜像。KV 分片常驻，Q 与 (O, L) 逐跳下传，就地在线合并</text>
+
+<rect x="24" y="76" width="232" height="226" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="140" y="96" text-anchor="middle" font-size="10.5" fill="#8B96A8">KV 分片常驻，一次都不搬</text>
+<rect x="46" y="106" width="88" height="44" rx="6" fill="#FF862F" fill-opacity="0.15" stroke="#FF862F" stroke-width="1.2"/>
+<text x="90" y="124" text-anchor="middle" font-size="9.5" fill="#F0C39B">R0</text>
+<text x="90" y="140" text-anchor="middle" font-size="8.5" fill="#9AA4B2">KV₀</text>
+<rect x="152" y="106" width="88" height="44" rx="6" fill="#FF862F" fill-opacity="0.15" stroke="#FF862F" stroke-width="1.2"/>
+<text x="196" y="124" text-anchor="middle" font-size="9.5" fill="#F0C39B">R1</text>
+<text x="196" y="140" text-anchor="middle" font-size="8.5" fill="#9AA4B2">KV₁</text>
+<rect x="152" y="200" width="88" height="44" rx="6" fill="#FF862F" fill-opacity="0.15" stroke="#FF862F" stroke-width="1.2"/>
+<text x="196" y="218" text-anchor="middle" font-size="9.5" fill="#F0C39B">R2</text>
+<text x="196" y="234" text-anchor="middle" font-size="8.5" fill="#9AA4B2">KV₂</text>
+<rect x="46" y="200" width="88" height="44" rx="6" fill="#FF862F" fill-opacity="0.15" stroke="#FF862F" stroke-width="1.2"/>
+<text x="90" y="218" text-anchor="middle" font-size="9.5" fill="#F0C39B">R3</text>
+<text x="90" y="234" text-anchor="middle" font-size="8.5" fill="#9AA4B2">KV₃</text>
+<g stroke="#58C4DD" stroke-width="1.4" fill="none">
+<path d="M136 118 L 148 118" marker-end="url(#a4b)"/>
+<path d="M196 152 L 196 196" marker-end="url(#a4b)"/>
+<path d="M150 224 L 138 224" marker-end="url(#a4b)"/>
+<path d="M90 198 L 90 156" marker-end="url(#a4b)"/>
 </g>
-<g stroke="#ea580c" stroke-width="2" fill="none">
-<line x1="134" y1="94" x2="184" y2="94" marker-end="url(#m33p2)"/>
-<line x1="230" y1="118" x2="230" y2="192" marker-end="url(#m33p2)"/>
-<line x1="186" y1="218" x2="136" y2="218" marker-end="url(#m33p2)"/>
-<line x1="90" y1="192" x2="90" y2="118" marker-end="url(#m33p2)"/>
+<text x="140" y="180" text-anchor="middle" font-size="9" fill="#8FC9DC">Q + acc 顺时针一跳</text>
+<text x="140" y="290" text-anchor="middle" font-size="9" fill="#5B6678">每跳 = 一次 P2P，全程 C 跳</text>
+
+<defs><marker id="a4d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#3A4557"/></marker></defs>
+<rect x="280" y="86" width="376" height="44" rx="6" fill="#0E131D" stroke="#3A4557"/>
+<circle cx="302" cy="108" r="10" fill="#58C4DD"/>
+<text x="302" y="112" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0B0D12">0</text>
+<text x="320" y="103" font-size="10.5" fill="#E6E8EC">跳 0 · R0 用 KV₀ 算出 S₀</text>
+<text x="320" y="119" font-size="9" fill="#5B6678">acc = (O₀, L₀)，这是只有一个分片的中间结果</text>
+<text x="646" y="108" text-anchor="end" font-size="9" fill="#8FC9DC">→ R1</text>
+<line x1="468" y1="130" x2="468" y2="134" stroke="#3A4557" stroke-width="1.2" marker-end="url(#a4d)"/>
+
+<rect x="280" y="138" width="376" height="44" rx="6" fill="#0E131D" stroke="#3A4557"/>
+<circle cx="302" cy="160" r="10" fill="#58C4DD"/>
+<text x="302" y="164" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0B0D12">1</text>
+<text x="320" y="155" font-size="10.5" fill="#E6E8EC">跳 1 · R1 用 KV₁ 算出 S₁，就地并入</text>
+<text x="320" y="171" font-size="9" fill="#5B6678">按在线 softmax 重标定权重，acc 覆盖 2 个分片</text>
+<text x="646" y="160" text-anchor="end" font-size="9" fill="#8FC9DC">→ R2</text>
+<line x1="468" y1="182" x2="468" y2="186" stroke="#3A4557" stroke-width="1.2" marker-end="url(#a4d)"/>
+
+<rect x="280" y="190" width="376" height="44" rx="6" fill="#0E131D" stroke="#3A4557"/>
+<circle cx="302" cy="212" r="10" fill="#58C4DD"/>
+<text x="302" y="216" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0B0D12">2</text>
+<text x="320" y="207" font-size="10.5" fill="#E6E8EC">跳 2 · R2 用 KV₂ 算出 S₂</text>
+<text x="320" y="223" font-size="9" fill="#5B6678">acc 覆盖 3 个分片，仍未归一化</text>
+<text x="646" y="212" text-anchor="end" font-size="9" fill="#8FC9DC">→ R3</text>
+<line x1="468" y1="234" x2="468" y2="238" stroke="#3A4557" stroke-width="1.2" marker-end="url(#a4d)"/>
+
+<rect x="280" y="242" width="376" height="44" rx="6" fill="#83C167" fill-opacity="0.12" stroke="#83C167" stroke-width="1.3"/>
+<circle cx="302" cy="264" r="10" fill="#83C167"/>
+<text x="302" y="268" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0B0D12">3</text>
+<text x="320" y="259" font-size="10.5" fill="#C6E3B6">跳 3 · R3 并入最后一段，acc 回到 R0</text>
+<text x="320" y="275" font-size="9" fill="#7FA36F">4 段齐了，acc 就是精确 O —— 归并通信直接省掉</text>
+<text x="646" y="264" text-anchor="end" font-size="9" fill="#83C167">输出 O</text>
+
+<rect x="24" y="316" width="632" height="56" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="336" font-size="10.5" fill="#9AA4B2">为什么值得多走几跳：decode 每步只有 1 个 query token，Q 与 acc 都是小张量，一路 P2P 只传 O(C·d)。</text>
+<text x="44" y="356" font-size="10.5" fill="#9AA4B2">代价是 C 跳串行，延迟高于一次 AllGather Q，因此更适合 KV 常驻缓存的多轮 decode 与 incremental prefill。</text>
+
+<rect x="24" y="382" width="632" height="60" rx="8" fill="#0E131D" stroke="#232C3A"/>
+<text x="44" y="402" font-size="10.5" fill="#8B96A8">同一件事的三种写法</text>
+<text x="44" y="422" font-size="9.5" fill="#5B6678">AllGather Q：1 次广播 + 1 次归并，延迟最低；Pass Q：C 跳串行但省归并，缓存友好。</text>
+<text x="44" y="436" font-size="9.5" fill="#5B6678">Meta 的 pass-Q 变体即为此形态，与 3.1 的 pass-KV 按 miss rate 动态选择。</text>
 </g>
-<text x="160" y="146" text-anchor="middle" font-size="10" fill="#64748b">KV 不动</text>
-<text x="160" y="162" text-anchor="middle" font-size="9" fill="#64748b">Q 包沿环逐 hop</text>
-<text x="480" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">每轮通信日程（C=4，源 = GPU 0）</text>
-<g font-size="9" fill="#334155">
-<rect x="300" y="58" width="172" height="88" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-<text x="310" y="75" font-size="10" font-weight="bold" fill="#0f172a">轮 0</text>
-<text x="310" y="93">Q 在 GPU 0（源），acc = ∅</text>
-<text x="310" y="109">算本地 KV₀ 的 partial</text>
-<text x="310" y="125">acc ← (O₀, L₀)</text>
-<text x="310" y="141" fill="#c2410c">send Q+acc → GPU 1</text>
-<rect x="488" y="58" width="172" height="88" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-<text x="498" y="75" font-size="10" font-weight="bold" fill="#0f172a">轮 1</text>
-<text x="498" y="93">Q 到 GPU 1，acc = (O₀,L₀)</text>
-<text x="498" y="109">算本地 KV₁ 的 partial</text>
-<text x="498" y="125">acc ⊕ (O₁, L₁)（在线合并）</text>
-<text x="498" y="141" fill="#c2410c">send → GPU 2</text>
-<rect x="488" y="160" width="172" height="88" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-<text x="498" y="177" font-size="10" font-weight="bold" fill="#0f172a">轮 2</text>
-<text x="498" y="195">Q 到 GPU 2，acc 含 KV₀~₁</text>
-<text x="498" y="211">算本地 KV₂ 的 partial</text>
-<text x="498" y="227">acc ⊕ (O₂, L₂)</text>
-<text x="498" y="243" fill="#c2410c">send → GPU 3</text>
-<rect x="300" y="160" width="172" height="88" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-<text x="310" y="177" font-size="10" font-weight="bold" fill="#0f172a">轮 3</text>
-<text x="310" y="195">Q 到 GPU 3，acc 含 KV₀~₂</text>
-<text x="310" y="211">算本地 KV₃ 的 partial</text>
-<text x="310" y="227">acc ⊕ (O₃, L₃) = 完整 O</text>
-<text x="310" y="243" fill="#c2410c">send → GPU 0（闭环）</text>
-</g>
-<g stroke="#ea580c" stroke-width="2" fill="none">
-<line x1="474" y1="102" x2="484" y2="102" marker-end="url(#m33p2)"/>
-<line x1="574" y1="148" x2="574" y2="156" marker-end="url(#m33p2)"/>
-<line x1="484" y1="204" x2="474" y2="204" marker-end="url(#m33p2)"/>
-</g>
-<text x="380" y="262" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#334155">通信前</text>
-<text x="583" y="262" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#334155">通信后（C 跳之后）</text>
-<rect x="300" y="268" width="160" height="44" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="380" y="286" text-anchor="middle" font-size="9" fill="#0f172a">Q 在 GPU 0，acc = ∅</text>
-<text x="380" y="302" text-anchor="middle" font-size="9" fill="#334155">尚无 KV 信息</text>
-<line x1="466" y1="290" x2="500" y2="290" stroke="#16a34a" stroke-width="2" marker-end="url(#m33g3)"/>
-<rect x="506" y="268" width="154" height="44" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-<text x="583" y="286" text-anchor="middle" font-size="9" fill="#0f172a">Q 回到 GPU 0</text>
-<text x="583" y="302" text-anchor="middle" font-size="9" fill="#334155">acc = 完整 O（免归并）</text>
-<rect x="40" y="330" width="600" height="76" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="352" text-anchor="middle" font-size="10" fill="#475569">传递的数据：Q [q, d] + 累加器 (O_acc [q, d]，L_acc [q])；通信方式：逐 hop P2P send/recv，串行 C 跳</text>
-<text x="340" y="372" text-anchor="middle" font-size="10" fill="#475569">通信量 C·(2qd + q)，与 KV Cache 无关；结果在源 rank 直接成型，省掉最后的归并通信</text>
-<text x="340" y="392" text-anchor="middle" font-size="10" fill="#475569">适合 KV 常驻的多轮 decode / incremental prefill（即 3.5 节 Meta 论文的 pass-Q）；缺点：串行延迟高于 AllGather Q</text>
 </svg>
 
 ▲ Pass Q 示意图：KV 分片常驻各 rank（左），Q 携带 partial 累加器沿环逐 hop 传递并就地在线合并（右，四轮日程全画），通信前 acc 为空，C 跳后回到源 rank 即为完整输出
@@ -593,50 +647,108 @@ Pass Q 可以看作 Ring 传 KV 的镜像。KV 分片常驻不动，Q 连同运�
 
 DeepSpeed-Ulysses 在注意力前后各做一次 All-to-All，把按序列切分的数据转置为按 head 切分。通信之后，每个 rank 持有全序列上的部分 head，可以直接调用普通 FlashAttention，之后再经一次 All-to-All 转回序列切分。该方案不需要修改 kernel，也不需要 LSE 合并；通信量正比于 $T$，但不随 CP 度增长（序列与设备等比例扩展时通信量保持恒定）。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="360" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">Ulysses：两次 All-to-All，把 [T, H] 矩阵在「行切分」与「列切分」间转置</text>
-<text x="115" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">① 序列切分（按行）</text>
-<text x="340" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">② head 切分（按列）</text>
-<text x="565" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">③ 转回序列切分</text>
-<g font-size="9" text-anchor="middle" fill="#64748b">
-<text x="115" y="72">Q / K / V [T, H]，每个 GPU 持 T/4 行 × 全部 H 列</text>
-<text x="340" y="72">每个 GPU 持全部 T 行 × H/4 列</text>
-<text x="565" y="72">输出 [T/4, H] 各回各位</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 402" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg5" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot5" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#9A72AC"/></marker>
+</defs>
+<rect width="680" height="402" fill="url(#bg5)"/>
+<rect width="680" height="402" fill="url(#dot5)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">Ulysses：两次 All-to-All，把序列维换成 head 维</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">矩阵不动，改变的是它被切的方向。注意力夹在两次换维之间的那一段里</text>
+
+<text x="120" y="92" text-anchor="middle" font-size="10.5" fill="#E6E8EC">① 注意力前：按序列（行）切</text>
+<text x="328" y="92" text-anchor="middle" font-size="10.5" fill="#E6E8EC">② a2a 之后：按 head（列）切</text>
+<text x="536" y="92" text-anchor="middle" font-size="10.5" fill="#E6E8EC">③ 注意力后：换回序列切</text>
+
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="64" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="92" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="120" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="148" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="64" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="92" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="120" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="148" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="64" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="92" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="120" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="148" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="64" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="92" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="120" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="148" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
 </g>
-<g stroke="#ffffff" stroke-width="1.5">
-<rect x="40" y="82" width="150" height="38" fill="#bfdbfe"/><rect x="40" y="120" width="150" height="38" fill="#bbf7d0"/><rect x="40" y="158" width="150" height="38" fill="#fde68a"/><rect x="40" y="196" width="150" height="38" fill="#fecaca"/>
-<rect x="265" y="82" width="38" height="152" fill="#bfdbfe"/><rect x="303" y="82" width="38" height="152" fill="#bbf7d0"/><rect x="341" y="82" width="38" height="152" fill="#fde68a"/><rect x="379" y="82" width="38" height="152" fill="#fecaca"/>
-<rect x="490" y="82" width="150" height="38" fill="#bfdbfe"/><rect x="490" y="120" width="150" height="38" fill="#bbf7d0"/><rect x="490" y="158" width="150" height="38" fill="#fde68a"/><rect x="490" y="196" width="150" height="38" fill="#fecaca"/>
+<text x="106" y="258" text-anchor="middle" font-size="9" fill="#5B6678">每 rank 持 T/4 行 × 全部 H</text>
+
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="272" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="300" y="112" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="328" y="112" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="356" y="112" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="272" y="140" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="300" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="328" y="140" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="356" y="140" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="272" y="168" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="300" y="168" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="328" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="356" y="168" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="272" y="196" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="300" y="196" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="328" y="196" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="356" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
 </g>
-<g font-size="11" text-anchor="middle">
-<text x="115" y="106" fill="#1d4ed8">GPU 0：[B, T/4, H]</text>
-<text x="115" y="144" fill="#15803d">GPU 1：[B, T/4, H]</text>
-<text x="115" y="182" fill="#b45309">GPU 2：[B, T/4, H]</text>
-<text x="115" y="220" fill="#b91c1c">GPU 3：[B, T/4, H]</text>
-<text x="284" y="162" fill="#1d4ed8">H/4</text>
-<text x="322" y="162" fill="#15803d">H/4</text>
-<text x="360" y="162" fill="#b45309">H/4</text>
-<text x="398" y="162" fill="#b91c1c">H/4</text>
-<text x="565" y="106" fill="#1d4ed8">GPU 0：[B, T/4, H]</text>
-<text x="565" y="144" fill="#15803d">GPU 1：[B, T/4, H]</text>
-<text x="565" y="182" fill="#b45309">GPU 2：[B, T/4, H]</text>
-<text x="565" y="220" fill="#b91c1c">GPU 3：[B, T/4, H]</text>
+<text x="314" y="258" text-anchor="middle" font-size="9" fill="#5B6678">每 rank 持全部 T × H/4</text>
+
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="480" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="508" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="536" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="564" y="112" width="28" height="28" fill="#58C4DD" fill-opacity="0.38"/>
+<rect x="480" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="508" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="536" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="564" y="140" width="28" height="28" fill="#5CD0B3" fill-opacity="0.38"/>
+<rect x="480" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="508" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="536" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="564" y="168" width="28" height="28" fill="#F4D345" fill-opacity="0.38"/>
+<rect x="480" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="508" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="536" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
+<rect x="564" y="196" width="28" height="28" fill="#FC6255" fill-opacity="0.38"/>
 </g>
-<text x="340" y="252" text-anchor="middle" font-size="10" fill="#64748b">列方向示意：T 全长（↑↓）× H/4（每列色块 = 一个 GPU 的 head 子集）</text>
-<g stroke="#7c3aed" stroke-width="2.2" fill="none">
-<line x1="196" y1="158" x2="258" y2="158"/><line x1="417" y1="158" x2="483" y2="158"/>
+<text x="522" y="258" text-anchor="middle" font-size="9" fill="#5B6678">输出按行块归位，供 FFN 继续</text>
+
+<g stroke="#9A72AC" stroke-width="1.6" fill="none">
+<line x1="182" y1="168" x2="264" y2="168" marker-end="url(#a5)"/>
+<line x1="390" y1="168" x2="472" y2="168" marker-end="url(#a5)"/>
 </g>
-<g font-size="11" fill="#6d28d9" text-anchor="middle">
-<text x="227" y="144">All-to-All</text>
-<text x="227" y="176">行切 → 列切</text>
-<text x="450" y="144">All-to-All</text>
-<text x="450" y="176">列切 → 行切</text>
+<text x="223" y="158" text-anchor="middle" font-size="9" fill="#B69BC7">All-to-All</text>
+<text x="223" y="186" text-anchor="middle" font-size="8.5" fill="#7B5E8C">行 → 列</text>
+<text x="431" y="158" text-anchor="middle" font-size="9" fill="#B69BC7">All-to-All</text>
+<text x="431" y="186" text-anchor="middle" font-size="8.5" fill="#7B5E8C">列 → 行</text>
+
+<g font-size="9" fill="#5B6678">
+
+
+
 </g>
-<rect x="140" y="272" width="400" height="34" rx="7" fill="#f0fdf4" stroke="#16a34a"/>
-<text x="340" y="294" text-anchor="middle" font-size="11" fill="#14532d">中间状态：普通 FlashAttention 算「全序列 × 本地 head 列块」，无需 LSE 合并</text>
-<rect x="60" y="316" width="560" height="30" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="336" text-anchor="middle" font-size="11" fill="#475569">硬约束：CP 度 ≤ head 数 —— GQA/MQA/MLA 的 KV head 极少，Ulysses 很快到顶</text>
+
+<rect x="24" y="278" width="632" height="46" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="297" font-size="10" fill="#9AA4B2">中间那一段（②）每个 rank 拿到「全序列 × 本地 head」，可以直接调用普通 FlashAttention，不需要改 kernel、也不需要 LSE 合并。</text>
+<text x="44" y="314" font-size="10" fill="#9AA4B2">代价是两次换维都要把整个激活搬一遍，通信量 ∝ T·H；强扩展下（序列与设备同比）每卡通信量恒定。</text>
+
+<rect x="24" y="334" width="632" height="52" rx="8" fill="#0E131D" stroke="#232C3A"/>
+<text x="44" y="353" font-size="10" fill="#FC6255">硬约束：a2a 按 head 切，CP 度不能超过 head 数。</text>
+<text x="44" y="371" font-size="10" fill="#8B96A8">GQA 只有 2~8 个 KV head、MLA 只有 1 个，Ulysses 很快触顶，这也是它在现代模型上让位于 Ring / AllGather KV 的原因。</text>
+</g>
 </svg>
 
 ▲ Ulysses 示意图：矩阵从按行（序列）切分经 All-to-All 变为按列（head）切分。注意其集合通信原语是 All-to-All，不是 AllGather
@@ -647,54 +759,96 @@ DeepSpeed-Ulysses 在注意力前后各做一次 All-to-All，把按序列切分
 
 Ulysses 与 Ring 并不互斥。USP（Unified Sequence Parallelism）在二维网格上组合两者，节点内（NVLink）使用 Ulysses All-to-All，节点间（IB/RoCE）使用 Ring P2P，总 CP 度由此可以超过 head 数。Megatron-Core 的 `cp_comm_type=a2a+p2p` 配合 `hierarchical_context_parallel_sizes`（内层 a2a 尺寸、外层 p2p 尺寸）即对应这一思路。USP 论文还给出了 4D 并行的推荐嵌套顺序（TP < SP-Ulysses < SP-Ring < ZeRO-DP < PP）。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 350" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="350" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">USP / a2a+p2p：[T, H] 矩阵二维切块 —— 行向 Ring，列向 Ulysses</text>
-<text x="195" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">矩阵切分（行 = 序列块，列 = head 块）</text>
-<rect x="90" y="62" width="212" height="212" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
-<g stroke="#ffffff" stroke-width="1.5">
-<rect x="92" y="64" width="104" height="104" fill="#bfdbfe"/><rect x="196" y="64" width="104" height="104" fill="#bbf7d0"/>
-<rect x="92" y="168" width="104" height="104" fill="#fde68a"/><rect x="196" y="168" width="104" height="104" fill="#fecaca"/>
-</g>
-<g font-size="11" text-anchor="middle">
-<text x="144" y="112" fill="#1d4ed8">GPU 0</text><text x="144" y="128" fill="#1d4ed8">T/2 × H/2</text>
-<text x="248" y="112" fill="#15803d">GPU 1</text><text x="248" y="128" fill="#15803d">T/2 × H/2</text>
-<text x="144" y="216" fill="#b45309">GPU 2</text><text x="144" y="232" fill="#b45309">T/2 × H/2</text>
-<text x="248" y="216" fill="#b91c1c">GPU 3</text><text x="248" y="232" fill="#b91c1c">T/2 × H/2</text>
-</g>
-<g stroke="#7c3aed" stroke-width="2" fill="none">
-<line x1="92" y1="116" x2="300" y2="116" stroke-dasharray="6 3"/>
-<line x1="92" y1="220" x2="300" y2="220" stroke-dasharray="6 3"/>
-</g>
-<text x="310" y="80" font-size="10" fill="#6d28d9">← 列方向：a2a 组</text>
-<text x="310" y="200" font-size="10" fill="#c2410c">← 行方向：p2p 环</text>
-<text x="195" y="296" text-anchor="middle" font-size="10" fill="#64748b">每块 = 一个 GPU 持有的 (序列段 × head 子集)</text>
-<text x="510" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">两层通信（示例：节点内 4 GPU × 节点间 2）</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 466" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg6" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot6" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a6v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#9A72AC"/></marker>
+<marker id="a6o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+</defs>
+<rect width="680" height="466" fill="url(#bg6)"/>
+<rect width="680" height="466" fill="url(#dot6)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">USP：节点内 a2a，节点间 Ring，总 CP 度可超过 head 数</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">两种混合在二维网格上各管一个方向，节点内的换维走 NVLink，跨节点只传 KV</text>
+
+<rect x="24" y="84" width="632" height="124" rx="10" fill="#0E131D" stroke="#9A72AC" stroke-width="1.2" stroke-opacity="0.5"/>
+<circle cx="44" cy="104" r="9" fill="#F4D345"/>
+<text x="44" y="108" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="60" y="108" font-size="11.5" fill="#E6E8EC">阶段一 · 节点内列向 All-to-All（NVLink）</text>
+<text x="640" y="108" text-anchor="end" font-size="9.5" fill="#9A72AC">序列维 → head 维</text>
 <g>
-<rect x="360" y="64" width="300" height="96" rx="9" fill="#faf5ff" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="510" y="84" text-anchor="middle" font-size="11" font-weight="bold" fill="#6d28d9">节点 0（NVLink）：Ulysses a2a</text>
-<g font-size="10" text-anchor="middle">
-<rect x="380" y="96" width="58" height="28" rx="4" fill="#ddd6fe"/><text x="409" y="114" fill="#3b0764">GPU 0</text>
-<rect x="448" y="96" width="58" height="28" rx="4" fill="#ddd6fe"/><text x="477" y="114" fill="#3b0764">GPU 1</text>
-<rect x="380" y="130" width="58" height="28" rx="4" fill="#ddd6fe"/><text x="409" y="148" fill="#3b0764">GPU 2</text>
-<rect x="448" y="130" width="58" height="28" rx="4" fill="#ddd6fe"/><text x="477" y="148" fill="#3b0764">GPU 3</text>
+<rect x="40" y="124" width="130" height="46" rx="6" fill="#58C4DD" fill-opacity="0.12" stroke="#58C4DD" stroke-width="1"/>
+<text x="105" y="144" text-anchor="middle" font-size="9.5" fill="#CFEAF2">GPU 0</text>
+<text x="105" y="159" text-anchor="middle" font-size="8.5" fill="#7FA9B8">行块 s0 → 列块 h0</text>
+<rect x="190" y="124" width="130" height="46" rx="6" fill="#5CD0B3" fill-opacity="0.12" stroke="#5CD0B3" stroke-width="1"/>
+<text x="255" y="144" text-anchor="middle" font-size="9.5" fill="#C3E8DC">GPU 1</text>
+<text x="255" y="159" text-anchor="middle" font-size="8.5" fill="#79AC9A">行块 s1 → 列块 h1</text>
+<rect x="340" y="124" width="130" height="46" rx="6" fill="#F4D345" fill-opacity="0.12" stroke="#F4D345" stroke-width="1"/>
+<text x="405" y="144" text-anchor="middle" font-size="9.5" fill="#F3E3AE">GPU 2</text>
+<text x="405" y="159" text-anchor="middle" font-size="8.5" fill="#B3A574">行块 s2 → 列块 h2</text>
+<rect x="490" y="124" width="130" height="46" rx="6" fill="#FC6255" fill-opacity="0.12" stroke="#FC6255" stroke-width="1"/>
+<text x="555" y="144" text-anchor="middle" font-size="9.5" fill="#F6C0BA">GPU 3</text>
+<text x="555" y="159" text-anchor="middle" font-size="8.5" fill="#B37C77">行块 s3 → 列块 h3</text>
 </g>
-<rect x="530" y="90" width="110" height="60" rx="6" fill="#fff7ed" stroke="#fdba74"/>
-<text x="585" y="114" text-anchor="middle" font-size="10" fill="#7c2d12">节点 1：GPU 4-7</text>
-<text x="585" y="132" text-anchor="middle" font-size="10" fill="#7c2d12">同构 a2a</text>
+<g stroke="#9A72AC" stroke-width="1.3" fill="none">
+<line x1="172" y1="140" x2="188" y2="140" marker-end="url(#a6v)"/>
+<line x1="188" y1="154" x2="172" y2="154" marker-end="url(#a6v)"/>
+<line x1="322" y1="140" x2="338" y2="140" marker-end="url(#a6v)"/>
+<line x1="338" y1="154" x2="322" y2="154" marker-end="url(#a6v)"/>
+<line x1="472" y1="140" x2="488" y2="140" marker-end="url(#a6v)"/>
+<line x1="488" y1="154" x2="472" y2="154" marker-end="url(#a6v)"/>
 </g>
-<g stroke="#7c3aed" stroke-width="1.8" fill="none">
-<line x1="380" y1="110" x2="442" y2="110"/><line x1="380" y1="144" x2="442" y2="144"/>
+<text x="340" y="192" text-anchor="middle" font-size="9" fill="#5B6678">同一节点内的 4 张卡互相交换，每个 rank 此后持有「本节点全部序列 × 1/4 head」</text>
+
+<rect x="24" y="220" width="300" height="120" rx="10" fill="#0E131D" stroke="#FF862F" stroke-width="1.1" stroke-opacity="0.45"/>
+<circle cx="44" cy="240" r="9" fill="#F4D345"/>
+<text x="44" y="244" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="60" y="244" font-size="11.5" fill="#E6E8EC">阶段二 · 节点 0</text>
+<g fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1">
+<rect x="56" y="262" width="46" height="34" rx="4"/><rect x="112" y="262" width="46" height="34" rx="4"/>
+<rect x="168" y="262" width="46" height="34" rx="4"/><rect x="224" y="262" width="46" height="34" rx="4"/>
 </g>
-<g stroke="#ea580c" stroke-width="2" fill="none">
-<line x1="510" y1="182" x2="510" y2="212"/>
-<line x1="360" y1="198" x2="360" y2="198"/>
+<g font-size="8.5" text-anchor="middle" fill="#F0C39B">
+<text x="79" y="283">KV a</text><text x="135" y="283">KV b</text><text x="191" y="283">KV c</text><text x="247" y="283">KV d</text>
 </g>
-<rect x="360" y="214" width="300" height="52" rx="9" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
-<text x="510" y="236" text-anchor="middle" font-size="11" font-weight="bold" fill="#c2410c">节点间（IB / RoCE）：Ring P2P 传 KV 块</text>
-<text x="510" y="254" text-anchor="middle" font-size="10" fill="#9a3412">KV 块沿 p2p 环跨节点流转，与计算重叠</text>
-<rect x="60" y="310" width="560" height="28" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="329" text-anchor="middle" font-size="11" fill="#475569">总 CP 度 = a2a 度 × p2p 度（例 4×2=8），可超过 head 数；对应 Megatron hierarchical_context_parallel_sizes</text>
+<text x="174" y="318" text-anchor="middle" font-size="9" fill="#5B6678">持序列前半段的全部 KV</text>
+
+<rect x="356" y="220" width="300" height="120" rx="10" fill="#0E131D" stroke="#FF862F" stroke-width="1.1" stroke-opacity="0.45"/>
+<text x="372" y="244" font-size="11.5" fill="#E6E8EC">节点 1</text>
+<g fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1">
+<rect x="388" y="262" width="46" height="34" rx="4"/><rect x="444" y="262" width="46" height="34" rx="4"/>
+<rect x="500" y="262" width="46" height="34" rx="4"/><rect x="556" y="262" width="46" height="34" rx="4"/>
+</g>
+<g font-size="8.5" text-anchor="middle" fill="#F0C39B">
+<text x="411" y="283">KV e</text><text x="467" y="283">KV f</text><text x="523" y="283">KV g</text><text x="579" y="283">KV h</text>
+</g>
+<text x="506" y="318" text-anchor="middle" font-size="9" fill="#5B6678">持序列后半段的全部 KV</text>
+
+<g stroke="#FF862F" stroke-width="1.5" fill="none">
+<line x1="327" y1="270" x2="352" y2="270" marker-end="url(#a6o)"/>
+<line x1="353" y1="292" x2="328" y2="292" marker-end="url(#a6o)"/>
+</g>
+<text x="340" y="356" text-anchor="middle" font-size="9" fill="#8B96A8">节点间 Ring P2P（IB / RoCE）：行向传 KV，与本地计算重叠</text>
+
+<text x="24" y="384" font-size="10.5" fill="#E6E8EC">tile 归属：p2p 度 × a2a 度</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="24" y="394" width="40" height="24" fill="#58C4DD" fill-opacity="0.18"/><rect x="64" y="394" width="40" height="24" fill="#5CD0B3" fill-opacity="0.18"/>
+<rect x="104" y="394" width="40" height="24" fill="#F4D345" fill-opacity="0.18"/><rect x="144" y="394" width="40" height="24" fill="#FC6255" fill-opacity="0.18"/>
+<rect x="24" y="418" width="40" height="24" fill="#58C4DD" fill-opacity="0.34"/><rect x="64" y="418" width="40" height="24" fill="#5CD0B3" fill-opacity="0.34"/>
+<rect x="104" y="418" width="40" height="24" fill="#F4D345" fill-opacity="0.34"/><rect x="144" y="418" width="40" height="24" fill="#FC6255" fill-opacity="0.34"/>
+</g>
+<text x="190" y="412" font-size="9" fill="#5B6678">行 = 节点（p2p 维，2 个）</text>
+<text x="190" y="428" font-size="9" fill="#5B6678">列 = head 组（a2a 维，4 个）</text>
+<text x="196" y="446" font-size="9.5" fill="#83C167">总 CP 度 = 4 × 2 = 8</text>
+<text x="352" y="404" font-size="9.5" fill="#8B96A8">Megatron：cp_comm_type=a2a+p2p</text>
+<text x="352" y="420" font-size="9.5" fill="#8B96A8">hierarchical_context_parallel_sizes = [4, 2]</text>
+<text x="352" y="440" font-size="9.5" fill="#5B6678">嵌套顺序建议 TP &lt; Ulysses &lt; Ring &lt; ZeRO-DP &lt; PP</text>
+</g>
 </svg>
 
 ▲ USP 混合示意图：[T, H] 矩阵二维切块，列向走 Ulysses a2a（节点内）、行向走 Ring P2P（节点间）
@@ -713,94 +867,103 @@ pass-Q 对应 3.3 节的传 Q。KV 分片跨轮常驻（persistent KV cache，�
 
 最后是该方案的适用边界。CP 显著降低 TTFT，但 TTIT 略有退化（padding 与 SendRecv/All2All 的开销），论文建议与 PD 分离（DistServe、Mooncake）配合部署。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 486" style="width:100%;height:auto">
 <defs>
-<marker id="m35s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
-<marker id="m35q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+<linearGradient id="bg7" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot7" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a7o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+<marker id="a7b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#58C4DD"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="440" fill="#ffffff"/>
-<text x="340" y="22" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">pass-KV / pass-Q 动态切换（Meta CP）：同一 Ring 拓扑，按 KV miss rate 决定传什么</text>
-<rect x="20" y="34" width="640" height="44" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="34" y="52" font-size="10" font-weight="bold" fill="#334155">多轮会话：</text>
-<rect x="100" y="42" width="250" height="18" rx="3" fill="#fed7aa" stroke="#ea580c"/>
-<text x="225" y="55" text-anchor="middle" font-size="9" fill="#7c2d12">P：已缓存 KV（persistent，跨轮常驻）</text>
-<rect x="350" y="42" width="92" height="18" rx="3" fill="#fdba74" stroke="#c2410c"/>
-<text x="396" y="55" text-anchor="middle" font-size="9" fill="#7c2d12">T：新 token</text>
-<text x="646" y="55" text-anchor="end" font-size="10" fill="#334155">miss rate = T/(T+P)</text>
-<text x="34" y="72" font-size="9" fill="#64748b">decode 每步 T=1 → miss rate≈0；full prefill P=0 → miss rate=100%；多轮 partial prefill 介于两者之间</text>
-<rect x="110" y="86" width="460" height="44" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="340" y="104" text-anchor="middle" font-size="11" font-weight="bold" fill="#312e81">切换规则：T/(T+P) ≤ 2·N_kv/N_h → pass-Q；否则 → pass-KV</text>
-<text x="340" y="121" text-anchor="middle" font-size="10" fill="#3730a3">Llama3-405B：N_h=128、N_kv=8 → 阈值 12.5%；实测切换点 ≈ miss rate 5%（128K / CP4）</text>
-<line x1="255" y1="130" x2="180" y2="150" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m35s)"/>
-<line x1="425" y1="130" x2="500" y2="150" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m35s)"/>
-<rect x="20" y="152" width="312" height="196" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="176" y="172" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a5f">pass-KV（miss rate 高 / full prefill）— 即 3.1 Ring</text>
-<g font-size="8" text-anchor="middle" fill="#64748b">
-<text x="66" y="190">K₀</text><text x="92" y="190">K₁</text><text x="118" y="190">K₂</text><text x="144" y="190">K₃</text>
-<text x="46" y="212" text-anchor="end" fill="#1d4ed8">Q₀</text>
-<text x="46" y="238" text-anchor="end" fill="#15803d">Q₁</text>
-<text x="46" y="264" text-anchor="end" fill="#b45309">Q₂</text>
-<text x="46" y="290" text-anchor="end" fill="#b91c1c">Q₃</text>
+<rect width="680" height="486" fill="url(#bg7)"/>
+<rect width="680" height="486" fill="url(#dot7)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">同一套 Ring，两种形状：按 miss rate 切换</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">pass-KV 传历史，pass-Q 传新 token。多轮会话里两者交替出现，判据只有一条</text>
+
+<rect x="24" y="72" width="632" height="164" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="94" font-size="11.5" fill="#E6E8EC">判据：本轮的 KV 命中率</text>
+<text x="40" y="112" font-size="9.5" fill="#5B6678">命中多则只需算新 token，miss 多则历史 KV 也要过一遍</text>
+<line x1="56" y1="146" x2="624" y2="146" stroke="#3A4557" stroke-width="1.2"/>
+<rect x="56" y="122" width="244" height="24" fill="#58C4DD" fill-opacity="0.16" stroke="#58C4DD" stroke-width="1"/>
+<rect x="300" y="122" width="324" height="24" fill="#FF862F" fill-opacity="0.16" stroke="#FF862F" stroke-width="1"/>
+<text x="178" y="139" text-anchor="middle" font-size="10.5" fill="#8FC9DC">pass-Q  命中多</text>
+<text x="462" y="139" text-anchor="middle" font-size="10.5" fill="#F0C39B">pass-KV  miss 多</text>
+<line x1="300" y1="112" x2="300" y2="176" stroke="#F4D345" stroke-width="1.2" stroke-dasharray="4 4"/>
+<text x="306" y="112" font-size="9.5" fill="#F4D345">阈值 2·N_kv/N_h，405B 约 12.5%</text>
+<text x="56" y="190" font-size="9" fill="#5B6678">0</text>
+<text x="624" y="190" text-anchor="end" font-size="9" fill="#5B6678">1（整段都是新的）</text>
+<text x="40" y="214" font-size="10" fill="#8B96A8">判据来自通信量之比：Q 侧只有 T·d，KV 侧是 P·d，当 T/(T+P) ≤ 2·N_kv/N_h 时传 Q 更省。</text>
+<text x="40" y="228" font-size="9.5" fill="#5B6678">横轴为示意刻度，不是线性。</text>
+
+<rect x="24" y="252" width="304" height="196" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="44" cy="272" r="9" fill="#F4D345"/>
+<text x="44" y="276" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="60" y="276" font-size="11" fill="#E6E8EC">pass-KV：KV 每轮环传（C = 3 示意）</text>
+<rect x="40" y="288" width="80" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="80" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">第 0 轮</text>
+<rect x="48" y="310" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="80" y="323" text-anchor="middle" font-size="8" fill="#F0C39B">R0 · K0</text>
+<rect x="48" y="332" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="80" y="345" text-anchor="middle" font-size="8" fill="#F0C39B">R1 · K1</text>
+<rect x="48" y="354" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="80" y="367" text-anchor="middle" font-size="8" fill="#F0C39B">R2 · K2</text>
+<text x="80" y="390" text-anchor="middle" font-size="8" fill="#5B6678">算 i−j = 0</text>
+
+<rect x="136" y="288" width="80" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="176" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">第 1 轮</text>
+<rect x="144" y="310" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="176" y="323" text-anchor="middle" font-size="8" fill="#F0C39B">R0 · K2</text>
+<rect x="144" y="332" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="176" y="345" text-anchor="middle" font-size="8" fill="#F0C39B">R1 · K0</text>
+<rect x="144" y="354" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="176" y="367" text-anchor="middle" font-size="8" fill="#F0C39B">R2 · K1</text>
+<text x="176" y="390" text-anchor="middle" font-size="8" fill="#5B6678">算 i−j = 1</text>
+
+<rect x="232" y="288" width="80" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="272" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">第 2 轮</text>
+<rect x="240" y="310" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="272" y="323" text-anchor="middle" font-size="8" fill="#F0C39B">R0 · K1</text>
+<rect x="240" y="332" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="272" y="345" text-anchor="middle" font-size="8" fill="#F0C39B">R1 · K2</text>
+<rect x="240" y="354" width="64" height="18" rx="3" fill="#FF862F" fill-opacity="0.28" stroke="#FF862F" stroke-width="0.9"/><text x="272" y="367" text-anchor="middle" font-size="8" fill="#F0C39B">R2 · K0</text>
+<text x="272" y="390" text-anchor="middle" font-size="8" fill="#5B6678">算 i−j = 2</text>
+
+<g stroke="#FF862F" stroke-width="1.4" fill="none">
+<line x1="122" y1="340" x2="134" y2="340" marker-end="url(#a7o)"/>
+<line x1="218" y1="340" x2="230" y2="340" marker-end="url(#a7o)"/>
 </g>
-<g stroke="#ffffff" stroke-width="1.5">
-<rect x="53" y="194" width="26" height="26" fill="#bfdbfe"/><rect x="79" y="194" width="26" height="26" fill="#e2e8f0"/><rect x="105" y="194" width="26" height="26" fill="#e2e8f0"/><rect x="131" y="194" width="26" height="26" fill="#e2e8f0"/>
-<rect x="53" y="220" width="26" height="26" fill="#bbf7d0"/><rect x="79" y="220" width="26" height="26" fill="#bbf7d0"/><rect x="105" y="220" width="26" height="26" fill="#e2e8f0"/><rect x="131" y="220" width="26" height="26" fill="#e2e8f0"/>
-<rect x="53" y="246" width="26" height="26" fill="#fde68a"/><rect x="79" y="246" width="26" height="26" fill="#fde68a"/><rect x="105" y="246" width="26" height="26" fill="#fde68a"/><rect x="131" y="246" width="26" height="26" fill="#e2e8f0"/>
-<rect x="53" y="272" width="26" height="26" fill="#fecaca"/><rect x="79" y="272" width="26" height="26" fill="#fecaca"/><rect x="105" y="272" width="26" height="26" fill="#fecaca"/><rect x="131" y="272" width="26" height="26" fill="#fecaca"/>
+<text x="40" y="424" font-size="9.5" fill="#5B6678">KV 沿环转一圈，通信量 O(T)；适合首次 prefill 与 miss 高的多轮会话。</text>
+
+<rect x="348" y="252" width="308" height="196" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="368" cy="272" r="9" fill="#F4D345"/>
+<text x="368" y="276" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="384" y="276" font-size="11" fill="#E6E8EC">pass-Q：Q 与 acc 逐跳下传</text>
+<rect x="364" y="288" width="80" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="404" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">跳 0</text>
+<rect x="372" y="312" width="64" height="20" rx="3" fill="#58C4DD" fill-opacity="0.25" stroke="#58C4DD" stroke-width="0.9"/><text x="404" y="326" text-anchor="middle" font-size="8" fill="#BFE4EF">Q → R0</text>
+<text x="404" y="348" text-anchor="middle" font-size="8" fill="#5B6678">acc = S0 段</text>
+<text x="404" y="390" text-anchor="middle" font-size="8" fill="#5B6678">KV0 常驻</text>
+
+<rect x="460" y="288" width="80" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="500" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">跳 1</text>
+<rect x="468" y="312" width="64" height="20" rx="3" fill="#58C4DD" fill-opacity="0.25" stroke="#58C4DD" stroke-width="0.9"/><text x="500" y="326" text-anchor="middle" font-size="8" fill="#BFE4EF">Q + acc → R1</text>
+<text x="500" y="348" text-anchor="middle" font-size="8" fill="#5B6678">acc 两段</text>
+<text x="500" y="390" text-anchor="middle" font-size="8" fill="#5B6678">KV1 常驻</text>
+
+<rect x="556" y="288" width="84" height="112" rx="6" fill="#0F1420" stroke="#2C3748"/>
+<text x="598" y="303" text-anchor="middle" font-size="8.5" fill="#8B96A8">跳 2</text>
+<rect x="564" y="312" width="68" height="20" rx="3" fill="#83C167" fill-opacity="0.25" stroke="#83C167" stroke-width="0.9"/><text x="598" y="326" text-anchor="middle" font-size="8" fill="#C6E3B6">→ 回 R0</text>
+<text x="598" y="348" text-anchor="middle" font-size="8" fill="#7FA36F">acc 即 O</text>
+<text x="598" y="390" text-anchor="middle" font-size="8" fill="#5B6678">KV2 常驻</text>
+
+<g stroke="#58C4DD" stroke-width="1.4" fill="none">
+<line x1="446" y1="340" x2="458" y2="340" marker-end="url(#a7b)"/>
+<line x1="542" y1="340" x2="554" y2="340" marker-end="url(#a7b)"/>
 </g>
-<rect x="77" y="192" width="30" height="108" fill="none" stroke="#ea580c" stroke-width="2.5"/>
-<text x="92" y="312" text-anchor="middle" font-size="8" fill="#c2410c">KV 列块沿环轮转</text>
-<g font-size="8.5">
-<rect x="170" y="188" width="152" height="18" rx="4" fill="#fff7ed" stroke="#fdba74"/>
-<text x="246" y="201" text-anchor="middle" fill="#7c2d12">轮 0：算 K₀ → 发 K₀ / 收 K₃</text>
-<rect x="170" y="210" width="152" height="18" rx="4" fill="#fff7ed" stroke="#fdba74"/>
-<text x="246" y="223" text-anchor="middle" fill="#7c2d12">轮 1：算 K₃ → 发 K₃ / 收 K₂</text>
-<rect x="170" y="232" width="152" height="18" rx="4" fill="#fff7ed" stroke="#fdba74"/>
-<text x="246" y="245" text-anchor="middle" fill="#7c2d12">轮 2：算 K₂ → 发 K₂ / 收 K₁</text>
-<text x="246" y="266" text-anchor="middle" fill="#9a3412">GPU0 视角（C=4）：末块 K₁ 收到后算完</text>
-<text x="246" y="282" text-anchor="middle" fill="#9a3412">N−1 轮 SendRecv 与计算重叠 → LSE 合并</text>
+<text x="364" y="424" font-size="9.5" fill="#5B6678">通信量只 ∝ 新 token 数 T；适合 decode 与增量 prefill，省掉归并。</text>
+
+<rect x="24" y="458" width="632" height="20" rx="6" fill="#121826" stroke="#232C3A"/>
+<text x="340" y="472" text-anchor="middle" font-size="10" fill="#9AA4B2">两者无损，结果与单卡稠密注意力逐位等价；区别只在把哪一侧搬上环</text>
 </g>
-<rect x="30" y="316" width="292" height="24" rx="5" fill="#fff7ed" stroke="#fdba74"/>
-<text x="176" y="332" text-anchor="middle" font-size="9" fill="#7c2d12">传 KV：∝ T·N_kv·d，GQA 下比传 Q 小约 N_h/N_kv 倍（405B：16×）</text>
-<rect x="348" y="152" width="312" height="196" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="504" y="172" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a5f">pass-Q（miss rate 低 / decode）— 即 3.3 传 Q</text>
-<g font-size="8" text-anchor="middle" fill="#64748b">
-<text x="381" y="190">KV₀</text><text x="407" y="190">KV₁</text><text x="433" y="190">KV₂</text><text x="459" y="190">KV₃</text>
-<text x="360" y="212" text-anchor="end" fill="#1d4ed8">Q₀</text>
-<text x="360" y="238" text-anchor="end" fill="#94a3b8">Q₁</text>
-<text x="360" y="264" text-anchor="end" fill="#94a3b8">Q₂</text>
-<text x="360" y="290" text-anchor="end" fill="#94a3b8">Q₃</text>
-</g>
-<g stroke="#ffffff" stroke-width="1.5">
-<rect x="368" y="194" width="26" height="26" fill="#fed7aa"/><rect x="394" y="194" width="26" height="26" fill="#fdba74"/><rect x="420" y="194" width="26" height="26" fill="#fed7aa"/><rect x="446" y="194" width="26" height="26" fill="#fdba74"/>
-<rect x="368" y="220" width="26" height="26" fill="#fed7aa"/><rect x="394" y="220" width="26" height="26" fill="#fdba74"/><rect x="420" y="220" width="26" height="26" fill="#fed7aa"/><rect x="446" y="220" width="26" height="26" fill="#fdba74"/>
-<rect x="368" y="246" width="26" height="26" fill="#fed7aa"/><rect x="394" y="246" width="26" height="26" fill="#fdba74"/><rect x="420" y="246" width="26" height="26" fill="#fed7aa"/><rect x="446" y="246" width="26" height="26" fill="#fdba74"/>
-<rect x="368" y="272" width="26" height="26" fill="#fed7aa"/><rect x="394" y="272" width="26" height="26" fill="#fdba74"/><rect x="420" y="272" width="26" height="26" fill="#fed7aa"/><rect x="446" y="272" width="26" height="26" fill="#fdba74"/>
-</g>
-<rect x="366" y="192" width="108" height="30" fill="none" stroke="#2563eb" stroke-width="2.5"/>
-<path d="M 480 207 L 500 207" stroke="#2563eb" stroke-width="1.6" marker-end="url(#m35q)"/>
-<text x="420" y="312" text-anchor="middle" font-size="8" fill="#1d4ed8">Q 行块沿环流转，KV 列块常驻</text>
-<g font-size="8.5">
-<rect x="496" y="188" width="156" height="18" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-<text x="574" y="201" text-anchor="middle" fill="#1e3a81">轮 0：Q₀@R0×KV₀ → 发 Q₀</text>
-<rect x="496" y="210" width="156" height="18" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-<text x="574" y="223" text-anchor="middle" fill="#1e3a81">轮 1：Q₀@R1×KV₁ → 发 Q₀</text>
-<rect x="496" y="232" width="156" height="18" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-<text x="574" y="245" text-anchor="middle" fill="#1e3a81">轮 2：Q₀@R2×KV₂ → 发 Q₀</text>
-<text x="574" y="266" text-anchor="middle" fill="#1d4ed8">每轮只传小 Q（decode 每步 1 token）</text>
-<text x="574" y="282" text-anchor="middle" fill="#1d4ed8">4 个 partial 散在各 rank → All2All 归位 + LSE 合并</text>
-</g>
-<rect x="358" y="316" width="292" height="24" rx="5" fill="#eff6ff" stroke="#93c5fd"/>
-<text x="504" y="332" text-anchor="middle" font-size="9" fill="#1e3a81">传 Q：∝ T·d·e，与 KV cache 大小无关；KV 分片跨轮常驻（persistent）</text>
-<rect x="20" y="356" width="640" height="34" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="370" text-anchor="middle" font-size="10" fill="#334155">负载均衡：序列切 2N 块、首尾配对 rank i ← (C_i, C_{2N−1−i})（同 zigzag），计算与 KV 显存双均衡；</text>
-<text x="340" y="384" text-anchor="middle" font-size="10" fill="#64748b">decode 用 round-robin 每步偏移 1 个 index 防 OOM；ring 消息按 max_i P_i + ⌈T/N⌉ 等长 padding</text>
-<rect x="20" y="396" width="640" height="34" rx="7" fill="#f1f5f9" stroke="#e2e8f0"/>
-<text x="340" y="410" text-anchor="middle" font-size="10" fill="#475569">传递的数据 / 通信方式：pass-KV = KV 张量 P2P 环传（N−1 轮 SendRecv 与计算重叠）；pass-Q = 小 Q P2P 环传 + All2All 归位；</text>
-<text x="340" y="424" text-anchor="middle" font-size="10" fill="#475569">两者均以 LSE 合并收尾、无损精确，按 miss rate T/(T+P) 与 roofline 自动切换，覆盖 full prefill / persistent KV prefill / decode</text>
 </svg>
 
-▲ pass-KV / pass-Q 动态切换示意图：上为多轮会话的 miss rate 与切换规则；下左为 pass-KV 的 KV 列块每轮环传（GPU0 视角），下右为 pass-Q 的 Q 行块每轮环传与 KV 列块常驻
+▲ pass-KV / pass-Q 动态切换示意图：上为多轮会话的 miss rate 与切换阈值；下左为 pass-KV 的三轮环传日程（C = 3 示意），下右为 pass-Q 的三跳下传，KV 始终常驻
 
 ## 3.6 公共组件：LSE 合并（在线 softmax）
 
@@ -810,52 +973,97 @@ $$m = \max_j L_j,\quad w_j = \exp(L_j - m),\quad O = \frac{\sum_j w_j O_j}{\sum_
 
 这正是 FlashAttention 在线 softmax 的推广，也是 decode CP 通信量可以极小的原因。每一步只需传递输出与 LSE，无须传递原始 KV。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">LSE 合并：score 行分段的 (O_j, L_j) 加权合成精确输出</text>
-<text x="150" y="52" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">各分片的 partial 结果</text>
-<text x="430" y="52" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">合并（在线 softmax）</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg8" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot8" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a8g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
+</defs>
+<rect width="680" height="420" fill="url(#bg8)"/>
+<rect width="680" height="420" fill="url(#dot8)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">LSE 合并：把各段的 partial 结果拼成精确值</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">这是 FlashAttention 的在线 softmax。下面用一组具体数值走一遍（4 个 KV 分片）</text>
+
+<circle cx="30" cy="82" r="9" fill="#F4D345"/>
+<text x="30" y="86" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="46" y="86" font-size="10.5" fill="#8B96A8">各段独立算出局部输出与对数和</text>
+
 <g>
-<rect x="40" y="64" width="220" height="44" rx="6" fill="#dcfce7" stroke="#16a34a"/>
-<rect x="52" y="76" width="60" height="20" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<text x="82" y="90" text-anchor="middle" font-size="10" fill="#14532d">O₀</text>
-<text x="190" y="90" text-anchor="middle" font-size="11" fill="#14532d">L₀（logsumexp）</text>
-<rect x="40" y="118" width="220" height="44" rx="6" fill="#dcfce7" stroke="#16a34a"/>
-<rect x="52" y="130" width="60" height="20" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<text x="82" y="144" text-anchor="middle" font-size="10" fill="#14532d">O₁</text>
-<text x="190" y="144" text-anchor="middle" font-size="11" fill="#14532d">L₁（logsumexp）</text>
-<rect x="40" y="172" width="220" height="44" rx="6" fill="#dcfce7" stroke="#16a34a"/>
-<rect x="52" y="184" width="60" height="20" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<text x="82" y="198" text-anchor="middle" font-size="10" fill="#14532d">O₂</text>
-<text x="190" y="198" text-anchor="middle" font-size="11" fill="#14532d">L₂（logsumexp）</text>
+<rect x="26" y="96" width="146" height="78" rx="8" fill="#0E131D" stroke="#3A4557"/>
+<text x="36" y="112" font-size="8.5" fill="#5B6678">列段 0</text>
+<text x="162" y="112" text-anchor="end" font-size="10" fill="#F4D345">L₀ = 2.1</text>
+<g><rect x="36" y="120" width="26" height="34" fill="#58C4DD" fill-opacity="0.3"/><rect x="62" y="120" width="26" height="34" fill="#58C4DD" fill-opacity="0.45"/><rect x="88" y="120" width="26" height="34" fill="#58C4DD" fill-opacity="0.6"/></g>
+<text x="126" y="140" font-size="9" fill="#8B96A8">O₀</text>
+<text x="36" y="166" font-size="8.5" fill="#5B6678">softmax 只在段内归一化</text>
 </g>
-<g stroke="#16a34a" stroke-width="1.8" fill="none">
-<path d="M 262 86 L 316 130"/><path d="M 262 140 L 316 140"/><path d="M 262 194 L 316 150"/>
-</g>
-<rect x="320" y="80" width="230" height="120" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
-<text x="435" y="106" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">合并公式（在线 softmax）</text>
-<text x="435" y="132" text-anchor="middle" font-size="12" fill="#14532d">m = max_j L_j</text>
-<text x="435" y="156" text-anchor="middle" font-size="12" fill="#14532d">w_j = exp(L_j − m)</text>
-<text x="435" y="180" text-anchor="middle" font-size="12" fill="#14532d">O = Σ_j w_j·O_j / Σ_j w_j</text>
-<line x1="552" y1="140" x2="586" y2="140" stroke="#16a34a" stroke-width="1.8"/>
-<rect x="588" y="112" width="72" height="56" rx="8" fill="#f1f5f9" stroke="#94a3b8"/>
-<rect x="600" y="126" width="48" height="14" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<rect x="600" y="142" width="48" height="14" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<text x="624" y="182" text-anchor="middle" font-size="10" fill="#334155">输出 O</text>
-<text x="340" y="232" text-anchor="middle" font-size="11" fill="#475569">矩阵视角：score 行 S[q, T] 列向切成 j 段 → 各段独立 softmax 得 (O_j, L_j) → 加权拼回整行</text>
 <g>
-<rect x="180" y="244" width="70" height="22" fill="#fed7aa"/><rect x="250" y="244" width="70" height="22" fill="#fdba74"/><rect x="320" y="244" width="70" height="22" fill="#fed7aa"/><rect x="390" y="244" width="70" height="22" fill="#fdba74"/>
-<text x="215" y="259" text-anchor="middle" font-size="9" fill="#7c2d12">段 0</text>
-<text x="285" y="259" text-anchor="middle" font-size="9" fill="#7c2d12">段 1</text>
-<text x="355" y="259" text-anchor="middle" font-size="9" fill="#7c2d12">段 2</text>
-<text x="425" y="259" text-anchor="middle" font-size="9" fill="#7c2d12">段 3</text>
+<rect x="186" y="96" width="146" height="78" rx="8" fill="#0E131D" stroke="#3A4557"/>
+<text x="196" y="112" font-size="8.5" fill="#5B6678">列段 1</text>
+<text x="322" y="112" text-anchor="end" font-size="10" fill="#F4D345">L₁ = 1.4</text>
+<g><rect x="196" y="120" width="26" height="34" fill="#5CD0B3" fill-opacity="0.3"/><rect x="222" y="120" width="26" height="34" fill="#5CD0B3" fill-opacity="0.45"/><rect x="248" y="120" width="26" height="34" fill="#5CD0B3" fill-opacity="0.6"/></g>
+<text x="286" y="140" font-size="9" fill="#8B96A8">O₁</text>
+<text x="196" y="166" font-size="8.5" fill="#5B6678">段内和 = 1（各自归一）</text>
 </g>
-<text x="340" y="286" text-anchor="middle" font-size="10" fill="#64748b">↓ 各段 (O_j, L_j) ↓</text>
-<rect x="230" y="296" width="220" height="20" fill="#86efac" stroke="#16a34a" stroke-width="1.2"/>
-<text x="340" y="310" text-anchor="middle" font-size="9" fill="#14532d">合并后的完整 score 行 / 输出 O</text>
+<g>
+<rect x="346" y="96" width="146" height="78" rx="8" fill="#0E131D" stroke="#3A4557"/>
+<text x="356" y="112" font-size="8.5" fill="#5B6678">列段 2</text>
+<text x="482" y="112" text-anchor="end" font-size="10" fill="#F4D345">L₂ = 2.6</text>
+<g><rect x="356" y="120" width="26" height="34" fill="#F4D345" fill-opacity="0.3"/><rect x="382" y="120" width="26" height="34" fill="#F4D345" fill-opacity="0.45"/><rect x="408" y="120" width="26" height="34" fill="#F4D345" fill-opacity="0.6"/></g>
+<text x="446" y="140" font-size="9" fill="#8B96A8">O₂</text>
+<text x="356" y="166" font-size="8.5" fill="#5B6678">L₂ 最大，后面以它为基准</text>
+</g>
+<g>
+<rect x="506" y="96" width="146" height="78" rx="8" fill="#0E131D" stroke="#3A4557"/>
+<text x="516" y="112" font-size="8.5" fill="#5B6678">列段 3</text>
+<text x="642" y="112" text-anchor="end" font-size="10" fill="#F4D345">L₃ = 0.9</text>
+<g><rect x="516" y="120" width="26" height="34" fill="#FC6255" fill-opacity="0.3"/><rect x="542" y="120" width="26" height="34" fill="#FC6255" fill-opacity="0.45"/><rect x="568" y="120" width="26" height="34" fill="#FC6255" fill-opacity="0.6"/></g>
+<text x="606" y="140" font-size="9" fill="#8B96A8">O₃</text>
+<text x="516" y="166" font-size="8.5" fill="#5B6678">L₃ 最小，权重也最小</text>
+</g>
+
+<circle cx="30" cy="196" r="9" fill="#F4D345"/>
+<text x="30" y="200" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="46" y="200" font-size="10.5" fill="#8B96A8">取全局最大值 m = max L_j = 2.6，把各段重标定到同一基准</text>
+
+<g>
+<rect x="26" y="212" width="146" height="44" rx="6" fill="#161C29" stroke="#3A4557"/>
+<text x="99" y="230" text-anchor="middle" font-size="9" fill="#8B96A8">e^(2.1 − 2.6)</text>
+<text x="99" y="248" text-anchor="middle" font-size="12" fill="#E6E8EC">w₀ = 0.61</text>
+<rect x="186" y="212" width="146" height="44" rx="6" fill="#161C29" stroke="#3A4557"/>
+<text x="259" y="230" text-anchor="middle" font-size="9" fill="#8B96A8">e^(1.4 − 2.6)</text>
+<text x="259" y="248" text-anchor="middle" font-size="12" fill="#E6E8EC">w₁ = 0.30</text>
+<rect x="346" y="212" width="146" height="44" rx="6" fill="#161C29" stroke="#3A4557"/>
+<text x="419" y="230" text-anchor="middle" font-size="9" fill="#8B96A8">e^(2.6 − 2.6)</text>
+<text x="419" y="248" text-anchor="middle" font-size="12" fill="#E6E8EC">w₂ = 1.00</text>
+<rect x="506" y="212" width="146" height="44" rx="6" fill="#161C29" stroke="#3A4557"/>
+<text x="579" y="230" text-anchor="middle" font-size="9" fill="#8B96A8">e^(0.9 − 2.6)</text>
+<text x="579" y="248" text-anchor="middle" font-size="12" fill="#E6E8EC">w₃ = 0.18</text>
+</g>
+
+<circle cx="30" cy="292" r="9" fill="#F4D345"/>
+<text x="30" y="296" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="46" y="296" font-size="10.5" fill="#8B96A8">按权相加再归一</text>
+
+<g stroke="#83C167" stroke-width="1.2" fill="none">
+<path d="M99 258 C 99 276, 210 282, 218 296" marker-end="url(#a8g)"/>
+<path d="M259 258 C 259 276, 240 282, 236 294" marker-end="url(#a8g)"/>
+<path d="M419 258 C 419 276, 430 282, 434 294" marker-end="url(#a8g)"/>
+<path d="M579 258 C 579 276, 460 282, 452 296" marker-end="url(#a8g)"/>
+</g>
+<rect x="196" y="300" width="288" height="58" rx="8" fill="#83C167" fill-opacity="0.14" stroke="#83C167" stroke-width="1.4"/>
+<text x="340" y="322" text-anchor="middle" font-size="12" fill="#DCECCD">O = (w₀O₀ + w₁O₁ + w₂O₂ + w₃O₃) / Σw</text>
+<text x="340" y="344" text-anchor="middle" font-size="10" fill="#8FB27C">Σw = 2.09 → 0.29 / 0.14 / 0.48 / 0.09</text>
+
+<rect x="24" y="374" width="632" height="34" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="340" y="396" text-anchor="middle" font-size="10" fill="#9AA4B2">第 j 段的权重只依赖它自己的 L_j，各段可以完全独立求值 —— 这正是 Ring 多轮、传 Q 多分片能并行的前提</text>
+</g>
 </svg>
 
-▲ LSE 合并示意图：各列段 partial 结果 (O_j, L_j) 与整行 score 矩阵的对应关系
+▲ LSE 合并示意图：以四个列段的 L_j = 2.1 / 1.4 / 2.6 / 0.9 为例，先重标定权重再归一，得到与单卡一致的输出
 
 ## 3.7 选型小结
 
@@ -869,49 +1077,71 @@ $$m = \max_j L_j,\quad w_j = \exp(L_j - m),\quad O = \frac{\sum_j w_j O_j}{\sum_
 | Ulysses（a2a） | Q/K/V/O | $O(T)$，恒定 | 是 | 低 | 节点内、head 多 |
 | USP（a2a+p2p） | 组合 | 组合 | 部分 | 中 | 多节点混合拓扑 |
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" style="width:100%;height:auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
 <defs>
-<marker id="m37" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+<linearGradient id="bg9" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot9" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#5B6678"/></marker>
+<marker id="a9b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#58C4DD"/></marker>
 </defs>
-<rect x="0" y="0" width="680" height="360" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">CP 通信方案选择路径</text>
-<rect x="260" y="40" width="160" height="34" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-<text x="340" y="62" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">CP 通信方案选择</text>
-<g stroke="#64748b" stroke-width="1.6" fill="none">
-<line x1="340" y1="74" x2="340" y2="98" marker-end="url(#m37)"/>
+<rect width="680" height="400" fill="url(#bg9)"/>
+<rect width="680" height="400" fill="url(#dot9)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">选型的路径：先看阶段，再看三件事</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">KV 有多大、CP 度会不会超过 head 数、跨不跨节点 —— 三个问题决定走哪条路</text>
+
+<rect x="24" y="168" width="108" height="54" rx="8" fill="#161C29" stroke="#3A4557"/>
+<text x="78" y="192" text-anchor="middle" font-size="10.5" fill="#E6E8EC">一层注意力</text>
+<text x="78" y="208" text-anchor="middle" font-size="9" fill="#5B6678">要分到多卡</text>
+
+<rect x="160" y="86" width="148" height="56" rx="8" fill="#58C4DD" fill-opacity="0.12" stroke="#58C4DD" stroke-width="1.1"/>
+<text x="234" y="109" text-anchor="middle" font-size="11" fill="#CFEAF2">Prefill</text>
+<text x="234" y="126" text-anchor="middle" font-size="9" fill="#7FA9B8">T 个新 token，算力受限</text>
+<rect x="160" y="238" width="148" height="56" rx="8" fill="#9A72AC" fill-opacity="0.14" stroke="#9A72AC" stroke-width="1.1"/>
+<text x="234" y="261" text-anchor="middle" font-size="11" fill="#D8C4E2">Decode</text>
+<text x="234" y="278" text-anchor="middle" font-size="9" fill="#9C86AA">每步 1 个 token，访存受限</text>
+
+<g stroke="#5B6678" stroke-width="1.3" fill="none">
+<path d="M132 186 C 148 160, 150 130, 158 116" marker-end="url(#a9)"/>
+<path d="M132 206 C 148 232, 150 258, 158 268" marker-end="url(#a9)"/>
 </g>
-<rect x="275" y="100" width="130" height="32" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-<text x="340" y="121" text-anchor="middle" font-size="12" fill="#0f172a">哪个阶段？</text>
-<g stroke="#64748b" stroke-width="1.6" fill="none">
-<line x1="300" y1="132" x2="185" y2="168" marker-end="url(#m37)"/>
-<line x1="380" y1="132" x2="500" y2="168" marker-end="url(#m37)"/>
+
+<rect x="356" y="66" width="300" height="50" rx="7" fill="#0E131D" stroke="#FF862F" stroke-width="1.1" stroke-opacity="0.6"/>
+<text x="370" y="86" font-size="10.5" fill="#F0C39B">AllGather KV</text>
+<text x="370" y="104" font-size="9" fill="#5B6678">KV 已被压小（MLA / DSA / CSA）→ 聚齐再算最省事</text>
+
+<rect x="356" y="124" width="300" height="50" rx="7" fill="#0E131D" stroke="#FF862F" stroke-width="1.1" stroke-opacity="0.6"/>
+<text x="370" y="144" font-size="10.5" fill="#F0C39B">Ring 传 KV</text>
+<text x="370" y="162" font-size="9" fill="#5B6678">KV 大且 CP 度超过 head 数 → 沿环传，通信可重叠</text>
+
+<rect x="356" y="182" width="300" height="50" rx="7" fill="#0E131D" stroke="#9A72AC" stroke-width="1.1" stroke-opacity="0.6"/>
+<text x="370" y="202" font-size="10.5" fill="#D8C4E2">Ulysses All-to-All</text>
+<text x="370" y="220" font-size="9" fill="#5B6678">head 足够多且都在节点内 → 换维后用普通 kernel</text>
+
+<rect x="356" y="246" width="300" height="58" rx="7" fill="#0E131D" stroke="#58C4DD" stroke-width="1.1" stroke-opacity="0.7"/>
+<text x="370" y="266" font-size="10.5" fill="#CFEAF2">传 Q</text>
+<text x="370" y="284" font-size="9" fill="#5B6678">AllGather Q 求低延迟；Pass Q 求省归并、缓存友好</text>
+
+<g stroke="#5B6678" stroke-width="1.2" fill="none">
+<path d="M310 106 C 332 100, 338 96, 350 91"/>
+<path d="M310 120 C 332 124, 338 146, 350 149"/>
+<path d="M310 130 C 332 146, 338 194, 350 206"/>
+<path d="M310 268 C 330 268, 336 274, 350 275"/>
 </g>
-<text x="220" y="152" text-anchor="middle" font-size="11" fill="#475569">Prefill</text>
-<text x="460" y="152" text-anchor="middle" font-size="11" fill="#475569">Decode</text>
-<rect x="95" y="170" width="170" height="32" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-<text x="180" y="191" text-anchor="middle" font-size="11" fill="#0f172a">全局 KV 放得下吗？</text>
-<rect x="415" y="170" width="180" height="32" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-<text x="505" y="191" text-anchor="middle" font-size="11" fill="#0f172a">Q 小、KV 大 →</text>
-<g stroke="#64748b" stroke-width="1.6" fill="none">
-<line x1="130" y1="202" x2="95" y2="238" marker-end="url(#m37)"/>
-<line x1="230" y1="202" x2="270" y2="238" marker-end="url(#m37)"/>
-<line x1="505" y1="202" x2="505" y2="238" marker-end="url(#m37)"/>
+
+
+
+
+
+<rect x="24" y="316" width="632" height="60" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="336" font-size="10" fill="#9AA4B2">三个判断量：KV 的字节数（决定搬哪一侧更便宜）、CP 度与 head 数的关系（决定 Ulysses 是否可用）、</text>
+<text x="44" y="354" font-size="10" fill="#9AA4B2">链路拓扑（节点内 NVLink 可承受 a2a，跨节点只适合 P2P）。三者互斥时按 3.1—3.5 的顺序退化。</text>
+<text x="44" y="370" font-size="9.5" fill="#5B6678">GQA 与 MLA 因 KV head 极少，实际多用 AllGather KV 或传 Q，Ulysses 只在训练侧常见。</text>
 </g>
-<text x="98" y="224" text-anchor="middle" font-size="11" fill="#15803d">放得下</text>
-<text x="262" y="224" text-anchor="middle" font-size="11" fill="#c2410c">放不下</text>
-<rect x="30" y="240" width="150" height="38" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-<text x="105" y="264" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">AllGather KV</text>
-<g stroke="#ffffff" stroke-width="1"><rect x="38" y="248" width="10" height="10" fill="#fdba74"/><rect x="38" y="258" width="10" height="10" fill="#fdba74"/></g>
-<rect x="205" y="240" width="150" height="38" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
-<text x="280" y="264" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">Ring（传 KV 块）</text>
-<g stroke="#ffffff" stroke-width="1"><rect x="213" y="248" width="10" height="10" fill="#fdba74"/><rect x="223" y="248" width="10" height="10" fill="#fed7aa"/></g>
-<rect x="415" y="240" width="180" height="38" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
-<text x="505" y="264" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">传 Q + LSE 合并</text>
-<g stroke="#ffffff" stroke-width="1"><rect x="423" y="248" width="20" height="8" fill="#93c5fd"/></g>
-<g stroke="#ffffff" stroke-width="1"><rect x="423" y="258" width="10" height="8" fill="#fdba74"/><rect x="433" y="258" width="10" height="8" fill="#fed7aa"/></g>
-<rect x="30" y="300" width="620" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="5 4"/>
-<text x="340" y="320" text-anchor="middle" font-size="11" fill="#334155">补充判断：head 富余 + 节点内高带宽、想少改 kernel → Ulysses（a2a）；CP 度需超过 head 数的多节点场景 → USP（a2a+p2p）</text>
-<text x="340" y="338" text-anchor="middle" font-size="11" fill="#64748b">无论哪条路径，多轮/多分片的部分结果最终都用 LSE 合并收尾</text>
 </svg>
 
 ▲ CP 通信方案选择路径
@@ -926,53 +1156,94 @@ GQA（Grouped Query Attention）让多个 query head 共享一组 KV head，压�
 
 一方面，KV head 数直接限制了 Ulysses 的并行度。All-to-All 按 head 切分时 CP 度不能超过 KV head 数，GQA 下很快触顶，这也是 Ulysses 在现代模型上逐渐让位于 Ring、AllGather KV 与传 Q 的原因。另一方面，传 KV 与传 Q 对 GQA 都可行。prefill 常用 AllGather KV（SGLang、vLLM PCP），decode 常用传 Q（AllGather Q、本地 KV 分片与 LSE 合并）。在 vLLM DCP 中，GQA 的 `dcp_size` 上界为 `tp_size / H_kv`；当 DCP 组与 TP 组重叠时，各 rank 的 Q head 不同，需要先沿 head 维 AllGather Q，算完再用 LSE 感知的 all-reduce 或 All-to-All 归并（如 `cp_lse_ag_out_rs`）。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">GQA 的 CP：传 KV 矩阵或传 Q 矩阵</text>
-<text x="120" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">GQA 结构（4 个 Q head 共享 1 个 KV head）</text>
-<g font-size="9" text-anchor="middle">
-<rect x="40" y="62" width="44" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="62" y="77" fill="#1e3a8a">Q h0</text>
-<rect x="92" y="62" width="44" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="114" y="77" fill="#1e3a8a">Q h1</text>
-<rect x="40" y="92" width="44" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="62" y="107" fill="#1e3a8a">Q h2</text>
-<rect x="92" y="92" width="44" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="114" y="107" fill="#1e3a8a">Q h3</text>
-<rect x="52" y="132" width="72" height="24" rx="3" fill="#fdba74" stroke="#ea580c"/><text x="88" y="148" fill="#7c2d12">KV head 0</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 366" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg10" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot10" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a10" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+<marker id="a10b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#58C4DD"/></marker>
+</defs>
+<rect width="680" height="366" fill="url(#bg10)"/>
+<rect width="680" height="366" fill="url(#dot10)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">GQA 的 CP：head 少，于是要么搬 KV，要么搬 Q</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">8 个 Q head 共用 2 个 KV head。KV 小到可以搬，Q 小到可以广播</text>
+
+<rect x="24" y="74" width="206" height="204" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="94" font-size="10.5" fill="#E6E8EC">结构：Q head 分组共享 KV</text>
+<g fill="#58C4DD" fill-opacity="0.35" stroke="#58C4DD" stroke-width="1">
+<rect x="36" y="106" width="18" height="20" rx="3"/><rect x="58" y="106" width="18" height="20" rx="3"/>
+<rect x="80" y="106" width="18" height="20" rx="3"/><rect x="102" y="106" width="18" height="20" rx="3"/>
 </g>
-<path d="M 62 84 L 80 132" stroke="#94a3b8" stroke-width="1.2" fill="none"/>
-<path d="M 114 84 L 96 132" stroke="#94a3b8" stroke-width="1.2" fill="none"/>
-<path d="M 62 114 L 80 132" stroke="#94a3b8" stroke-width="1.2" fill="none"/>
-<path d="M 114 114 L 96 132" stroke="#94a3b8" stroke-width="1.2" fill="none"/>
-<text x="120" y="178" text-anchor="middle" font-size="9" fill="#64748b">KV head 数 H_kv 少 → Ulysses 度 ≤ H_kv 很快到顶</text>
-<text x="355" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">路径 A（Prefill）：传 KV —— AllGather KV 矩阵</text>
-<g>
-<rect x="250" y="62" width="60" height="34" fill="#bfdbfe"/><rect x="250" y="96" width="60" height="34" fill="#bbf7d0"/><rect x="250" y="130" width="60" height="34" fill="#fde68a"/><rect x="250" y="164" width="60" height="34" fill="#fecaca"/>
-<text x="280" y="83" text-anchor="middle" font-size="9" fill="#1e3a8a">Q₀</text><text x="280" y="117" text-anchor="middle" font-size="9" fill="#14532d">Q₁</text><text x="280" y="151" text-anchor="middle" font-size="9" fill="#92400e">Q₂</text><text x="280" y="185" text-anchor="middle" font-size="9" fill="#7f1d1d">Q₃</text>
-<rect x="330" y="62" width="34" height="136" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="347" y="134" text-anchor="middle" font-size="9" fill="#7c2d12" transform="rotate(90 347 134)">KV₀</text>
-<rect x="376" y="62" width="34" height="136" fill="#fed7aa" stroke="#ea580c" stroke-width="1.2"/>
-<text x="393" y="134" text-anchor="middle" font-size="9" fill="#7c2d12" transform="rotate(90 393 134)">KV₁</text>
-<rect x="422" y="62" width="34" height="136" fill="#fdba74" stroke="#ea580c" stroke-width="1.2"/>
-<text x="439" y="134" text-anchor="middle" font-size="9" fill="#7c2d12" transform="rotate(90 439 134)">KV₂</text>
-<rect x="468" y="62" width="34" height="136" fill="#fed7aa" stroke="#ea580c" stroke-width="1.2"/>
-<text x="485" y="134" text-anchor="middle" font-size="9" fill="#7c2d12" transform="rotate(90 485 134)">KV₃</text>
+<g fill="#5CD0B3" fill-opacity="0.35" stroke="#5CD0B3" stroke-width="1">
+<rect x="126" y="106" width="18" height="20" rx="3"/><rect x="148" y="106" width="18" height="20" rx="3"/>
+<rect x="170" y="106" width="18" height="20" rx="3"/><rect x="192" y="106" width="18" height="20" rx="3"/>
 </g>
-<text x="399" y="216" text-anchor="middle" font-size="10" fill="#c2410c">AllGather（T 维）→ 全局 KV [T, d] × H_kv</text>
-<text x="399" y="234" text-anchor="middle" font-size="9" fill="#64748b">Q 行块 [T/C, H_q] 不动，对全局 KV 标准 FlashAttention</text>
-<text x="580" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">路径 B（Decode）：传 Q</text>
-<g>
-<rect x="530" y="62" width="100" height="18" fill="#93c5fd" stroke="#2563eb" stroke-width="1.2"/>
-<text x="580" y="75" text-anchor="middle" font-size="9" fill="#1e3a8a">Q [q, H_q, d]（很小）</text>
-<text x="580" y="98" text-anchor="middle" font-size="9" fill="#1d4ed8">broadcast / all-gather ↓</text>
-<rect x="530" y="106" width="46" height="40" fill="#fdba74"/><rect x="584" y="106" width="46" height="40" fill="#fed7aa"/>
-<text x="553" y="130" text-anchor="middle" font-size="8" fill="#7c2d12">KV₀</text><text x="607" y="130" text-anchor="middle" font-size="8" fill="#7c2d12">KV₁</text>
-<rect x="530" y="150" width="46" height="40" fill="#fed7aa"/><rect x="584" y="150" width="46" height="40" fill="#fdba74"/>
-<text x="553" y="174" text-anchor="middle" font-size="8" fill="#7c2d12">KV₂</text><text x="607" y="174" text-anchor="middle" font-size="8" fill="#7c2d12">KV₃</text>
-<text x="580" y="208" text-anchor="middle" font-size="9" fill="#15803d">各 rank 对本地 KV 分片 → (O_j, L_j)</text>
-<rect x="532" y="218" width="96" height="24" rx="5" fill="#dcfce7" stroke="#16a34a"/>
-<text x="580" y="234" text-anchor="middle" font-size="9" fill="#14532d">LSE 合并（很小）</text>
+<text x="38" y="142" font-size="8.5" fill="#5B6678">Q head 0–3</text>
+<text x="210" y="142" text-anchor="end" font-size="8.5" fill="#5B6678">Q head 4–7</text>
+<path d="M36 148 L36 156 L102 156 L102 148" fill="none" stroke="#58C4DD" stroke-width="1" opacity="0.7"/>
+<path d="M126 148 L126 156 L192 156 L192 148" fill="none" stroke="#5CD0B3" stroke-width="1" opacity="0.7"/>
+<g stroke="#8B96A8" stroke-width="1" fill="none">
+<line x1="74" y1="160" x2="74" y2="186"/><line x1="176" y1="160" x2="176" y2="186"/>
 </g>
-<rect x="60" y="252" width="560" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="272" text-anchor="middle" font-size="10" fill="#334155">传递的数据：KV 矩阵 [T, d] × H_kv（路径 A）或 Q 矩阵 [q, H_q, d] + partial (O, LSE)（路径 B）</text>
-<text x="340" y="292" text-anchor="middle" font-size="10" fill="#64748b">通信方式：AllGather（KV 沿 T）/ broadcast+AllGather（Q 沿 head，DCP 与 TP 重叠时）+ LSE 感知归并</text>
+<rect x="58" y="186" width="32" height="26" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1.2"/>
+<text x="74" y="203" text-anchor="middle" font-size="8.5" fill="#F0C39B">KV0</text>
+<rect x="160" y="186" width="32" height="26" rx="3" fill="#FF862F" fill-opacity="0.3" stroke="#FF862F" stroke-width="1.2"/>
+<text x="176" y="203" text-anchor="middle" font-size="8.5" fill="#F0C39B">KV1</text>
+<text x="40" y="238" font-size="9" fill="#5B6678">每组 4 个 Q head 共享 1 个 KV head</text>
+<text x="40" y="256" font-size="9" fill="#FC6255">Ulysses 的 CP 度 ≤ H_kv = 2</text>
+
+<rect x="246" y="74" width="198" height="204" rx="10" fill="#0E131D" stroke="#FF862F" stroke-width="1.1" stroke-opacity="0.5"/>
+<text x="260" y="94" font-size="10.5" fill="#F0C39B">路线一 · 传 KV</text>
+<g stroke="#FF862F" stroke-width="0.8">
+<rect x="272" y="106" width="20" height="20" fill="#FF862F" fill-opacity="0.18"/><rect x="292" y="106" width="20" height="20" fill="#FF862F" fill-opacity="0.3"/>
+<rect x="272" y="126" width="20" height="20" fill="#FF862F" fill-opacity="0.28"/><rect x="292" y="126" width="20" height="20" fill="#FF862F" fill-opacity="0.44"/>
+<rect x="272" y="146" width="20" height="20" fill="#FF862F" fill-opacity="0.38"/><rect x="292" y="146" width="20" height="20" fill="#FF862F" fill-opacity="0.56"/>
+<rect x="272" y="166" width="20" height="20" fill="#FF862F" fill-opacity="0.48"/><rect x="292" y="166" width="20" height="20" fill="#FF862F" fill-opacity="0.68"/>
+</g>
+<text x="262" y="202" font-size="8" fill="#5B6678">KV [T, d] × 2</text>
+<line x1="330" y1="126" x2="344" y2="126" stroke="#FF862F" stroke-width="1.2" marker-end="url(#a10)"/>
+<text x="352" y="120" font-size="9" fill="#8B96A8">每层 AllGather</text>
+<text x="352" y="134" font-size="9" fill="#8B96A8">→ 整份 KV</text>
+<rect x="352" y="146" width="76" height="46" rx="5" fill="#58C4DD" fill-opacity="0.16" stroke="#58C4DD" stroke-width="1"/>
+<text x="390" y="165" text-anchor="middle" font-size="9" fill="#CFEAF2">Q_i × 全 KV</text>
+<text x="390" y="181" text-anchor="middle" font-size="9" fill="#CFEAF2">标准 kernel</text>
+<text x="260" y="222" font-size="9" fill="#5B6678">通信量 T·d·H_kv；不改 kernel</text>
+<text x="260" y="240" font-size="9" fill="#5B6678">CP 度 ≤ tp_size / H_kv</text>
+<text x="260" y="262" font-size="9" fill="#83C167">prefill 常用</text>
+
+<rect x="456" y="74" width="200" height="204" rx="10" fill="#0E131D" stroke="#58C4DD" stroke-width="1.1" stroke-opacity="0.6"/>
+<text x="470" y="94" font-size="10.5" fill="#CFEAF2">路线二 · 传 Q</text>
+<g fill="#58C4DD" fill-opacity="0.3" stroke="#58C4DD" stroke-width="0.8">
+<rect x="470" y="106" width="21" height="18"/><rect x="491" y="106" width="21" height="18"/>
+<rect x="512" y="106" width="21" height="18"/><rect x="533" y="106" width="21" height="18"/>
+<rect x="554" y="106" width="21" height="18"/><rect x="575" y="106" width="21" height="18"/>
+<rect x="596" y="106" width="21" height="18"/><rect x="617" y="106" width="21" height="18"/>
+</g>
+<text x="470" y="140" font-size="8.5" fill="#5B6678">Q [q, 8, d]：decode 时 q = 1</text>
+<g stroke="#58C4DD" stroke-width="1.3" fill="none">
+<line x1="500" y1="146" x2="500" y2="160" marker-end="url(#a10b)"/>
+<line x1="530" y1="146" x2="530" y2="160" marker-end="url(#a10b)"/>
+<line x1="560" y1="146" x2="560" y2="160" marker-end="url(#a10b)"/>
+<line x1="590" y1="146" x2="590" y2="160" marker-end="url(#a10b)"/>
+</g>
+<g font-size="8" text-anchor="middle" fill="#5B6678">
+<text x="500" y="174">(O₀,L₀)</text><text x="530" y="174">(O₁,L₁)</text><text x="560" y="174">(O₂,L₂)</text><text x="590" y="174">(O₃,L₃)</text>
+</g>
+<rect x="486" y="184" width="140" height="22" rx="4" fill="#83C167" fill-opacity="0.18" stroke="#83C167" stroke-width="1"/>
+<text x="556" y="199" text-anchor="middle" font-size="9" fill="#C6E3B6">LSE 合并 → O</text>
+<text x="470" y="222" font-size="9" fill="#5B6678">通信量 ∝ q·H_q·d，与 T 无关</text>
+<text x="470" y="240" font-size="9" fill="#5B6678">可与 TP 组重叠，先沿 head gather Q</text>
+<text x="470" y="262" font-size="9" fill="#83C167">decode 常用（vLLM DCP）</text>
+
+<rect x="24" y="292" width="632" height="56" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="311" font-size="10" fill="#9AA4B2">DCP 直接消除 KV 复制：DeepSeek-R1 只有 1 个 KV head，tp=8 时 8 份副本，DCP=8 后每卡只留 1/8 的 T。</text>
+<text x="44" y="329" font-size="10" fill="#9AA4B2">GQA 的 dcp_size 上界为 tp_size / H_kv；DCP 与 TP 组重叠时各 rank 的 Q head 不同，需先沿 head 维 AllGather Q。</text>
+</g>
 </svg>
 
 ▲ GQA 的 CP：结构（左）与两条通信路径——传 KV 矩阵（中）或传 Q 矩阵（右）
@@ -987,51 +1258,68 @@ MLA（Multi-head Latent Attention，DeepSeek-V2/V3）把每个 token 的 K/V 压
 
 MLA 也是 DCP 最典型的应用场景。DeepSeek-R1 推理时只有 1 个 KV head，tp=8 时存在 8 倍复制，DCP=8 可以将其完全消除。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">MLA 的 CP：传 latent 矩阵（而非 per-head KV）</text>
-<text x="130" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">对比：per-head KV vs MLA latent</text>
-<g>
-<rect x="40" y="62" width="70" height="26" fill="#fca5a5" stroke="#dc2626" stroke-width="1.2"/>
-<rect x="40" y="88" width="70" height="26" fill="#fca5a5" stroke="#dc2626" stroke-width="1.2"/>
-<rect x="40" y="114" width="70" height="26" fill="#fca5a5" stroke="#dc2626" stroke-width="1.2"/>
-<rect x="40" y="140" width="70" height="26" fill="#fca5a5" stroke="#dc2626" stroke-width="1.2"/>
-<text x="75" y="79" text-anchor="middle" font-size="9" fill="#7f1d1d">K/V h0</text><text x="75" y="105" text-anchor="middle" font-size="9" fill="#7f1d1d">K/V h1</text>
-<text x="75" y="131" text-anchor="middle" font-size="9" fill="#7f1d1d">K/V h2</text><text x="75" y="157" text-anchor="middle" font-size="9" fill="#7f1d1d">K/V h3</text>
-<text x="75" y="184" text-anchor="middle" font-size="9" fill="#b91c1c">per-head KV：大（H × T）</text>
-<rect x="140" y="62" width="36" height="104" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.2"/>
-<rect x="182" y="62" width="18" height="104" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>
-<text x="158" y="118" text-anchor="middle" font-size="9" fill="#4c1d95" transform="rotate(90 158 118)">c_KV [T, 512]</text>
-<text x="191" y="118" text-anchor="middle" font-size="8" fill="#5b21b6" transform="rotate(90 191 118)">k_pe</text>
-<text x="166" y="184" text-anchor="middle" font-size="9" fill="#6d28d9">MLA latent：小约 32 倍</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 366" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg11" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot11" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a11p" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#9A72AC"/></marker>
+<marker id="a11g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
+</defs>
+<rect width="680" height="366" fill="url(#bg11)"/>
+<rect width="680" height="366" fill="url(#dot11)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">MLA 的 CP：只搬一份 latent</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">KV 被压成 512 维的 latent，per-head 的写法不再成立，Ulysses 也随之失效</text>
+
+<rect x="24" y="74" width="300" height="204" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="94" font-size="10.5" fill="#E6E8EC">同样 T 行，两种存法差一个数量级</text>
+<g fill="#9A72AC" fill-opacity="0.28" stroke="#9A72AC" stroke-width="0.8">
+<rect x="44" y="108" width="12" height="96"/><rect x="58" y="108" width="12" height="96"/><rect x="72" y="108" width="12" height="96"/>
+<rect x="86" y="108" width="12" height="96"/><rect x="100" y="108" width="12" height="96"/><rect x="114" y="108" width="12" height="96"/>
+<rect x="128" y="108" width="12" height="96"/><rect x="142" y="108" width="12" height="96"/>
 </g>
-<text x="390" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">CP 通信：AllGather latent 矩阵（或 ring 传 latent）</text>
-<g>
-<rect x="250" y="62" width="46" height="30" fill="#ddd6fe"/><text x="273" y="81" text-anchor="middle" font-size="8" fill="#4c1d95">c⁰</text>
-<rect x="250" y="92" width="46" height="30" fill="#c4b5fd"/><text x="273" y="111" text-anchor="middle" font-size="8" fill="#4c1d95">c¹</text>
-<rect x="250" y="122" width="46" height="30" fill="#ddd6fe"/><text x="273" y="141" text-anchor="middle" font-size="8" fill="#4c1d95">c²</text>
-<rect x="250" y="152" width="46" height="30" fill="#c4b5fd"/><text x="273" y="171" text-anchor="middle" font-size="8" fill="#4c1d95">c³</text>
-<text x="273" y="198" text-anchor="middle" font-size="9" fill="#6d28d9">latent 分片 [T/C, 512]</text>
-<text x="330" y="122" text-anchor="middle" font-size="10" fill="#6d28d9">AllGather →</text>
-<rect x="360" y="62" width="120" height="120" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
-<g stroke="#ffffff" stroke-width="1.2">
-<rect x="362" y="64" width="116" height="28" fill="#ddd6fe"/><rect x="362" y="92" width="116" height="28" fill="#c4b5fd"/>
-<rect x="362" y="120" width="116" height="28" fill="#ddd6fe"/><rect x="362" y="148" width="116" height="28" fill="#c4b5fd"/>
+<text x="44" y="220" font-size="8.5" fill="#5B6678">per-head KV：128 列 ×（d_c + d_h）</text>
+<text x="44" y="236" font-size="8.5" fill="#5B6678">每层每 token 约 128 × 576</text>
+<g fill="#9A72AC" fill-opacity="0.5" stroke="#9A72AC" stroke-width="0.9">
+<rect x="196" y="108" width="42" height="96"/>
+<rect x="244" y="108" width="12" height="96" fill-opacity="0.3"/>
 </g>
-<text x="420" y="112" text-anchor="middle" font-size="9" fill="#4c1d95">全局 latent [T, 512]</text>
-<text x="420" y="198" text-anchor="middle" font-size="9" fill="#6d28d9">+ 解耦 k_pe [T, 64] 一并聚合</text>
-<text x="545" y="86" text-anchor="middle" font-size="10" fill="#334155">absorb 形式：</text>
-<text x="545" y="106" text-anchor="middle" font-size="10" fill="#334155">W_kv,b 吸进 Q</text>
-<text x="545" y="126" text-anchor="middle" font-size="10" fill="#334155">→ 直接在 latent</text>
-<text x="545" y="146" text-anchor="middle" font-size="10" fill="#334155">上算注意力</text>
-<rect x="505" y="162" width="80" height="26" rx="5" fill="#dcfce7" stroke="#16a34a"/>
-<text x="545" y="179" text-anchor="middle" font-size="9" fill="#14532d">decode 标准做法</text>
+<text x="196" y="220" font-size="8.5" fill="#5B6678">latent 512 + k_pe 64</text>
+<text x="196" y="236" font-size="8.5" fill="#83C167">约为 per-head 的 1/128</text>
+
+<rect x="340" y="74" width="316" height="204" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="356" y="94" font-size="10.5" fill="#E6E8EC">三步：切 latent → 聚齐 → absorb 着算</text>
+<g fill="#9A72AC" fill-opacity="0.3" stroke="#9A72AC" stroke-width="0.8">
+<rect x="356" y="108" width="54" height="20"/><rect x="356" y="130" width="54" height="20"/>
+<rect x="356" y="152" width="54" height="20"/><rect x="356" y="174" width="54" height="20"/>
 </g>
-<rect x="60" y="216" width="560" height="88" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="238" text-anchor="middle" font-size="10" fill="#334155">传递的数据：latent c_KV [T, 512] + k_pe [T, 64]（每 token 一条，与 head 数无关）</text>
-<text x="340" y="258" text-anchor="middle" font-size="10" fill="#334155">通信方式：AllGather（prefill / decode）或 ring P2P 传 latent；vLLM DCP 可选 --dcp-q-replicate 省掉每步 query all-gather</text>
-<text x="340" y="278" text-anchor="middle" font-size="10" fill="#64748b">Ulysses 失效：absorb 式下无 per-head KV 可做 a2a scatter，有效 Ulysses 度塌缩为 1</text>
-<text x="340" y="296" text-anchor="middle" font-size="10" fill="#64748b">训练侧：Megatron-Core 禁用 absorbed（激活回归 20~34%）；LAGA 通信只传 latent、本地重建 per-head K/V</text>
+<text x="383" y="204" text-anchor="middle" font-size="8" fill="#5B6678">T/4 行</text>
+<line x1="416" y1="150" x2="436" y2="150" stroke="#9A72AC" stroke-width="1.4" marker-end="url(#a11p)"/>
+<text x="426" y="142" text-anchor="middle" font-size="7.5" fill="#B69BC7">gather</text>
+<g fill="#9A72AC" fill-opacity="0.3" stroke="#9A72AC" stroke-width="0.8">
+<rect x="444" y="108" width="54" height="20"/><rect x="444" y="130" width="54" height="20"/>
+<rect x="444" y="152" width="54" height="20"/><rect x="444" y="174" width="54" height="20"/>
+
+
+</g>
+<text x="471" y="212" text-anchor="middle" font-size="8" fill="#5B6678">T 行</text>
+<line x1="506" y1="170" x2="524" y2="170" stroke="#83C167" stroke-width="1.4" marker-end="url(#a11g)"/>
+<rect x="528" y="140" width="112" height="58" rx="6" fill="#83C167" fill-opacity="0.14" stroke="#83C167" stroke-width="1.1"/>
+<text x="584" y="160" text-anchor="middle" font-size="8.5" fill="#C6E3B6">Q 吸收进权重</text>
+<text x="584" y="176" text-anchor="middle" font-size="8.5" fill="#C6E3B6">与 latentᵀ 相乘</text>
+<text x="584" y="190" text-anchor="middle" font-size="8" fill="#7FA36F">输出 O 行块</text>
+<text x="356" y="236" font-size="8.5" fill="#5B6678">通信量 T×512，约为 per-head 方案的 1/128</text>
+<text x="356" y="252" font-size="8.5" fill="#FC6255">Ulysses 失效：只有 1 个 latent，无法按 head 切</text>
+<text x="356" y="268" font-size="8.5" fill="#8B96A8">训练时 Megatron-Core 禁 absorbed，LAGA 给出替代</text>
+
+<rect x="24" y="292" width="632" height="56" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="311" font-size="10" fill="#9AA4B2">DeepSeek-R1 推理只有 1 个 KV head，tp=8 时 latent 被复制 8 份；DCP=8 沿 T 维切分后复制被完全消除。</text>
+<text x="44" y="329" font-size="10" fill="#9AA4B2">absorb 之后 latent 参与了 Q 的投影，若按 head 切分就会把 latent 复制回去 —— 这是 MLA 不能用 Ulysses 的根因。</text>
+</g>
 </svg>
 
 ▲ MLA 的 CP：latent 矩阵的形状对比（左）与 AllGather latent 通信（右）
@@ -1044,46 +1332,88 @@ DSA 叠加在 MLA 之上，CP 下需要传递的数据因而有两类，即 MLA 
 
 工程上还有若干配套做法。负载均衡采用 2C 头尾对称切片加 token 重排，在每层 Indexer 与稀疏注意力之前把 KV 还原回因果顺序，SGLang 的 interleave 策略与 vLLM PCP 的 DualChunkSwap 与此同理。SGLang Prefill CP 的 Interleave 策略对 DSA 有专门集成，按请求切分 query 与 indexer 元数据，并按需 gather indexer key 与 MLA KV。vLLM Ascend 曾实现独立的 DSA-CP 路径（`enable_dsa_cp`），现已由通用的 PCP 路径承接，两者不能同时开启。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">DSA 的 CP：传 latent 矩阵 + indexer key 矩阵</text>
-<text x="340" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">需要全局视图的两份数据（top-k 打分要扫全部 indexer key）</text>
-<g>
-<text x="150" y="72" text-anchor="middle" font-size="10" fill="#4c1d95">MLA latent [T, 512]</text>
-<rect x="90" y="78" width="120" height="70" rx="3" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.2"/>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="92" y="80" width="116" height="16" fill="#ddd6fe"/><rect x="92" y="96" width="116" height="16" fill="#c4b5fd"/>
-<rect x="92" y="112" width="116" height="16" fill="#ddd6fe"/><rect x="92" y="128" width="116" height="16" fill="#c4b5fd"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg12" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot12" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a12o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+</defs>
+<rect width="680" height="400" fill="url(#bg12)"/>
+<rect width="680" height="400" fill="url(#dot12)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">DSA 的 CP：latent 与 indexer key 要一起搬</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">稀疏注意力多了一份「打分用的 key」，CP 时两份数据都要聚齐，再在本地做 top-k</text>
+
+<rect x="24" y="74" width="196" height="252" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="42" cy="94" r="9" fill="#F4D345"/>
+<text x="42" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="58" y="98" font-size="11" fill="#E6E8EC">分片：两份数据</text>
+<g fill="#9A72AC" fill-opacity="0.32" stroke="#9A72AC" stroke-width="0.8">
+<rect x="40" y="114" width="106" height="20"/><rect x="40" y="136" width="106" height="20"/>
+<rect x="40" y="158" width="106" height="20"/><rect x="40" y="180" width="106" height="20"/>
 </g>
-<text x="340" y="72" text-anchor="middle" font-size="10" fill="#9a3412">Indexer key [T, d_idx]</text>
-<rect x="280" y="78" width="120" height="70" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="1.2"/>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="282" y="80" width="116" height="16" fill="#fed7aa"/><rect x="282" y="96" width="116" height="16" fill="#fdba74"/>
-<rect x="282" y="112" width="116" height="16" fill="#fed7aa"/><rect x="282" y="128" width="116" height="16" fill="#fdba74"/>
+<text x="93" y="216" text-anchor="middle" font-size="8.5" fill="#B69BC7">latent [T/4, 512]</text>
+<g fill="#F4D345" fill-opacity="0.26" stroke="#F4D345" stroke-width="0.8">
+<rect x="40" y="230" width="106" height="12"/><rect x="40" y="244" width="106" height="12"/>
+<rect x="40" y="258" width="106" height="12"/><rect x="40" y="272" width="106" height="12"/>
 </g>
-<text x="520" y="72" text-anchor="middle" font-size="10" fill="#1d4ed8">2C 头尾配对切分（负载均衡）</text>
-<g font-size="9" text-anchor="middle">
-<rect x="440" y="78" width="34" height="18" fill="#bfdbfe"/><rect x="476" y="78" width="34" height="18" fill="#bbf7d0"/><rect x="512" y="78" width="34" height="18" fill="#fde68a"/><rect x="548" y="78" width="34" height="18" fill="#fecaca"/>
-<rect x="440" y="98" width="34" height="18" fill="#fecaca"/><rect x="476" y="98" width="34" height="18" fill="#fde68a"/><rect x="512" y="98" width="34" height="18" fill="#bbf7d0"/><rect x="548" y="98" width="34" height="18" fill="#bfdbfe"/>
-<text x="510" y="132" fill="#64748b">query/indexer 按块 r 与块 2C−1−r 配对</text>
+<text x="93" y="298" text-anchor="middle" font-size="8.5" fill="#D6C179">indexer key [T/4, 128]</text>
+<text x="40" y="314" font-size="8.5" fill="#5B6678">两份都按 T 维切，不按 head 切</text>
+
+<rect x="250" y="74" width="196" height="252" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="268" cy="94" r="9" fill="#F4D345"/>
+<text x="268" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="284" y="98" font-size="11" fill="#E6E8EC">AllGather：两份聚齐</text>
+<g fill="#9A72AC" fill-opacity="0.32" stroke="#9A72AC" stroke-width="0.8">
+<rect x="266" y="114" width="106" height="20"/><rect x="266" y="136" width="106" height="20"/>
+<rect x="266" y="158" width="106" height="20"/><rect x="266" y="180" width="106" height="20"/>
+
 </g>
+<text x="319" y="220" text-anchor="middle" font-size="8.5" fill="#B69BC7">latent [T, 512]</text>
+<g fill="#F4D345" fill-opacity="0.26" stroke="#F4D345" stroke-width="0.8">
+<rect x="266" y="240" width="106" height="9"/><rect x="266" y="251" width="106" height="9"/>
+<rect x="266" y="262" width="106" height="9"/><rect x="266" y="273" width="106" height="9"/>
 </g>
-<text x="340" y="168" text-anchor="middle" font-size="10" fill="#c2410c">通信：AllGather latent + AllGather indexer key（weight-absorb 下两者都很小；Ring 形式复杂不划算）</text>
-<text x="340" y="190" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">之后各 rank 本地完成：indexer top-k 打分 → 稀疏注意力（示意 mask 矩阵）</text>
-<g>
-<rect x="130" y="200" width="144" height="88" fill="#f8fafc" stroke="#94a3b8"/>
-<g>
-<rect x="132" y="202" width="16" height="20" fill="#e2e8f0"/><rect x="164" y="202" width="16" height="20" fill="#e2e8f0"/><rect x="180" y="202" width="16" height="20" fill="#86efac"/><rect x="212" y="202" width="16" height="20" fill="#e2e8f0"/><rect x="228" y="202" width="16" height="20" fill="#86efac"/><rect x="260" y="202" width="16" height="20" fill="#e2e8f0"/>
-<rect x="132" y="222" width="16" height="20" fill="#86efac"/><rect x="148" y="222" width="16" height="20" fill="#e2e8f0"/><rect x="196" y="222" width="16" height="20" fill="#e2e8f0"/><rect x="212" y="222" width="16" height="20" fill="#86efac"/><rect x="244" y="222" width="16" height="20" fill="#e2e8f0"/><rect x="260" y="222" width="16" height="20" fill="#86efac"/>
-<rect x="132" y="242" width="16" height="20" fill="#e2e8f0"/><rect x="148" y="242" width="16" height="20" fill="#86efac"/><rect x="180" y="242" width="16" height="20" fill="#e2e8f0"/><rect x="196" y="242" width="16" height="20" fill="#86efac"/><rect x="228" y="242" width="16" height="20" fill="#e2e8f0"/><rect x="244" y="242" width="16" height="20" fill="#86efac"/>
-<rect x="132" y="262" width="16" height="20" fill="#86efac"/><rect x="164" y="262" width="16" height="20" fill="#e2e8f0"/><rect x="180" y="262" width="16" height="20" fill="#86efac"/><rect x="212" y="262" width="16" height="20" fill="#e2e8f0"/><rect x="228" y="262" width="16" height="20" fill="#86efac"/><rect x="260" y="262" width="16" height="20" fill="#e2e8f0"/>
+<text x="319" y="298" text-anchor="middle" font-size="8.5" fill="#D6C179">indexer key [T, 128]</text>
+
+<rect x="476" y="74" width="196" height="252" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="494" cy="94" r="9" fill="#F4D345"/>
+<text x="494" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="510" y="98" font-size="11" fill="#E6E8EC">本地 top-k，只算选中的列</text>
+<text x="490" y="120" font-size="8.5" fill="#5B6678">score 行 = Q 与全部 key 的打分</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="488" y="128" width="14" height="26" fill="#F4D345" fill-opacity="0.45"/>
+<rect x="502" y="128" width="14" height="26" fill="#141A24"/>
+<rect x="516" y="128" width="14" height="26" fill="#141A24"/>
+<rect x="530" y="128" width="14" height="26" fill="#F4D345" fill-opacity="0.45"/>
+<rect x="544" y="128" width="14" height="26" fill="#141A24"/>
+<rect x="558" y="128" width="14" height="26" fill="#F4D345" fill-opacity="0.45"/>
+<rect x="572" y="128" width="14" height="26" fill="#141A24"/>
+<rect x="586" y="128" width="14" height="26" fill="#141A24"/>
+<rect x="600" y="128" width="14" height="26" fill="#5CD0B3" fill-opacity="0.4"/>
+<rect x="614" y="128" width="14" height="26" fill="#5CD0B3" fill-opacity="0.4"/>
+<rect x="628" y="128" width="14" height="26" fill="#5CD0B3" fill-opacity="0.4"/>
+<rect x="642" y="128" width="14" height="26" fill="#5CD0B3" fill-opacity="0.4"/>
 </g>
-<text x="202" y="304" text-anchor="middle" font-size="9" fill="#64748b">行 = query，列 = 全序列 key；绿 = top-k 选中（k≈2048 / 64K）</text>
+<text x="488" y="170" font-size="8" fill="#D6C179">top-k 选中（动态）</text>
+<text x="642" y="170" text-anchor="end" font-size="8" fill="#8FC9BB">滑窗（固定）</text>
+<g font-size="8.5" fill="#5B6678">
+<text x="490" y="196">灰格 = 未选中，不参与 softmax</text>
+<text x="490" y="214">选中的列散落在全部 T 上，</text>
+<text x="490" y="230">所以必须先把 KV 聚齐才能选</text>
 </g>
-<rect x="380" y="216" width="220" height="66" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="490" y="238" text-anchor="middle" font-size="10" fill="#334155">每 rank 只为本地 query 做：</text>
-<text x="490" y="256" text-anchor="middle" font-size="10" fill="#334155">① indexer 打分（对全局 indexer key）</text>
-<text x="490" y="274" text-anchor="middle" font-size="10" fill="#334155">② top-k 稀疏注意力（对全局 latent）</text>
+<rect x="490" y="246" width="164" height="26" rx="4" fill="#83C167" fill-opacity="0.14" stroke="#83C167" stroke-width="1"/>
+<text x="572" y="263" text-anchor="middle" font-size="8.5" fill="#C6E3B6">只对被选列做注意力</text>
+<text x="490" y="292" font-size="8.5" fill="#8B96A8">Load 极不均衡 → 2C 头尾切分</text>
+<text x="490" y="308" font-size="8.5" fill="#8B96A8">算前需还原成因果顺序</text>
+
+<rect x="24" y="336" width="632" height="52" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="355" font-size="10" fill="#9AA4B2">DSA 的 CP 不是「传什么」的问题，而是「什么时候选」：top-k 是 token 级动态的，只有拿到全局 latent 与 indexer key 才能选。</text>
+<text x="44" y="373" font-size="10" fill="#9AA4B2">SGLang 的 Interleave 策略按请求切分 query 与 indexer 元数据，vLLM PCP 的 DualChunkSwap 做同样的事。</text>
+</g>
 </svg>
 
 ▲ DSA 的 CP：传递 latent 与 indexer key 两份矩阵（AllGather），本地做 top-k 稀疏注意力（mask 为动态选中列）
@@ -1096,41 +1426,82 @@ $$S_t = \alpha_t S_{t-1} + \beta_t (v_t - \alpha_t S_{t-1} k_t) k_t^\top, \qquad
 
 其中 $\alpha_t \in (0,1]$ 控制旧状态的整体遗忘，$\beta_t$ 控制当前 key 关联的写入强度。这一结构决定了 GDN 在 CP 下的形态。由于没有 KV Cache 可传，AllGather KV 类方案不再适用，rank 之间传递的是状态 $S$。状态大小固定（例如 Qwen3-Next 每 head 为 128×128），跨 rank 同步状态的通信量与序列长度无关。另一方面，$S_t$ 依赖 $S_{t-1}$ 的串行依赖必须妥善处理。训练与预填充阶段通常用 chunk-wise 并行（chunk 内矩阵并行、chunk 间串行传状态）摊开；CP 时可以沿序列在 rank 间传递状态（类似 ring 的状态链），也可以各段先独立计算状态转移再精确合成。兜底方案还有重算与 Ulysses（按 head 切），但状态链传递的通信量最优。实际模型多为混合架构，例如 Qwen3.5、Qwen3.8-Flash-Next 的大部分层使用 GDN、少数层保留全局注意力，CP 时两类层分别走状态传递与常规注意力通信。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">GDN 的 CP：只传固定大小的状态矩阵 S</text>
-<text x="340" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">序列分段 → 各段独立求 (Φᵢ, Bᵢ) → 状态链传播（无 KV Cache 可传）</text>
-<g font-size="10" text-anchor="middle">
-<rect x="70" y="62" width="120" height="26" fill="#bfdbfe"/><text x="130" y="79" fill="#1e3a8a">段 0（rank 0）</text>
-<rect x="200" y="62" width="120" height="26" fill="#bbf7d0"/><text x="260" y="79" fill="#14532d">段 1（rank 1）</text>
-<rect x="330" y="62" width="120" height="26" fill="#fde68a"/><text x="390" y="79" fill="#92400e">段 2（rank 2）</text>
-<rect x="460" y="62" width="120" height="26" fill="#fecaca"/><text x="520" y="79" fill="#7f1d1d">段 3（rank 3）</text>
-</g>
-<g font-size="9" text-anchor="middle" fill="#475569">
-<text x="130" y="108">本地算 (Φ₀, B₀)</text><text x="260" y="108">本地算 (Φ₁, B₁)</text><text x="390" y="108">本地算 (Φ₂, B₂)</text><text x="520" y="108">本地算 (Φ₃, B₃)</text>
-<text x="130" y="122">零通信、可并行</text><text x="260" y="122">零通信、可并行</text><text x="390" y="122">零通信、可并行</text><text x="520" y="122">零通信、可并行</text>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg13" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot13" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a13" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#9A72AC"/></marker>
+<marker id="a13g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
+</defs>
+<rect width="680" height="420" fill="url(#bg13)"/>
+<rect width="680" height="420" fill="url(#dot13)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">GDN 的 CP：没有 KV 可传，只传一个固定大小的状态</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">线性注意力的段间依赖是仿射的 S_L = S_0Φ + B，这让各段可以先各算各的</text>
+
+<circle cx="32" cy="84" r="9" fill="#F4D345"/>
+<text x="32" y="88" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="48" y="88" font-size="10.5" fill="#8B96A8">四段并行：各自算出与输入状态无关的 (Φ, B)</text>
 <g>
-<rect x="96" y="142" width="48" height="48" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.2"/>
-<g stroke="#ffffff" stroke-width="1"><rect x="98" y="144" width="22" height="22" fill="#a5b4fc"/><rect x="120" y="144" width="22" height="22" fill="#c7d2fe"/><rect x="98" y="166" width="22" height="22" fill="#c7d2fe"/><rect x="120" y="166" width="22" height="22" fill="#a5b4fc"/></g>
-<text x="120" y="206" text-anchor="middle" font-size="9" fill="#3730a3">S₀ [d_v, d_k]</text>
-<rect x="276" y="142" width="48" height="48" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.2"/>
-<g stroke="#ffffff" stroke-width="1"><rect x="278" y="144" width="22" height="22" fill="#c7d2fe"/><rect x="300" y="144" width="22" height="22" fill="#a5b4fc"/><rect x="278" y="166" width="22" height="22" fill="#a5b4fc"/><rect x="300" y="166" width="22" height="22" fill="#c7d2fe"/></g>
-<text x="300" y="206" text-anchor="middle" font-size="9" fill="#3730a3">S₁ = S₀Φ₀ + B₀</text>
-<rect x="456" y="142" width="48" height="48" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.2"/>
-<g stroke="#ffffff" stroke-width="1"><rect x="458" y="144" width="22" height="22" fill="#a5b4fc"/><rect x="480" y="144" width="22" height="22" fill="#c7d2fe"/><rect x="458" y="166" width="22" height="22" fill="#c7d2fe"/><rect x="480" y="166" width="22" height="22" fill="#a5b4fc"/></g>
-<text x="480" y="206" text-anchor="middle" font-size="9" fill="#3730a3">S₂ = S₁Φ₁ + B₁</text>
+<rect x="30" y="98" width="146" height="56" rx="6" fill="#9A72AC" fill-opacity="0.12" stroke="#9A72AC" stroke-width="1"/>
+<text x="103" y="118" text-anchor="middle" font-size="10" fill="#D8C4E2">段 0 · R0</text>
+<text x="103" y="136" text-anchor="middle" font-size="9" fill="#8B96A8">Φ₀, B₀ 独立求值</text>
+<rect x="190" y="98" width="146" height="56" rx="6" fill="#9A72AC" fill-opacity="0.12" stroke="#9A72AC" stroke-width="1"/>
+<text x="263" y="118" text-anchor="middle" font-size="10" fill="#D8C4E2">段 1 · R1</text>
+<text x="263" y="136" text-anchor="middle" font-size="9" fill="#8B96A8">Φ₁, B₁ 独立求值</text>
+<rect x="350" y="98" width="146" height="56" rx="6" fill="#9A72AC" fill-opacity="0.12" stroke="#9A72AC" stroke-width="1"/>
+<text x="423" y="118" text-anchor="middle" font-size="10" fill="#D8C4E2">段 2 · R2</text>
+<text x="423" y="136" text-anchor="middle" font-size="9" fill="#8B96A8">Φ₂, B₂ 独立求值</text>
+<rect x="510" y="98" width="146" height="56" rx="6" fill="#9A72AC" fill-opacity="0.12" stroke="#9A72AC" stroke-width="1"/>
+<text x="583" y="118" text-anchor="middle" font-size="10" fill="#D8C4E2">段 3 · R3</text>
+<text x="583" y="136" text-anchor="middle" font-size="9" fill="#8B96A8">Φ₃, B₃ 独立求值</text>
 </g>
-<g stroke="#7c3aed" stroke-width="2" fill="none">
-<path d="M 152 166 L 266 166"/><path d="M 332 166 L 446 166"/><path d="M 512 166 L 590 166"/>
+<text x="340" y="170" text-anchor="middle" font-size="9" fill="#5B6678">B_i 与输入状态无关，Φ_i 只依赖本段的门控与 key，因此四段可以完全并行</text>
+
+<circle cx="32" cy="196" r="9" fill="#F4D345"/>
+<text x="32" y="200" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="48" y="200" font-size="10.5" fill="#8B96A8">状态沿链接力：S_i = S_{i−1}Φ_i + B_i，每次只传一个 d×d 矩阵</text>
+<g>
+<rect x="30" y="212" width="84" height="34" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="72" y="234" text-anchor="middle" font-size="10" fill="#E6E8EC">S₀</text>
+<rect x="150" y="212" width="84" height="34" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="192" y="234" text-anchor="middle" font-size="10" fill="#E6E8EC">S₁</text>
+<rect x="270" y="212" width="84" height="34" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="312" y="234" text-anchor="middle" font-size="10" fill="#E6E8EC">S₂</text>
+<rect x="390" y="212" width="84" height="34" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="432" y="234" text-anchor="middle" font-size="10" fill="#E6E8EC">S₃</text>
+<rect x="510" y="212" width="84" height="34" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="552" y="234" text-anchor="middle" font-size="10" fill="#E6E8EC">S₄</text>
 </g>
-<text x="210" y="158" text-anchor="middle" font-size="9" fill="#6d28d9">P2P 传 S（固定大小）</text>
-<text x="390" y="158" text-anchor="middle" font-size="9" fill="#6d28d9">P2P 传 S（固定大小）</text>
-<text x="556" y="158" text-anchor="middle" font-size="9" fill="#6d28d9">→ S₃ → S_out</text>
-<rect x="90" y="228" width="500" height="72" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="250" text-anchor="middle" font-size="10" fill="#334155">传递的数据：状态矩阵 S ∈ ℝ^(d_v×d_k)（或等价段级摘要 (Φᵢ, Bᵢ)）—— 大小固定，例如每 head 128×128</text>
-<text x="340" y="270" text-anchor="middle" font-size="10" fill="#334155">通信方式：沿序列顺序的 P2P 状态链（类 ring，但传的是 S 而非 KV）；也可两两合成摘要后一次性求末状态</text>
-<text x="340" y="290" text-anchor="middle" font-size="10" fill="#64748b">通信量与序列长度无关；段内输出 o_t = S_t q_t 在 S_in 到位后本地并行算</text>
+<g stroke="#9A72AC" stroke-width="1.5" fill="none">
+<line x1="116" y1="229" x2="146" y2="229" marker-end="url(#a13)"/>
+<line x1="236" y1="229" x2="266" y2="229" marker-end="url(#a13)"/>
+<line x1="356" y1="229" x2="386" y2="229" marker-end="url(#a13)"/>
+<line x1="476" y1="229" x2="506" y2="229" marker-end="url(#a13)"/>
+</g>
+<text x="340" y="264" text-anchor="middle" font-size="9" fill="#5B6678">C 次 P2P，传的是固定大小的 S（如 128×128），与序列长度无关</text>
+
+<circle cx="32" cy="290" r="9" fill="#F4D345"/>
+<text x="32" y="294" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="48" y="294" font-size="10.5" fill="#8B96A8">拿到上一段的状态后，四段再次并行输出</text>
+<g>
+<rect x="30" y="306" width="146" height="46" rx="6" fill="#83C167" fill-opacity="0.12" stroke="#83C167" stroke-width="1"/>
+<text x="103" y="334" text-anchor="middle" font-size="9.5" fill="#C6E3B6">O₀ = f(S₀, 段 0)</text>
+<rect x="190" y="306" width="146" height="46" rx="6" fill="#83C167" fill-opacity="0.12" stroke="#83C167" stroke-width="1"/>
+<text x="263" y="334" text-anchor="middle" font-size="9.5" fill="#C6E3B6">O₁ = f(S₀Φ₁+B₁, 段 1)</text>
+<rect x="350" y="306" width="146" height="46" rx="6" fill="#83C167" fill-opacity="0.12" stroke="#83C167" stroke-width="1"/>
+<text x="423" y="334" text-anchor="middle" font-size="9.5" fill="#C6E3B6">O₂ = f(S₁Φ₂+B₂, 段 2)</text>
+<rect x="510" y="306" width="146" height="46" rx="6" fill="#83C167" fill-opacity="0.12" stroke="#83C167" stroke-width="1"/>
+<text x="583" y="334" text-anchor="middle" font-size="9.5" fill="#C6E3B6">O₃ = f(S₂Φ₃+B₃, 段 3)</text>
+</g>
+<text x="340" y="372" text-anchor="middle" font-size="9.5" fill="#5B6678">实际模型多为混合架构：多数层用 GDN 走状态传递，少数全局注意力层仍走 3.1–3.3 的常规通信</text>
+<rect x="24" y="386" width="632" height="24" rx="6" fill="#121826" stroke="#232C3A"/>
+<text x="340" y="402" text-anchor="middle" font-size="9.5" fill="#9AA4B2">代价：状态链是串行的，段间要等；收益：通信量与 T 完全无关，百万 token 也不涨</text>
+</g>
 </svg>
 
 ▲ GDN 的 CP：无 KV 可传，rank 间只传固定大小的状态矩阵 S
@@ -1179,47 +1550,86 @@ KDA（Kimi Delta Attention，Kimi Linear，arXiv:2510.26692）是 Gated DeltaNet
 
 KDA 的 CP 需要采用专门的 KCP（KDA Context Parallelism）。对标准线性注意力，每个序列分段的状态转移可以在不知道输入状态的情况下独立求值，再精确合成递归链；KDA 的逐通道遗忘门在数学上使这种独立求值再合成不再直接成立，具体推导见下文。KCP 的做法是把状态转移中可以独立计算的部分尽可能拆解出来，分发到不同 GPU 进程并行计算，再合成各段应得的状态。除跨设备 KCP 外，KCP 还支持单卡内 SM 级的序列二次切分（intra-device KCP），两者可以同时进行。这一点对百万 token 的长序列尤为重要，因为仅靠 TP 切 head 会让 prefill 的 SM 大量空转。跨设备同步的只是固定大小的状态，通信成本恒定，不随文本变长。工程配套方面，FlashKDA（基于 CUTLASS 的 chunkwise kernel）把 chunk 内并行与跨 chunk 状态传播重叠执行，state-aware prefix caching 则利用了固定大小状态天然适合缓存复用的特性。生态上，SGLang 针对 Kimi-K3 提供了 fused KDA decode kernel、KDA-aware prefix caching、DP attention、MTP 与 PD 分离支持。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">KDA 的 CP（KCP）：独立量并行求值 + 固定状态合成</text>
-<text x="170" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">KDA 转移：D_t（对角）+ 秩一</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 424" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg14" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot14" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a14" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#9A72AC"/></marker>
+</defs>
+<rect width="680" height="424" fill="url(#bg14)"/>
+<rect width="680" height="424" fill="url(#dot14)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">KDA 的 CP：门控逐通道，段间就不能各自为政</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">GDN 的仿射分解依赖标量遗忘门；换成逐通道对角门之后，转移矩阵不再对易</text>
+
+<rect x="24" y="74" width="306" height="252" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="94" font-size="10.5" fill="#E6E8EC">转移矩阵的两块：对角门 − 秩一修正</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="52" y="120" width="14" height="14" fill="#F4D345" fill-opacity="0.55"/><rect x="66" y="120" width="14" height="14" fill="#141A24"/><rect x="80" y="120" width="14" height="14" fill="#141A24"/><rect x="94" y="120" width="14" height="14" fill="#141A24"/><rect x="108" y="120" width="14" height="14" fill="#141A24"/>
+<rect x="52" y="134" width="14" height="14" fill="#141A24"/><rect x="66" y="134" width="14" height="14" fill="#F4D345" fill-opacity="0.55"/><rect x="80" y="134" width="14" height="14" fill="#141A24"/><rect x="94" y="134" width="14" height="14" fill="#141A24"/><rect x="108" y="134" width="14" height="14" fill="#141A24"/>
+<rect x="52" y="148" width="14" height="14" fill="#141A24"/><rect x="66" y="148" width="14" height="14" fill="#141A24"/><rect x="80" y="148" width="14" height="14" fill="#F4D345" fill-opacity="0.55"/><rect x="94" y="148" width="14" height="14" fill="#141A24"/><rect x="108" y="148" width="14" height="14" fill="#141A24"/>
+<rect x="52" y="162" width="14" height="14" fill="#141A24"/><rect x="66" y="162" width="14" height="14" fill="#141A24"/><rect x="80" y="162" width="14" height="14" fill="#141A24"/><rect x="94" y="162" width="14" height="14" fill="#F4D345" fill-opacity="0.55"/><rect x="108" y="162" width="14" height="14" fill="#141A24"/>
+<rect x="52" y="176" width="14" height="14" fill="#141A24"/><rect x="66" y="176" width="14" height="14" fill="#141A24"/><rect x="80" y="176" width="14" height="14" fill="#141A24"/><rect x="94" y="176" width="14" height="14" fill="#141A24"/><rect x="108" y="176" width="14" height="14" fill="#F4D345" fill-opacity="0.55"/>
+</g>
+<text x="85" y="206" text-anchor="middle" font-size="8.5" fill="#D6C179">D_t = diag(α_t)</text>
+<text x="130" y="158" font-size="14" fill="#8B96A8">−</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="146" y="120" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="160" y="120" width="14" height="14" fill="#9A72AC" fill-opacity="0.55"/><rect x="174" y="120" width="14" height="14" fill="#9A72AC" fill-opacity="0.28"/><rect x="188" y="120" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="202" y="120" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/>
+<rect x="146" y="134" width="14" height="14" fill="#9A72AC" fill-opacity="0.55"/><rect x="160" y="134" width="14" height="14" fill="#9A72AC" fill-opacity="0.9"/><rect x="174" y="134" width="14" height="14" fill="#9A72AC" fill-opacity="0.55"/><rect x="188" y="134" width="14" height="14" fill="#9A72AC" fill-opacity="0.34"/><rect x="202" y="134" width="14" height="14" fill="#9A72AC" fill-opacity="0.28"/>
+<rect x="146" y="148" width="14" height="14" fill="#9A72AC" fill-opacity="0.28"/><rect x="160" y="148" width="14" height="14" fill="#9A72AC" fill-opacity="0.55"/><rect x="174" y="148" width="14" height="14" fill="#9A72AC" fill-opacity="0.55"/><rect x="188" y="148" width="14" height="14" fill="#9A72AC" fill-opacity="0.34"/><rect x="202" y="148" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/>
+<rect x="146" y="162" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="160" y="162" width="14" height="14" fill="#9A72AC" fill-opacity="0.34"/><rect x="174" y="162" width="14" height="14" fill="#9A72AC" fill-opacity="0.34"/><rect x="188" y="162" width="14" height="14" fill="#9A72AC" fill-opacity="0.28"/><rect x="202" y="162" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/>
+<rect x="146" y="176" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="160" y="176" width="14" height="14" fill="#9A72AC" fill-opacity="0.28"/><rect x="174" y="176" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="188" y="176" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/><rect x="202" y="176" width="14" height="14" fill="#9A72AC" fill-opacity="0.2"/>
+</g>
+<text x="179" y="206" text-anchor="middle" font-size="8.5" fill="#B69BC7">β·(α⊙k)kᵀ（秩一）</text>
+<text x="40" y="232" font-size="9.5" fill="#FC6255">对角阵与秩一项不对易：D(I−βkkᵀ) ≠ (I−βkkᵀ)D</text>
+<text x="40" y="250" font-size="9.5" fill="#8B96A8">于是 WY 那种把整段乘积写成紧凑闭式的做法不封闭，</text>
+<text x="40" y="266" font-size="9.5" fill="#8B96A8">GDN 的「各段独立求值再合成」不能原样套用。</text>
+<text x="40" y="290" font-size="9.5" fill="#5B6678">可拆的部分仍在：对角门本身可并行作用在状态上。</text>
+<text x="40" y="308" font-size="9.5" fill="#5B6678">KCP 就是把这部分拆出来分发，再合成整段状态。</text>
+
+<rect x="348" y="74" width="308" height="252" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="364" y="94" font-size="10.5" fill="#E6E8EC">KCP 的做法：两级并行</text>
+<text x="364" y="118" font-size="9.5" fill="#D8C4E2">① 跨设备：切序列段，段间传状态 S</text>
 <g>
-<rect x="90" y="62" width="44" height="44" fill="#f8fafc" stroke="#94a3b8"/>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="92" y="64" width="12" height="12" fill="#fbbf24"/><rect x="104" y="64" width="12" height="12" fill="#e2e8f0"/><rect x="116" y="64" width="12" height="12" fill="#e2e8f0"/>
-<rect x="92" y="76" width="12" height="12" fill="#e2e8f0"/><rect x="104" y="76" width="12" height="12" fill="#fbbf24"/><rect x="116" y="76" width="12" height="12" fill="#e2e8f0"/>
-<rect x="92" y="88" width="12" height="12" fill="#e2e8f0"/><rect x="104" y="88" width="12" height="12" fill="#e2e8f0"/><rect x="116" y="88" width="12" height="12" fill="#fbbf24"/>
+<rect x="364" y="128" width="60" height="30" rx="4" fill="#9A72AC" fill-opacity="0.18" stroke="#9A72AC" stroke-width="1"/>
+<text x="394" y="147" text-anchor="middle" font-size="9" fill="#D8C4E2">R0</text>
+<rect x="438" y="128" width="60" height="30" rx="4" fill="#9A72AC" fill-opacity="0.18" stroke="#9A72AC" stroke-width="1"/>
+<text x="468" y="147" text-anchor="middle" font-size="9" fill="#D8C4E2">R1</text>
+<rect x="512" y="128" width="60" height="30" rx="4" fill="#9A72AC" fill-opacity="0.18" stroke="#9A72AC" stroke-width="1"/>
+<text x="542" y="147" text-anchor="middle" font-size="9" fill="#D8C4E2">R2</text>
+<rect x="586" y="128" width="60" height="30" rx="4" fill="#9A72AC" fill-opacity="0.18" stroke="#9A72AC" stroke-width="1"/>
+<text x="616" y="147" text-anchor="middle" font-size="9" fill="#D8C4E2">R3</text>
 </g>
-<text x="112" y="122" text-anchor="middle" font-size="9" fill="#92400e">D_t = Diag(α_t)</text>
-<text x="112" y="136" text-anchor="middle" font-size="9" fill="#64748b">逐通道遗忘门</text>
-<rect x="150" y="62" width="44" height="44" fill="#f8fafc" stroke="#94a3b8"/>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="152" y="64" width="12" height="12" fill="#93c5fd"/><rect x="164" y="64" width="12" height="12" fill="#93c5fd"/><rect x="176" y="64" width="12" height="12" fill="#93c5fd"/>
-<rect x="152" y="76" width="12" height="12" fill="#93c5fd"/><rect x="164" y="76" width="12" height="12" fill="#93c5fd"/><rect x="176" y="76" width="12" height="12" fill="#93c5fd"/>
-<rect x="152" y="88" width="12" height="12" fill="#93c5fd"/><rect x="164" y="88" width="12" height="12" fill="#93c5fd"/><rect x="176" y="88" width="12" height="12" fill="#93c5fd"/>
+<g stroke="#9A72AC" stroke-width="1.3" fill="none">
+<line x1="426" y1="143" x2="434" y2="143" marker-end="url(#a14)"/>
+<line x1="500" y1="143" x2="508" y2="143" marker-end="url(#a14)"/>
+<line x1="574" y1="143" x2="582" y2="143" marker-end="url(#a14)"/>
 </g>
-<text x="172" y="122" text-anchor="middle" font-size="9" fill="#1d4ed8">−β(D_tk)kᵀ</text>
-<text x="172" y="136" text-anchor="middle" font-size="9" fill="#64748b">秩一修正</text>
-<text x="135" y="158" text-anchor="middle" font-size="10" fill="#334155">T_t = D_t − β_t(D_tk_t)k_tᵀ（DPLR）</text>
+<text x="364" y="174" font-size="8.5" fill="#5B6678">传的只有 S（与 T 无关），C 次 P2P</text>
+
+<text x="364" y="198" font-size="9.5" fill="#D8C4E2">② 卡内：单卡的序列再切一次，分发到 SM</text>
+<rect x="364" y="208" width="274" height="66" rx="6" fill="#161C29" stroke="#3A4557"/>
+<g fill="#9A72AC" fill-opacity="0.2" stroke="#9A72AC" stroke-width="0.8">
+<rect x="372" y="216" width="62" height="50"/><rect x="438" y="216" width="62" height="50"/>
+<rect x="504" y="216" width="62" height="50"/><rect x="570" y="216" width="62" height="50"/>
 </g>
-<text x="460" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">KCP 两级并行</text>
-<g font-size="9" text-anchor="middle">
-<rect x="300" y="62" width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="350" y="80" fill="#14532d">独立量求值</text><text x="350" y="95" fill="#14532d">∏D_t / 低秩因子 / KV 统计</text>
-<rect x="412" y="62" width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="462" y="80" fill="#14532d">独立量求值</text><text x="462" y="95" fill="#14532d">拆到不同 GPU 进程</text>
-<rect x="524" y="62" width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="574" y="80" fill="#14532d">独立量求值</text><text x="574" y="95" fill="#14532d">（零通信、并行）</text>
+<g font-size="8" text-anchor="middle" fill="#B69BC7">
+<text x="403" y="240">SM 0</text><text x="469" y="240">SM 1</text><text x="535" y="240">SM 2</text><text x="601" y="240">SM 3</text>
 </g>
-<g stroke="#7c3aed" stroke-width="2" fill="none">
-<path d="M 350 106 L 420 148"/><path d="M 462 106 L 455 148"/><path d="M 574 106 L 490 148"/>
+<g font-size="7.5" text-anchor="middle" fill="#7B5E8C">
+<text x="403" y="256">tile 0</text><text x="469" y="256">tile 1</text><text x="535" y="256">tile 2</text><text x="601" y="256">tile 3</text>
 </g>
-<rect x="392" y="150" width="126" height="34" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
-<text x="455" y="166" text-anchor="middle" font-size="9" fill="#4c1d95">状态合成</text>
-<text x="455" y="180" text-anchor="middle" font-size="9" fill="#4c1d95">只传 S [d_v, d_k]</text>
-<rect x="300" y="202" width="324" height="48" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-<text x="462" y="220" text-anchor="middle" font-size="9" fill="#334155">跨设备 KCP：沿段链 P2P 传固定大小状态</text>
-<text x="462" y="238" text-anchor="middle" font-size="9" fill="#334155">卡内 KCP：SM 级序列二次切分，各 SM 算完再合并状态</text>
-<rect x="90" y="262" width="500" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="282" text-anchor="middle" font-size="10" fill="#334155">传递的数据：状态 S（或段级转移摘要）+ 各段独立计算的中间量就地合成</text>
-<text x="340" y="302" text-anchor="middle" font-size="10" fill="#64748b">通信方式：跨设备 P2P 状态链（成本恒定）；与 FlashKDA chunkwise kernel、state-aware prefix caching 配套</text>
+<text x="364" y="292" font-size="8.5" fill="#5B6678">两级可以同时进行：设备间传 S，设备内切 tile</text>
+<text x="364" y="310" font-size="8.5" fill="#83C167">对百万 token 的 prefill 尤其关键</text>
+
+<rect x="24" y="340" width="632" height="62" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="359" font-size="10" fill="#9AA4B2">为什么不能只靠 TP：TP 切 head 不切序列，单卡仍要放下整条 prefill 的激活与中间结果；序列到百万级时，只有沿 T 切才有用。</text>
+<text x="44" y="377" font-size="10" fill="#9AA4B2">KCP 把「可独立算的转移量」并行、把「串行的状态合成」固定成常数次通信，从而在逐通道门下仍拿到接近线性的扩展。</text>
+<text x="44" y="393" font-size="9.5" fill="#5B6678">SGLang 对 Kimi-K3 提供 fused KDA decode kernel、KDA 感知的前缀缓存与 PD 分离支持。</text>
+</g>
 </svg>
 
 ▲ KDA 的 CP（KCP）：DPLR 转移矩阵（左）与"独立量并行 + 固定状态合成"两级并行（右）
@@ -1264,62 +1674,91 @@ CP 下传递的是压缩 KV 条目（以及独立缓存时的 indexer key），�
 
 从演化路线看，NSA（2025-02，压缩、选择、滑窗三分支与块级稀疏）开其端，DSA（V3.2，token 级动态稀疏加 Lightning Indexer）继其后，CSA（V4，KV 压缩加稀疏选择）是最新形态。SGLang 的 DeepSeek-V4 后端（multi-ratio compressed KV pools、FlashMLA 与稀疏索引）以及 Prefill CP 的 DeepSeek V4 interleave 路径已有对应集成。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 330" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
-<text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">CSA 的 CP：传压缩 KV 矩阵（1/m）+ indexer key</text>
-<text x="140" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">KV 压缩：每 m=4 条 → 1 条</text>
-<g>
-<rect x="70" y="62" width="40" height="12" fill="#fdba74"/><rect x="70" y="74" width="40" height="12" fill="#fed7aa"/><rect x="70" y="86" width="40" height="12" fill="#fdba74"/><rect x="70" y="98" width="40" height="12" fill="#fed7aa"/>
-<rect x="70" y="118" width="40" height="12" fill="#fdba74"/><rect x="70" y="130" width="40" height="12" fill="#fed7aa"/><rect x="70" y="142" width="40" height="12" fill="#fdba74"/><rect x="70" y="154" width="40" height="12" fill="#fed7aa"/>
-<text x="90" y="180" text-anchor="middle" font-size="9" fill="#9a3412">原始 KV [T, d]</text>
-<path d="M 116 84 L 148 84" stroke="#64748b" stroke-width="1.5" fill="none"/>
-<path d="M 116 136 L 148 136" stroke="#64748b" stroke-width="1.5" fill="none"/>
-<rect x="152" y="68" width="40" height="26" fill="#f97316" stroke="#ea580c" stroke-width="1.2"/>
-<rect x="152" y="120" width="40" height="26" fill="#f97316" stroke="#ea580c" stroke-width="1.2"/>
-<text x="172" y="86" text-anchor="middle" font-size="9" fill="#7c2d12">条目 0</text>
-<text x="172" y="138" text-anchor="middle" font-size="9" fill="#7c2d12">条目 1</text>
-<text x="172" y="180" text-anchor="middle" font-size="9" fill="#c2410c">压缩 KV [T/4, d]</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 396" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg15" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot15" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a15" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#FF862F"/></marker>
+</defs>
+<rect width="680" height="396" fill="url(#bg15)"/>
+<rect width="680" height="396" fill="url(#dot15)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">CSA 的 CP：先压成条目，再在条目上做稀疏</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">KV 被压到 1/m，通信量随之下降；但 top-k 的候选变成了条目，选择粒度变粗</text>
+
+<rect x="24" y="74" width="196" height="242" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="42" cy="94" r="9" fill="#F4D345"/>
+<text x="42" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="58" y="98" font-size="11" fill="#E6E8EC">压缩：m 个 token → 1 条</text>
+<g stroke="#0B0D12" stroke-width="0.8">
+<rect x="44" y="114" width="22" height="14" fill="#FF862F" fill-opacity="0.22"/><rect x="66" y="114" width="22" height="14" fill="#FF862F" fill-opacity="0.22"/><rect x="88" y="114" width="22" height="14" fill="#FF862F" fill-opacity="0.22"/><rect x="110" y="114" width="22" height="14" fill="#FF862F" fill-opacity="0.22"/>
+<rect x="44" y="130" width="22" height="14" fill="#FF862F" fill-opacity="0.3"/><rect x="66" y="130" width="22" height="14" fill="#FF862F" fill-opacity="0.3"/><rect x="88" y="130" width="22" height="14" fill="#FF862F" fill-opacity="0.3"/><rect x="110" y="130" width="22" height="14" fill="#FF862F" fill-opacity="0.3"/>
+<rect x="44" y="146" width="22" height="14" fill="#FF862F" fill-opacity="0.38"/><rect x="66" y="146" width="22" height="14" fill="#FF862F" fill-opacity="0.38"/><rect x="88" y="146" width="22" height="14" fill="#FF862F" fill-opacity="0.38"/><rect x="110" y="146" width="22" height="14" fill="#FF862F" fill-opacity="0.38"/>
+<rect x="44" y="162" width="22" height="14" fill="#FF862F" fill-opacity="0.46"/><rect x="66" y="162" width="22" height="14" fill="#FF862F" fill-opacity="0.46"/><rect x="88" y="162" width="22" height="14" fill="#FF862F" fill-opacity="0.46"/><rect x="110" y="162" width="22" height="14" fill="#FF862F" fill-opacity="0.46"/>
 </g>
-<text x="330" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">CP 通信：AllGather 压缩条目 + indexer key</text>
-<g>
-<rect x="240" y="62" width="56" height="20" fill="#fdba74"/><text x="268" y="76" text-anchor="middle" font-size="8" fill="#7c2d12">压缩 0</text>
-<rect x="240" y="82" width="56" height="20" fill="#fed7aa"/><text x="268" y="96" text-anchor="middle" font-size="8" fill="#7c2d12">压缩 1</text>
-<rect x="240" y="102" width="56" height="20" fill="#fdba74"/><text x="268" y="116" text-anchor="middle" font-size="8" fill="#7c2d12">压缩 2</text>
-<rect x="240" y="122" width="56" height="20" fill="#fed7aa"/><text x="268" y="136" text-anchor="middle" font-size="8" fill="#7c2d12">压缩 3</text>
-<text x="268" y="160" text-anchor="middle" font-size="9" fill="#c2410c">各 rank 本地分片</text>
-<text x="340" y="106" font-size="10" fill="#c2410c">AllGather →</text>
-<rect x="392" y="62" width="90" height="80" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
-<g stroke="#ffffff" stroke-width="1">
-<rect x="394" y="64" width="86" height="18" fill="#fed7aa"/><rect x="394" y="82" width="86" height="18" fill="#fdba74"/><rect x="394" y="100" width="86" height="18" fill="#fed7aa"/><rect x="394" y="118" width="86" height="18" fill="#fdba74"/>
+<text x="138" y="140" font-size="8" fill="#5B6678">4 个</text>
+<text x="138" y="152" font-size="8" fill="#5B6678">token</text>
+<line x1="88" y1="182" x2="88" y2="198" stroke="#FF862F" stroke-width="1.4" marker-end="url(#a15)"/>
+<text x="96" y="194" font-size="8" fill="#8B96A8">压缩 m = 4</text>
+<g stroke="#FF862F" stroke-width="1">
+<rect x="44" y="202" width="22" height="16" fill="#FF862F" fill-opacity="0.62"/><rect x="66" y="202" width="22" height="16" fill="#FF862F" fill-opacity="0.62"/><rect x="88" y="202" width="22" height="16" fill="#FF862F" fill-opacity="0.62"/><rect x="110" y="202" width="22" height="16" fill="#FF862F" fill-opacity="0.62"/>
 </g>
-<text x="437" y="160" text-anchor="middle" font-size="9" fill="#c2410c">全局压缩 KV [T/4, d]</text>
-<text x="560" y="86" text-anchor="middle" font-size="9" fill="#334155">体量只有原始 KV 的 1/m</text>
-<text x="560" y="106" text-anchor="middle" font-size="9" fill="#334155">+ indexer key（FP4）一并聚合</text>
-<text x="560" y="126" text-anchor="middle" font-size="9" fill="#334155">压缩组（m 个 token）为切分</text>
-<text x="560" y="142" text-anchor="middle" font-size="9" fill="#334155">最小粒度，不可切断</text>
+<text x="44" y="236" font-size="8.5" fill="#5B6678">1 条压缩 KV，携带 4 个 token 的信息</text>
+<text x="44" y="254" font-size="8.5" fill="#5B6678">条目数 = T / m，KV 显存与通信量同比降</text>
+<text x="44" y="276" font-size="8.5" fill="#FC6255">代价：分辨率变粗，只能整条选或整条弃</text>
+<text x="44" y="296" font-size="8.5" fill="#5B6678">另有 FP4 indexer 负责给条目打分</text>
+
+<rect x="250" y="74" width="196" height="242" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="268" cy="94" r="9" fill="#F4D345"/>
+<text x="268" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="284" y="98" font-size="11" fill="#E6E8EC">AllGather：条目聚齐</text>
+<g stroke="#FF862F" stroke-width="0.8">
+<rect x="266" y="114" width="70" height="16" fill="#FF862F" fill-opacity="0.3"/>
+<rect x="266" y="134" width="70" height="16" fill="#FF862F" fill-opacity="0.3"/>
+<rect x="266" y="154" width="70" height="16" fill="#FF862F" fill-opacity="0.3"/>
 </g>
-<text x="340" y="188" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">之后本地：indexer 对压缩条目 top-k → 稀疏注意力 + SWA 局部分支</text>
-<g>
-<rect x="120" y="200" width="100" height="72" fill="#f8fafc" stroke="#94a3b8"/>
-<g>
-<rect x="122" y="202" width="18" height="16" fill="#e2e8f0"/><rect x="140" y="202" width="18" height="16" fill="#86efac"/><rect x="158" y="202" width="18" height="16" fill="#e2e8f0"/><rect x="176" y="202" width="18" height="16" fill="#86efac"/><rect x="194" y="202" width="18" height="16" fill="#e2e8f0"/>
-<rect x="122" y="218" width="18" height="16" fill="#86efac"/><rect x="140" y="218" width="18" height="16" fill="#e2e8f0"/><rect x="158" y="218" width="18" height="16" fill="#86efac"/><rect x="176" y="218" width="18" height="16" fill="#e2e8f0"/><rect x="194" y="218" width="18" height="16" fill="#86efac"/>
-<rect x="122" y="234" width="18" height="16" fill="#e2e8f0"/><rect x="140" y="234" width="18" height="16" fill="#86efac"/><rect x="158" y="234" width="18" height="16" fill="#e2e8f0"/><rect x="176" y="234" width="18" height="16" fill="#86efac"/><rect x="194" y="234" width="18" height="16" fill="#e2e8f0"/>
-<rect x="122" y="250" width="18" height="16" fill="#86efac"/><rect x="140" y="250" width="18" height="16" fill="#e2e8f0"/><rect x="158" y="250" width="18" height="16" fill="#86efac"/><rect x="176" y="250" width="18" height="16" fill="#e2e8f0"/><rect x="194" y="250" width="18" height="16" fill="#86efac"/>
+<text x="342" y="150" font-size="8" fill="#5B6678">本 rank 的条目</text>
+<line x1="344" y1="166" x2="344" y2="182" stroke="#FF862F" stroke-width="1.2" marker-end="url(#a15)"/>
+<g stroke="#FF862F" stroke-width="0.7">
+<rect x="266" y="188" width="126" height="11" fill="#FF862F" fill-opacity="0.24"/>
+<rect x="266" y="200" width="126" height="11" fill="#FF862F" fill-opacity="0.28"/>
+<rect x="266" y="212" width="126" height="11" fill="#FF862F" fill-opacity="0.32"/>
+<rect x="266" y="224" width="126" height="11" fill="#FF862F" fill-opacity="0.36"/>
+<rect x="266" y="236" width="126" height="11" fill="#FF862F" fill-opacity="0.4"/>
+<rect x="266" y="248" width="126" height="11" fill="#FF862F" fill-opacity="0.44"/>
+<rect x="266" y="260" width="126" height="11" fill="#FF862F" fill-opacity="0.48"/>
+<rect x="266" y="272" width="126" height="11" fill="#FF862F" fill-opacity="0.52"/>
 </g>
-<text x="170" y="288" text-anchor="middle" font-size="9" fill="#64748b">稀疏选择：行=query，列=压缩条目</text>
-<rect x="270" y="200" width="100" height="72" fill="#f8fafc" stroke="#94a3b8"/>
-<g>
-<rect x="272" y="202" width="18" height="16" fill="#86efac"/><rect x="290" y="202" width="18" height="16" fill="#86efac"/><rect x="308" y="202" width="18" height="16" fill="#e2e8f0"/><rect x="326" y="202" width="18" height="16" fill="#e2e8f0"/><rect x="344" y="202" width="18" height="16" fill="#e2e8f0"/>
-<rect x="272" y="218" width="18" height="16" fill="#86efac"/><rect x="290" y="218" width="18" height="16" fill="#86efac"/><rect x="308" y="218" width="18" height="16" fill="#86efac"/><rect x="326" y="218" width="18" height="16" fill="#e2e8f0"/><rect x="344" y="218" width="18" height="16" fill="#e2e8f0"/>
-<rect x="272" y="234" width="18" height="16" fill="#e2e8f0"/><rect x="290" y="234" width="18" height="16" fill="#86efac"/><rect x="308" y="234" width="18" height="16" fill="#86efac"/><rect x="326" y="234" width="18" height="16" fill="#86efac"/><rect x="344" y="234" width="18" height="16" fill="#e2e8f0"/>
-<rect x="272" y="250" width="18" height="16" fill="#e2e8f0"/><rect x="290" y="250" width="18" height="16" fill="#e2e8f0"/><rect x="308" y="250" width="18" height="16" fill="#86efac"/><rect x="326" y="250" width="18" height="16" fill="#86efac"/><rect x="344" y="250" width="18" height="16" fill="#86efac"/>
+<text x="272" y="298" font-size="8.5" fill="#5B6678">每个 rank 持全部条目，后续选择才有全局视野</text>
+
+<rect x="476" y="74" width="180" height="242" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="494" cy="94" r="9" fill="#F4D345"/>
+<text x="494" y="98" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="510" y="98" font-size="11" fill="#E6E8EC">稀疏：条目级选择</text>
+<g stroke="#0B0D12" stroke-width="0.8">
+<rect x="490" y="114" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="508" y="114" width="18" height="18" fill="#141A24"/><rect x="526" y="114" width="18" height="18" fill="#141A24"/><rect x="544" y="114" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="562" y="114" width="18" height="18" fill="#141A24"/><rect x="580" y="114" width="18" height="18" fill="#141A24"/><rect x="598" y="114" width="18" height="18" fill="#5CD0B3" fill-opacity="0.45"/><rect x="616" y="114" width="18" height="18" fill="#5CD0B3" fill-opacity="0.45"/>
+
+<rect x="490" y="132" width="18" height="18" fill="#141A24"/><rect x="508" y="132" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="526" y="132" width="18" height="18" fill="#141A24"/><rect x="544" y="132" width="18" height="18" fill="#141A24"/><rect x="562" y="132" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="580" y="132" width="18" height="18" fill="#141A24"/><rect x="598" y="132" width="18" height="18" fill="#141A24"/><rect x="616" y="132" width="18" height="18" fill="#5CD0B3" fill-opacity="0.45"/>
+
+<rect x="490" y="150" width="18" height="18" fill="#141A24"/><rect x="508" y="150" width="18" height="18" fill="#141A24"/><rect x="526" y="150" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="544" y="150" width="18" height="18" fill="#141A24"/><rect x="562" y="150" width="18" height="18" fill="#141A24"/><rect x="580" y="150" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="598" y="150" width="18" height="18" fill="#141A24"/><rect x="616" y="150" width="18" height="18" fill="#141A24"/>
+
+<rect x="490" y="168" width="18" height="18" fill="#141A24"/><rect x="508" y="168" width="18" height="18" fill="#141A24"/><rect x="526" y="168" width="18" height="18" fill="#141A24"/><rect x="544" y="168" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="562" y="168" width="18" height="18" fill="#141A24"/><rect x="580" y="168" width="18" height="18" fill="#141A24"/><rect x="598" y="168" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="616" y="168" width="18" height="18" fill="#141A24"/>
+
+<rect x="490" y="186" width="18" height="18" fill="#141A24"/><rect x="508" y="186" width="18" height="18" fill="#141A24"/><rect x="526" y="186" width="18" height="18" fill="#141A24"/><rect x="544" y="186" width="18" height="18" fill="#141A24"/><rect x="562" y="186" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/><rect x="580" y="186" width="18" height="18" fill="#141A24"/><rect x="598" y="186" width="18" height="18" fill="#141A24"/><rect x="616" y="186" width="18" height="18" fill="#F4D345" fill-opacity="0.5"/>
 </g>
-<text x="320" y="288" text-anchor="middle" font-size="9" fill="#64748b">SWA 分支：对角带状 mask，基本不通信</text>
-<rect x="430" y="208" width="180" height="60" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="520" y="228" text-anchor="middle" font-size="9" fill="#334155">传递的数据：压缩 KV [T/4, d] + indexer key</text>
-<text x="520" y="248" text-anchor="middle" font-size="9" fill="#334155">通信方式：AllGather（比 DSA 更轻）</text>
-<text x="520" y="264" text-anchor="middle" font-size="9" fill="#64748b">SWA 窗口跨界时少量补传</text>
+<text x="490" y="222" font-size="8" fill="#D6C179">金 = top-k 选中</text>
+<text x="490" y="236" font-size="8" fill="#8FC9BB">绿 = 滑窗保底</text>
+<text x="490" y="258" font-size="8.5" fill="#5B6678">条目内仍需完整 KV 才能算出</text>
+<text x="490" y="274" font-size="8.5" fill="#5B6678">精确结果，故条目与原始 KV</text>
+<text x="490" y="290" font-size="8.5" fill="#5B6678">要一起分片、一起搬</text>
+<text x="490" y="308" font-size="8.5" fill="#83C167">压缩比越高，CP 越轻松</text>
+
+<rect x="24" y="328" width="632" height="56" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="346" font-size="9.5" fill="#9AA4B2">演化路线：NSA（块级稀疏，压缩 / 选择 / 滑窗三分支）→ DSA（token 级动态稀疏）→ CSA（KV 压缩 + 稀疏选择）</text>
+<text x="44" y="364" font-size="9.5" fill="#9AA4B2">对 CP 而言，压缩比是关键变量：条目越小，AllGather 越便宜，可承受的 CP 度也越高。</text>
 </g>
 </svg>
 
@@ -1367,52 +1806,84 @@ Helix 的核心做法是把注意力与 FFN 的并行映射在时间维上解耦
 
 与传统做法相比，AFD 把注意力与 FFN 空分到不同 GPU（各干各的，但卡约有一半时间空闲），Helix 把两者时分到同一组 GPU；TP 单独使用时 KV Cache 随 KV head 复制，batch 上限被锁死。形象地说，Helix 等于在 Attention 时是 CP、在 FFN 时是 TP/EP，每层只有一次轻量 LSE 合并通信。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="400" fill="#ffffff"/>
-<text x="340" y="22" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">Helix 动态 CP：同一组 GPU 时分复用 KVP 与 TP/EP 两种映射</text>
-<text x="60" y="48" font-size="11" font-weight="bold" fill="#334155">时间轴（每层一拍）→</text>
-<g font-size="10" text-anchor="middle">
-<rect x="60" y="58" width="130" height="30" fill="#c7d2fe" stroke="#6366f1"/><text x="125" y="77" fill="#312e81">Attention（KVP）</text>
-<rect x="194" y="58" width="70" height="30" fill="#fdba74" stroke="#ea580c"/><text x="229" y="77" fill="#7c2d12">LSE 合并</text>
-<rect x="268" y="58" width="120" height="30" fill="#86efac" stroke="#16a34a"/><text x="328" y="77" fill="#14532d">FFN（TP）</text>
-<rect x="392" y="58" width="130" height="30" fill="#c7d2fe" stroke="#6366f1"/><text x="457" y="77" fill="#312e81">Attention（KVP）</text>
-<rect x="526" y="58" width="70" height="30" fill="#fdba74" stroke="#ea580c"/><text x="561" y="77" fill="#7c2d12">LSE 合并</text>
-<rect x="600" y="58" width="60" height="30" fill="#86efac" stroke="#16a34a"/><text x="630" y="77" fill="#14532d">FFN</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 430" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg16" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot16" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+</defs>
+<rect width="680" height="430" fill="url(#bg16)"/>
+<rect width="680" height="430" fill="url(#dot16)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">Helix：同一组卡，Attention 时当 CP、FFN 时当 TP</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">不改并行度，只改映射。每层重配置两次，中间只夹一次轻量合并</text>
+
+<rect x="24" y="70" width="632" height="112" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="90" font-size="10.5" fill="#E6E8EC">一层的三段：KV 分片算注意力 → 合并 → 权重切分算 FFN</text>
+<rect x="44" y="102" width="326" height="34" rx="4" fill="#58C4DD" fill-opacity="0.22" stroke="#58C4DD" stroke-width="1"/>
+<text x="207" y="123" text-anchor="middle" font-size="9.5" fill="#CFEAF2">KV Parallelism：KV 交错分片，本地算 partial</text>
+<rect x="374" y="102" width="62" height="34" rx="4" fill="#F4D345" fill-opacity="0.22" stroke="#F4D345" stroke-width="1"/>
+<text x="405" y="117" text-anchor="middle" font-size="8.5" fill="#F3E3AE">LSE</text>
+<text x="405" y="130" text-anchor="middle" font-size="8.5" fill="#F3E3AE">合并</text>
+<rect x="440" y="102" width="200" height="34" rx="4" fill="#83C167" fill-opacity="0.2" stroke="#83C167" stroke-width="1"/>
+<text x="540" y="123" text-anchor="middle" font-size="9.5" fill="#C6E3B6">TP / EP 映射：算 FFN</text>
+<g font-size="8.5" text-anchor="middle" fill="#5B6678">
+<text x="207" y="152">Attention 段的显存按 T 切，batch 上限不再被 KV 复制锁死</text>
+<text x="405" y="152">唯一的跨卡通信</text>
+<text x="540" y="152">FFN 段的权重按 hidden 切，卡不空转</text>
 </g>
-<text x="340" y="108" text-anchor="middle" font-size="10" fill="#64748b">layer i 的一拍：KVP 算注意力 → 轻量合并 → 换 TP/EP 映射算 FFN → 进入 layer i+1（同一批 GPU，反复重配置）</text>
-<text x="60" y="136" font-size="11" font-weight="bold" fill="#334155">HOP-B：batch 维交错，把合并通信藏进另一个 batch 的计算</text>
-<g font-size="9" text-anchor="middle">
-<rect x="60" y="146" width="70" height="24" fill="#bfdbfe"/><text x="95" y="162" fill="#1e3a8a">A: Attn</text>
-<rect x="132" y="146" width="50" height="24" fill="#fdba74"/><text x="157" y="162" fill="#7c2d12">A: 合并</text>
-<rect x="184" y="146" width="70" height="24" fill="#bbf7d0"/><text x="219" y="162" fill="#14532d">A: FFN</text>
-<rect x="256" y="146" width="70" height="24" fill="#bfdbfe"/><text x="291" y="162" fill="#1e3a8a">A: Attn</text>
-<rect x="328" y="146" width="50" height="24" fill="#fdba74"/><text x="353" y="162" fill="#7c2d12">A: 合并</text>
-<rect x="100" y="176" width="70" height="24" fill="#fde68a"/><text x="135" y="192" fill="#92400e">B: Attn</text>
-<rect x="172" y="176" width="50" height="24" fill="#fecaca"/><text x="197" y="192" fill="#7f1d1d">B: 合并</text>
-<rect x="224" y="176" width="70" height="24" fill="#ddd6fe"/><text x="259" y="192" fill="#4c1d95">B: FFN</text>
-<rect x="296" y="176" width="70" height="24" fill="#fde68a"/><text x="331" y="192" fill="#92400e">B: Attn</text>
-<rect x="368" y="176" width="50" height="24" fill="#fecaca"/><text x="393" y="192" fill="#7f1d1d">B: 合并</text>
+<text x="44" y="172" font-size="9" fill="#8B96A8">逐层循环：第 l 层的这三段跑完，第 l+1 层重新按同样的顺序重配置一次</text>
+
+<rect x="24" y="192" width="308" height="150" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="40" y="212" font-size="10.5" fill="#E6E8EC">HOP-B：用另一个请求盖住合并的通信</text>
+<text x="40" y="234" font-size="8.5" fill="#8B96A8">请求 A</text>
+<g>
+<rect x="76" y="224" width="70" height="16" fill="#58C4DD" fill-opacity="0.3" stroke="#58C4DD" stroke-width="0.8"/>
+<rect x="146" y="224" width="26" height="16" fill="#F4D345" fill-opacity="0.3" stroke="#F4D345" stroke-width="0.8"/>
+<rect x="172" y="224" width="80" height="16" fill="#83C167" fill-opacity="0.28" stroke="#83C167" stroke-width="0.8"/>
+<rect x="252" y="224" width="26" height="16" fill="#F4D345" fill-opacity="0.3" stroke="#F4D345" stroke-width="0.8"/>
+<rect x="278" y="224" width="34" height="16" fill="#58C4DD" fill-opacity="0.3" stroke="#58C4DD" stroke-width="0.8"/>
 </g>
-<text x="530" y="162" text-anchor="middle" font-size="9" fill="#334155">请求 A 通信（橙）时</text>
-<text x="530" y="180" text-anchor="middle" font-size="9" fill="#334155">请求 B 正在计算 →</text>
-<text x="530" y="198" text-anchor="middle" font-size="9" fill="#15803d">通信 100% 被藏起来</text>
-<text x="340" y="226" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">两种映射下的矩阵/权重分片（4 GPU 例）</text>
-<g font-size="9" text-anchor="middle">
-<text x="175" y="246" fill="#312e81">KVP：KV Cache 沿 T 交错分片（Attention 段）</text>
-<rect x="60" y="252" width="52" height="20" fill="#c7d2fe"/><rect x="116" y="252" width="52" height="20" fill="#a5b4fc"/><rect x="172" y="252" width="52" height="20" fill="#c7d2fe"/><rect x="228" y="252" width="52" height="20" fill="#a5b4fc"/>
-<rect x="60" y="272" width="52" height="20" fill="#a5b4fc"/><rect x="116" y="272" width="52" height="20" fill="#c7d2fe"/><rect x="172" y="272" width="52" height="20" fill="#a5b4fc"/><rect x="228" y="272" width="52" height="20" fill="#c7d2fe"/>
-<text x="175" y="306" fill="#64748b">KV 块按 rank 轮转交错 → 各卡显存均匀增长</text>
-<text x="500" y="246" fill="#14532d">TP/EP：权重按 head / expert 切分（FFN 段）</text>
-<rect x="400" y="252" width="52" height="40" fill="#86efac"/><rect x="456" y="252" width="52" height="40" fill="#bbf7d0"/><rect x="512" y="252" width="52" height="40" fill="#86efac"/><rect x="568" y="252" width="52" height="40" fill="#bbf7d0"/>
-<text x="500" y="306" fill="#64748b">FFN/MoE：TP（dense）或 TP×EP（MoE），结果 AllReduce</text>
+<text x="40" y="266" font-size="8.5" fill="#8B96A8">请求 B</text>
+<g>
+<rect x="76" y="256" width="26" height="16" fill="#F4D345" fill-opacity="0.3" stroke="#F4D345" stroke-width="0.8"/>
+<rect x="102" y="256" width="70" height="16" fill="#58C4DD" fill-opacity="0.3" stroke="#58C4DD" stroke-width="0.8"/>
+<rect x="172" y="256" width="26" height="16" fill="#F4D345" fill-opacity="0.3" stroke="#F4D345" stroke-width="0.8"/>
+<rect x="198" y="256" width="80" height="16" fill="#83C167" fill-opacity="0.28" stroke="#83C167" stroke-width="0.8"/>
+<rect x="278" y="256" width="34" height="16" fill="#58C4DD" fill-opacity="0.3" stroke="#58C4DD" stroke-width="0.8"/>
 </g>
-<g stroke="#7c3aed" stroke-width="1.6" fill="none" stroke-dasharray="5 3">
-<rect x="292" y="248" width="26" height="48"/>
+<g stroke="#F4D345" stroke-width="0.9" stroke-dasharray="3 3" fill="none">
+<line x1="172" y1="242" x2="172" y2="254"/>
+<line x1="252" y1="242" x2="252" y2="254"/>
 </g>
-<text x="340" y="330" text-anchor="middle" font-size="9" fill="#6d28d9">⇄ 每拍在两种映射间切换（同一批 GPU 重配置，KV 分片不动）</text>
-<rect x="60" y="344" width="560" height="42" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="362" text-anchor="middle" font-size="10" fill="#334155">传递的数据：partial (O, LSE) 的轻量合并（每层一次）+ FFN 权重 AllReduce / MoE 路由</text>
-<text x="340" y="380" text-anchor="middle" font-size="10" fill="#64748b">通信方式：KVP 组内 LSE 合并 + TP AllReduce；HOP-B 让两者都被另一个 batch 的计算覆盖</text>
+<text x="40" y="292" font-size="8.5" fill="#5B6678">A 的合并（黄）对齐 B 的计算（蓝/绿），</text>
+<text x="40" y="308" font-size="8.5" fill="#5B6678">B 的合并再对齐 A 的下一段 —— 通信被藏掉。</text>
+<text x="40" y="328" font-size="8.5" fill="#83C167">副作用：同时在线两个请求，KV 需双份预算。</text>
+
+<rect x="348" y="192" width="308" height="150" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<text x="364" y="212" font-size="10.5" fill="#E6E8EC">同一次重配置，两种切法</text>
+<text x="364" y="234" font-size="8.5" fill="#8B96A8">KVP：KV 按 T 交错切</text>
+<g stroke="#0B0D12" stroke-width="1">
+<rect x="364" y="242" width="16" height="16" fill="#58C4DD" fill-opacity="0.4"/><rect x="380" y="242" width="16" height="16" fill="#5CD0B3" fill-opacity="0.4"/><rect x="396" y="242" width="16" height="16" fill="#F4D345" fill-opacity="0.4"/><rect x="412" y="242" width="16" height="16" fill="#FC6255" fill-opacity="0.4"/><rect x="428" y="242" width="16" height="16" fill="#58C4DD" fill-opacity="0.4"/><rect x="444" y="242" width="16" height="16" fill="#5CD0B3" fill-opacity="0.4"/><rect x="460" y="242" width="16" height="16" fill="#F4D345" fill-opacity="0.4"/><rect x="476" y="242" width="16" height="16" fill="#FC6255" fill-opacity="0.4"/><rect x="364" y="262" width="16" height="16" fill="#58C4DD" fill-opacity="0.4"/><rect x="380" y="262" width="16" height="16" fill="#5CD0B3" fill-opacity="0.4"/><rect x="396" y="262" width="16" height="16" fill="#F4D345" fill-opacity="0.4"/><rect x="412" y="262" width="16" height="16" fill="#FC6255" fill-opacity="0.4"/><rect x="428" y="262" width="16" height="16" fill="#58C4DD" fill-opacity="0.4"/><rect x="444" y="262" width="16" height="16" fill="#5CD0B3" fill-opacity="0.4"/><rect x="460" y="262" width="16" height="16" fill="#F4D345" fill-opacity="0.4"/><rect x="476" y="262" width="16" height="16" fill="#FC6255" fill-opacity="0.4"/>
+</g>
+<text x="364" y="300" font-size="8" fill="#5B6678">块 i → rank (i mod 4)，每卡隔 4 取 1</text>
+<text x="364" y="316" font-size="8" fill="#5B6678">显存均匀，逻辑顺序需重排</text>
+<text x="530" y="234" font-size="8.5" fill="#8B96A8">TP：权重按列切</text>
+<g stroke="#83C167" stroke-width="1">
+<rect x="530" y="242" width="24" height="56" fill="#83C167" fill-opacity="0.28"/>
+<rect x="554" y="242" width="24" height="56" fill="#83C167" fill-opacity="0.2"/>
+<rect x="578" y="242" width="24" height="56" fill="#83C167" fill-opacity="0.14"/>
+<rect x="602" y="242" width="24" height="56" fill="#83C167" fill-opacity="0.1"/>
+</g>
+<text x="530" y="316" font-size="8" fill="#5B6678">每卡一份完整激活</text>
+<text x="530" y="330" font-size="8" fill="#5B6678">显存占用是另一套账</text>
+
+<rect x="24" y="354" width="632" height="62" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="373" font-size="10" fill="#9AA4B2">与 AFD 的对比：AFD 把 Attention 与 FFN 空分到不同 GPU，两类卡各有一半时间闲着；Helix 时分复用同一组卡，没有闲着的那一半。</text>
+<text x="44" y="391" font-size="10" fill="#9AA4B2">代价是每层一次重配置与一次合并通信，且两套映射的显存预算必须同时成立 —— 这就是它需要 HOP-B 来填通信空隙的原因。</text>
+<text x="44" y="407" font-size="9.5" fill="#5B6678">在 DeepSeek-R1、Blackwell NVL72、FP4、1M 上下文的模拟中，固定 batch 下 TTL 最多降 1.5 倍，同延迟预算下 batch 最多放大 32 倍。</text>
+</g>
 </svg>
 
 ▲ Helix 动态 CP 机制：每层一拍的 KVP、合并、TP/EP 时序，HOP-B 的 batch 交错，两种映射下的分片形态
@@ -1429,60 +1900,116 @@ Helix 的核心做法是把注意力与 FFN 的并行映射在时间维上解耦
 
 Vertumnus 的设计相应分为三层。第一层是请求级路由，用 placement cost 在不同 CP 度的 worker 之间路由请求，代价函数由预测排队延迟、cache-aware 的 prefill 时间与 GPU-time 成本构成。第二层是集群级重组，随负载变化以秒级 split/merge 调整 worker 组成，短请求潮到来时把大 CP worker 拆成多个小 worker，长请求潮到来时把小 worker 合并成大 worker，全程无须重启进程或重新加载模型。第三层是全局前缀缓存管理，跨 worker（无论 CP 度是否相同）协调缓存的放置与复制，在 worker 重组、请求改派时保持缓存局部性，缺失的缓存块可以从其他 worker（甚至是不同 CP 度的 worker）按需复制。
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 380" style="width:100%;height:auto">
-<rect x="0" y="0" width="680" height="380" fill="#ffffff"/>
-<text x="340" y="22" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">Vertumnus：调度时动态调 CP 度（请求级路由 + 秒级 split/merge + 全局前缀缓存）</text>
-<text x="150" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">① 请求级路由（placement cost）</text>
-<g font-size="9" text-anchor="middle">
-<rect x="30" y="60" width="86" height="24" fill="#bbf7d0" stroke="#16a34a"/><text x="73" y="76" fill="#14532d">短请求 512</text>
-<rect x="30" y="90" width="86" height="24" fill="#bfdbfe" stroke="#2563eb"/><text x="73" y="106" fill="#1e3a8a">长请求 128K</text>
-<rect x="30" y="120" width="86" height="24" fill="#bbf7d0" stroke="#16a34a"/><text x="73" y="136" fill="#14532d">短请求 256</text>
-<rect x="30" y="150" width="86" height="24" fill="#fecaca" stroke="#dc2626"/><text x="73" y="166" fill="#7f1d1d">超长 1M</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 412" style="width:100%;height:auto">
+<defs>
+<linearGradient id="bg17" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#101728"/><stop offset="1" stop-color="#080A10"/></linearGradient>
+<pattern id="dot17" width="18" height="18" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="0.9" fill="#2C3748"/></pattern>
+<marker id="a17" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#5B6678"/></marker>
+<marker id="a17g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M0,0 L10,5 L0,10 z" fill="#83C167"/></marker>
+</defs>
+<rect width="680" height="412" fill="url(#bg17)"/>
+<rect width="680" height="412" fill="url(#dot17)" opacity="0.55"/>
+<g font-family="Georgia, 'Times New Roman', 'Source Han Serif SC', 'Songti SC', SimSun, serif">
+<text x="36" y="34" font-size="19" fill="#F2F4F8">Vertumnus：让 CP 度跟着负载走</text>
+<text x="36" y="55" font-size="11.5" fill="#8B96A8">请求级路由、秒级 split/merge、跨 worker 的前缀缓存，三层各管一件事</text>
+
+<rect x="24" y="72" width="204" height="190" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="42" cy="92" r="9" fill="#F4D345"/>
+<text x="42" y="96" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">1</text>
+<text x="58" y="96" font-size="10.5" fill="#E6E8EC">请求级路由</text>
+<rect x="36" y="110" width="72" height="24" rx="4" fill="#58C4DD" fill-opacity="0.18" stroke="#58C4DD" stroke-width="0.9"/>
+<text x="72" y="126" text-anchor="middle" font-size="8.5" fill="#CFEAF2">短请求</text>
+<rect x="36" y="144" width="72" height="24" rx="4" fill="#5CD0B3" fill-opacity="0.18" stroke="#5CD0B3" stroke-width="0.9"/>
+<text x="72" y="160" text-anchor="middle" font-size="8.5" fill="#C3E8DC">中等请求</text>
+<rect x="36" y="178" width="72" height="24" rx="4" fill="#F4D345" fill-opacity="0.18" stroke="#F4D345" stroke-width="0.9"/>
+<text x="72" y="194" text-anchor="middle" font-size="8.5" fill="#F3E3AE">超长请求</text>
+<g stroke="#5B6678" stroke-width="1.2" fill="none">
+<line x1="110" y1="122" x2="132" y2="116" marker-end="url(#a17)"/>
+<line x1="110" y1="156" x2="132" y2="152" marker-end="url(#a17)"/>
+<line x1="110" y1="190" x2="132" y2="188" marker-end="url(#a17)"/>
 </g>
-<rect x="140" y="72" width="120" height="88" rx="7" fill="#f1f5f9" stroke="#94a3b8"/>
-<text x="200" y="94" text-anchor="middle" font-size="9" fill="#334155">代价函数 =</text>
-<text x="200" y="110" text-anchor="middle" font-size="9" fill="#334155">排队延迟 +</text>
-<text x="200" y="126" text-anchor="middle" font-size="9" fill="#334155">cache-aware</text>
-<text x="200" y="142" text-anchor="middle" font-size="9" fill="#334155">prefill 时间 + GPU·s</text>
-<g stroke="#64748b" stroke-width="1.5" fill="none">
-<path d="M 118 72 L 138 100"/><path d="M 118 102 L 138 112"/><path d="M 118 132 L 138 124"/><path d="M 118 162 L 138 138"/>
-</g>
-<text x="330" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">② 集群级 split / merge（秒级，不重启、不重载）</text>
-<g font-size="9" text-anchor="middle">
-<rect x="280" y="62" width="150" height="30" fill="#e0e7ff" stroke="#6366f1"/><text x="355" y="81" fill="#1e3a8a">worker CP=4（大）</text>
-<rect x="280" y="122" width="70" height="26" fill="#ddd6fe" stroke="#7c3aed"/><text x="315" y="139" fill="#4c1d95">CP=2</text>
-<rect x="360" y="122" width="70" height="26" fill="#ddd6fe" stroke="#7c3aed"/><text x="395" y="139" fill="#4c1d95">CP=2</text>
-<rect x="280" y="162" width="150" height="30" fill="#e0e7ff" stroke="#6366f1"/><text x="355" y="181" fill="#1e3a8a">worker CP=1（小）</text>
-<rect x="280" y="212" width="150" height="30" fill="#e0e7ff" stroke="#6366f1"/><text x="355" y="231" fill="#1e3a8a">worker CP=1（小）</text>
-<rect x="280" y="262" width="150" height="30" fill="#e0e7ff" stroke="#6366f1"/><text x="355" y="281" fill="#1e3a8a">worker CP=2（合并后）</text>
-</g>
-<g stroke="#7c3aed" stroke-width="1.8" fill="none">
-<path d="M 320 94 L 315 118"/><path d="M 390 94 L 395 118"/>
-<path d="M 300 244 L 320 258"/><path d="M 410 244 L 390 258"/>
-</g>
-<g font-size="9" fill="#6d28d9" text-anchor="middle">
-<text x="452" y="88">短请求潮 → split</text>
-<text x="452" y="104">大 worker 拆小</text>
-<text x="452" y="236">长请求潮 → merge</text>
-<text x="452" y="252">小 worker 合大</text>
-</g>
-<g stroke="#64748b" stroke-width="1.5" fill="none">
-<path d="M 262 110 L 278 80"/><path d="M 262 126 L 278 136"/><path d="M 262 158 L 278 176"/><path d="M 262 138 L 278 228"/>
-</g>
-<text x="590" y="50" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">③ 全局前缀缓存</text>
+<rect x="136" y="104" width="78" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="175" y="120" text-anchor="middle" font-size="8.5" fill="#E6E8EC">worker · CP=1</text>
+<rect x="136" y="140" width="78" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="175" y="156" text-anchor="middle" font-size="8.5" fill="#E6E8EC">worker · CP=2</text>
+<rect x="136" y="176" width="78" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="175" y="192" text-anchor="middle" font-size="8.5" fill="#E6E8EC">worker · CP=4</text>
+<text x="36" y="224" font-size="8.5" fill="#5B6678">代价 = 预测排队 + cache-aware 的</text>
+<text x="36" y="238" font-size="8.5" fill="#5B6678">prefill 时间 + GPU-time 成本</text>
+<text x="36" y="254" font-size="8.5" fill="#83C167">按请求粒度挑 CP 度，而不是全局一个</text>
+
+<rect x="240" y="72" width="204" height="190" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="258" cy="92" r="9" fill="#F4D345"/>
+<text x="258" y="96" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">2</text>
+<text x="274" y="96" font-size="10.5" fill="#E6E8EC">秒级 split / merge</text>
+<rect x="256" y="108" width="72" height="28" rx="4" fill="#F4D345" fill-opacity="0.16" stroke="#F4D345" stroke-width="1"/>
+<text x="292" y="126" text-anchor="middle" font-size="9" fill="#F3E3AE">CP=4</text>
+<line x1="332" y1="122" x2="352" y2="112" stroke="#83C167" stroke-width="1.3" marker-end="url(#a17g)"/>
+<line x1="332" y1="122" x2="352" y2="136" stroke="#83C167" stroke-width="1.3" marker-end="url(#a17g)"/>
+
+<rect x="356" y="100" width="72" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="392" y="116" text-anchor="middle" font-size="8.5" fill="#E6E8EC">CP=2</text>
+<rect x="356" y="128" width="72" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="392" y="144" text-anchor="middle" font-size="8.5" fill="#E6E8EC">CP=2</text>
+
+<rect x="256" y="176" width="72" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="292" y="192" text-anchor="middle" font-size="8.5" fill="#E6E8EC">CP=1</text>
+<rect x="256" y="206" width="72" height="24" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="292" y="222" text-anchor="middle" font-size="8.5" fill="#E6E8EC">CP=1</text>
+<line x1="332" y1="188" x2="352" y2="194" stroke="#58C4DD" stroke-width="1.3" marker-end="url(#a17)"/>
+<line x1="332" y1="218" x2="352" y2="204" stroke="#58C4DD" stroke-width="1.3" marker-end="url(#a17)"/>
+
+<rect x="356" y="186" width="72" height="26" rx="4" fill="#58C4DD" fill-opacity="0.16" stroke="#58C4DD" stroke-width="1"/>
+<text x="392" y="203" text-anchor="middle" font-size="9" fill="#CFEAF2">CP=2</text>
+<text x="256" y="248" font-size="8" fill="#5B6678">不重启进程、不重载权重</text>
+
+<rect x="456" y="72" width="200" height="190" rx="10" fill="#0E131D" stroke="#232C3A"/>
+<circle cx="474" cy="92" r="9" fill="#F4D345"/>
+<text x="474" y="96" text-anchor="middle" font-size="10" font-weight="bold" fill="#0B0D12">3</text>
+<text x="490" y="96" font-size="10.5" fill="#E6E8EC">全局前缀缓存</text>
 <g>
-<rect x="500" y="62" width="180" height="26" fill="#fef3c7" stroke="#d97706"/><text x="590" y="79" text-anchor="middle" font-size="9" fill="#92400e">system prompt 前缀块</text>
-<rect x="500" y="94" width="180" height="26" fill="#fef3c7" stroke="#d97706"/><text x="590" y="111" text-anchor="middle" font-size="9" fill="#92400e">多轮对话前缀块</text>
-<rect x="500" y="126" width="180" height="26" fill="#fef3c7" stroke="#d97706"/><text x="590" y="143" text-anchor="middle" font-size="9" fill="#92400e">Agent 工作流前缀块</text>
-<text x="590" y="172" text-anchor="middle" font-size="9" fill="#334155">跨 worker / 跨 CP 度统一管理</text>
-<text x="590" y="188" text-anchor="middle" font-size="9" fill="#334155">缺块按需复制，重组时保局部性</text>
-<g stroke="#d97706" stroke-width="1.5" fill="none">
-<path d="M 498 100 L 434 240"/><path d="M 498 132 L 434 272"/>
+<rect x="470" y="108" width="172" height="30" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="480" y="127" font-size="8" fill="#9AA4B2">w0 · CP=4</text>
+<g stroke="#83C167" stroke-width="0.8">
+<rect x="540" y="115" width="16" height="16" fill="#83C167" fill-opacity="0.3"/><rect x="558" y="115" width="16" height="16" fill="#83C167" fill-opacity="0.3"/>
+<rect x="576" y="115" width="16" height="16" fill="#83C167" fill-opacity="0.18"/><rect x="594" y="115" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
+<rect x="612" y="115" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
+</g>
+<rect x="470" y="146" width="172" height="30" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="480" y="165" font-size="8" fill="#9AA4B2">w1 · CP=2</text>
+<g stroke="#83C167" stroke-width="0.8">
+<rect x="540" y="153" width="16" height="16" fill="#83C167" fill-opacity="0.18"/><rect x="558" y="153" width="16" height="16" fill="#83C167" fill-opacity="0.3"/>
+<rect x="576" y="153" width="16" height="16" fill="#83C167" fill-opacity="0.3"/><rect x="594" y="153" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
+<rect x="612" y="153" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
+</g>
+<rect x="470" y="184" width="172" height="30" rx="4" fill="#161C29" stroke="#3A4557"/>
+<text x="480" y="203" font-size="8" fill="#9AA4B2">w2 · CP=1</text>
+<g stroke="#83C167" stroke-width="0.8">
+<rect x="540" y="191" width="16" height="16" fill="#83C167" fill-opacity="0.3"/><rect x="558" y="191" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
+<rect x="576" y="191" width="16" height="16" fill="#83C167" fill-opacity="0.18"/><rect x="594" y="191" width="16" height="16" fill="#83C167" fill-opacity="0.3"/>
+<rect x="612" y="191" width="16" height="16" fill="#83C167" fill-opacity="0.18"/>
 </g>
 </g>
-<rect x="60" y="310" width="560" height="54" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="340" y="330" text-anchor="middle" font-size="10" fill="#334155">传递的数据：按 placement cost 选择的请求流 + 前缀缓存块的跨 worker 复制</text>
-<text x="340" y="350" text-anchor="middle" font-size="10" fill="#64748b">"通信"方式：请求改派（秒级）与 worker split/merge（秒级），缓存块按需搬移而非全量重算</text>
+<g stroke="#83C167" stroke-width="1" fill="none" stroke-dasharray="3 3" opacity="0.8">
+<path d="M566 174 C 566 180, 566 182, 566 188" marker-end="url(#a17g)"/>
+<path d="M602 140 C 602 146, 602 148, 602 152" marker-end="url(#a17g)"/>
+</g>
+<text x="470" y="228" font-size="8" fill="#5B6678">缺块可从别的 worker（哪怕 CP 度不同）</text>
+<text x="470" y="242" font-size="8" fill="#5B6678">复制过来，重组后仍命中缓存</text>
+<text x="470" y="256" font-size="8" fill="#83C167">浅格 = 缺失，虚线 = 跨 worker 复制</text>
+
+<rect x="24" y="280" width="632" height="58" rx="8" fill="#121826" stroke="#232C3A"/>
+<text x="44" y="299" font-size="10" fill="#9AA4B2">三层合起来的效果：请求按自身长度落到合适的 CP 度上，负载形态变化时 worker 自动重组，重组不丢前缀缓存。</text>
+<text x="44" y="317" font-size="10" fill="#FC6255">代价：重组期间有迁移开销，缓存复制占用带宽，代价函数需要在线校准。</text>
+
+<rect x="24" y="348" width="632" height="52" rx="8" fill="#0E131D" stroke="#232C3A"/>
+<text x="44" y="367" font-size="10" fill="#8B96A8">实测（64 GPU，公开集 + 生产流量）：最高负载下平均 TTFT 降 28.1%，token 加权 SLO 达成率提升 13.3 个百分点。</text>
+<text x="44" y="385" font-size="10" fill="#8B96A8">与 Helix 的分工：Helix 在单次前向内改映射，Vertumnus 在集群层面改 worker 组成，两者可以叠加。</text>
+</g>
 </svg>
 
 ▲ Vertumnus 三层机制：请求级路由（左）、集群级 split/merge（中）、全局前缀缓存（右）
