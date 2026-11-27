@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="470" viewBox="0 0 820 470" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<line x1="112.0" y1="359.4" x2="772.0" y2="359.4" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="102.0" y="363.4" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">55k</text>
+<line x1="112.0" y1="284.0" x2="772.0" y2="284.0" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="102.0" y="288.0" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">65k</text>
+<line x1="112.0" y1="208.7" x2="772.0" y2="208.7" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="102.0" y="212.7" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">75k</text>
+<line x1="112.0" y1="133.3" x2="772.0" y2="133.3" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="102.0" y="137.3" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">85k</text>
+<line x1="112.0" y1="58.0" x2="772.0" y2="58.0" stroke="#e8e9eb" stroke-width="1.0" opacity="1.00"/>
+<text x="102.0" y="62.0" font-size="11" fill="#6b7280" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">95k</text>
+<line x1="112.0" y1="382.0" x2="112.0" y2="386.0" stroke="#3c4043" stroke-width="1.0" opacity="1.00"/>
+<text x="112.0" y="402.0" font-size="11" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">0</text>
+<line x1="277.0" y1="382.0" x2="277.0" y2="386.0" stroke="#3c4043" stroke-width="1.0" opacity="1.00"/>
+<text x="277.0" y="402.0" font-size="11" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">200</text>
+<line x1="442.0" y1="382.0" x2="442.0" y2="386.0" stroke="#3c4043" stroke-width="1.0" opacity="1.00"/>
+<text x="442.0" y="402.0" font-size="11" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">400</text>
+<line x1="607.0" y1="382.0" x2="607.0" y2="386.0" stroke="#3c4043" stroke-width="1.0" opacity="1.00"/>
+<text x="607.0" y="402.0" font-size="11" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">600</text>
+<line x1="772.0" y1="382.0" x2="772.0" y2="386.0" stroke="#3c4043" stroke-width="1.0" opacity="1.00"/>
+<text x="772.0" y="402.0" font-size="11" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">800</text>
+<line x1="112.0" y1="382.0" x2="772.0" y2="382.0" stroke="#3c4043" stroke-width="1.2" opacity="1.00"/>
+<line x1="112.0" y1="58.0" x2="112.0" y2="382.0" stroke="#3c4043" stroke-width="1.2" opacity="1.00"/>
+<text x="442.0" y="428.0" font-size="12" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">单步 Prefill 耗时（ms/step）</text>
+<text x="30.0" y="220.0" font-size="12" fill="#1f2328" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal" transform="rotate(-90 30 220)">单卡输入吞吐（tok/s/GPU）</text>
+<polyline points="168.1,321.7 206.1,235.1 277.0,159.7 422.2,118.3 715.9,99.4" fill="none" stroke="#2a7f7a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="168.1" cy="321.7" r="4.6" fill="#ffffff" stroke="#2a7f7a" stroke-width="2.0"/>
+<text x="178.1" y="311.7" font-size="10" fill="#2a7f7a" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">4K tok/rank</text>
+<circle cx="206.1" cy="235.1" r="4.6" fill="#ffffff" stroke="#2a7f7a" stroke-width="2.0"/>
+<text x="218.1" y="249.1" font-size="10" fill="#2a7f7a" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">8K tok/rank</text>
+<circle cx="277.0" cy="159.7" r="4.6" fill="#ffffff" stroke="#2a7f7a" stroke-width="2.0"/>
+<text x="289.0" y="173.7" font-size="10" fill="#2a7f7a" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">16K tok/rank</text>
+<circle cx="422.2" cy="118.3" r="4.6" fill="#ffffff" stroke="#2a7f7a" stroke-width="2.0"/>
+<text x="434.2" y="132.3" font-size="10" fill="#2a7f7a" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">32K tok/rank</text>
+<circle cx="715.9" cy="99.4" r="4.6" fill="#ffffff" stroke="#2a7f7a" stroke-width="2.0"/>
+<text x="705.9" y="115.4" font-size="10" fill="#2a7f7a" text-anchor="end" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">64K tok/rank</text>
+<text x="242.0" y="68.0" font-size="10" fill="#6b7280" text-anchor="start" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">4×SM100（EP4/DP4）· 131K 上下文 · bounded replay 140</text>
+<text x="359.5" y="321.7" font-size="10" fill="#6b7280" text-anchor="middle" font-family="'Songti SC','SimSun','Source Han Serif SC','Noto Serif CJK SC',Georgia,serif" font-weight="normal">批量 > 32K 后，时延翻倍而吞吐仅 +3%</text>
+</svg>

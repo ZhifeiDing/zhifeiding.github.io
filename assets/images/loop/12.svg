@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="770" viewBox="0 0 820 770" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <rect width="820" height="770" fill="#1a1a1a"/>
+
+  <!-- 标题 -->
+  <text x="410" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#f5f5f5">Inkling 2 Mini · 循环深度 + 稀疏 MoE</text>
+  <text x="410" y="56" text-anchor="middle" font-size="12.5" fill="#a8a8a8">24 层物理权重 · 中段 12 层循环 3 次 → 48 层等效深度 · 26.4B 总参 / 3.4B 激活 · 1M 上下文</text>
+
+  <!-- ===================== 左面板：四块划分 ===================== -->
+  <rect x="24" y="76" width="340" height="624" rx="14" fill="#f1f1f1" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="40" y="100" font-size="13" font-weight="700" fill="#1a1a1a">层划分：4 块 × 6 层</text>
+  <text x="40" y="116" font-size="10.5" fill="#666666">首尾各执行 1 次，中段 12 层共享权重执行 3 次</text>
+
+  <!-- Token Embedding -->
+  <rect x="84" y="620" width="220" height="40" rx="8" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="194" y="637" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">Token Embedding / 视觉编码器</text>
+  <text x="194" y="652" text-anchor="middle" font-size="9" fill="#444444">文本 + 图像输入 · BF16</text>
+
+  <line x1="194" y1="620" x2="194" y2="608" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Prelude -->
+  <rect x="84" y="566" width="220" height="42" rx="6" fill="#c9cfea" stroke="#000000" stroke-width="1.2"/>
+  <text x="194" y="584" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">Prelude（前导）· L0–5 × 1</text>
+  <text x="194" y="599" text-anchor="middle" font-size="9" fill="#555555">输入 → 内部表示，输出 x₀</text>
+
+  <line x1="194" y1="566" x2="194" y2="550" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Loop Core 分组 -->
+  <rect x="70" y="290" width="248" height="258" rx="10" fill="#ffffff" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="194" y="310" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">Loop Core（循环核心）· 12 层</text>
+  <text x="194" y="325" text-anchor="middle" font-size="9.5" fill="#666666">L6–17 · 两组 6 层块共享同一组权重</text>
+
+  <!-- 子块 2 -->
+  <rect x="96" y="340" width="196" height="50" rx="5" fill="#fbf3c9" stroke="#000000" stroke-width="1"/>
+  <text x="194" y="359" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1a1a">块 2 · L12–17（6 层）</text>
+  <text x="194" y="375" text-anchor="middle" font-size="9" fill="#444444">滑动窗口 + 全局注意力 + MoE</text>
+
+  <line x1="194" y1="402" x2="194" y2="390" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- 子块 1 -->
+  <rect x="96" y="402" width="196" height="50" rx="5" fill="#fbf3c9" stroke="#000000" stroke-width="1"/>
+  <text x="194" y="421" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1a1a">块 1 · L6–11（6 层）</text>
+  <text x="194" y="437" text-anchor="middle" font-size="9" fill="#444444">滑动窗口 + 全局注意力 + MoE</text>
+
+  <text x="194" y="474" text-anchor="middle" font-size="9.5" fill="#333333">每轮从 x₀ 重新起步，共 3 轮；</text>
+  <text x="194" y="490" text-anchor="middle" font-size="9.5" fill="#333333">第 2、3 轮经跨轮消息读取上一轮结果</text>
+
+  <rect x="88" y="504" width="212" height="30" rx="6" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1"/>
+  <text x="194" y="523" text-anchor="middle" font-size="9.3" fill="#8a6d1f">消融：中段 12 层，28 项中 27 项占优</text>
+
+  <!-- 循环回线 -->
+  <path d="M 318 300 L 334 300 L 334 534 L 318 534" fill="none" stroke="#000000" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+
+  <line x1="194" y1="290" x2="194" y2="274" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Coda -->
+  <rect x="84" y="232" width="220" height="42" rx="6" fill="#c9cfea" stroke="#000000" stroke-width="1.2"/>
+  <text x="194" y="250" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">Coda（收尾）· L18–23 × 1</text>
+  <text x="194" y="265" text-anchor="middle" font-size="9" fill="#555555">内部表示 → 输出，24 层中后 4 层 MXFP8</text>
+
+  <line x1="194" y1="232" x2="194" y2="216" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Output -->
+  <rect x="84" y="176" width="220" height="40" rx="8" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="194" y="193" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">LM Head</text>
+  <text x="194" y="208" text-anchor="middle" font-size="9" fill="#444444">下一个 token 分布 · BF16</text>
+
+  <!-- 算式 -->
+  <text x="194" y="682" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a1a1a">6 × 1 + 6 × 3 + 6 × 3 + 6 × 1 = 48</text>
+  <text x="194" y="696" text-anchor="middle" font-size="9.3" fill="#666666">仅存储 24 层权重，单 token 读取 5.4B 参数</text>
+
+  <!-- ===================== 右面板：循环步内部 ===================== -->
+  <rect x="380" y="76" width="416" height="624" rx="14" fill="#f1f1f1" stroke="#000000" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="396" y="100" font-size="13" font-weight="700" fill="#1a1a1a">单个循环步内部：跨轮消息 + 混合注意力 + MoE</text>
+  <text x="396" y="116" font-size="10.5" fill="#666666">第 r 轮（r = 2, 3）从 x₀ 起步，读取第 r−1 轮的 message</text>
+
+  <!-- x0 -->
+  <rect x="500" y="134" width="220" height="38" rx="7" fill="#f8d3d8" stroke="#000000" stroke-width="1.2"/>
+  <text x="610" y="151" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">Prelude 输出 x₀</text>
+  <text x="610" y="165" text-anchor="middle" font-size="9" fill="#555555">每轮重新注入，不累积漂移</text>
+
+  <!-- message 侧输入 -->
+  <rect x="390" y="190" width="96" height="42" rx="7" fill="#f8d9ac" stroke="#000000" stroke-width="1.2"/>
+  <text x="438" y="206" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1a1a1a">message</text>
+  <text x="438" y="221" text-anchor="middle" font-size="8.5" fill="#555555">上一轮 2 块输出</text>
+
+  <line x1="486" y1="211" x2="500" y2="211" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="610" y1="172" x2="610" y2="186" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- 门控 -->
+  <rect x="500" y="186" width="220" height="50" rx="7" fill="#f8d9ac" stroke="#000000" stroke-width="1.2"/>
+  <text x="610" y="204" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">低秩门控 · gate_rank = 64</text>
+  <text x="610" y="220" text-anchor="middle" font-size="9" fill="#444444">Q/K/V/MLP 四路各读一条 message，按通道融合</text>
+
+  <line x1="610" y1="236" x2="610" y2="252" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- 6 层块 -->
+  <rect x="500" y="252" width="220" height="120" rx="7" fill="#ffffff" stroke="#000000" stroke-width="1.1"/>
+  <text x="512" y="268" font-size="9.5" font-weight="700" fill="#1a1a1a">6 层块（每层：注意力 + MoE）</text>
+
+  <rect x="512" y="274" width="196" height="13" rx="3" fill="#fbf3c9" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="284" font-size="8.3" fill="#1a1a1a">滑动窗口注意力 · 窗口 1,024 tokens</text>
+  <rect x="512" y="290" width="196" height="13" rx="3" fill="#fbf3c9" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="300" font-size="8.3" fill="#1a1a1a">滑动窗口注意力 · 窗口 1,024 tokens</text>
+  <rect x="512" y="306" width="196" height="13" rx="3" fill="#fbf3c9" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="316" font-size="8.3" fill="#1a1a1a">滑动窗口注意力 · 窗口 1,024 tokens</text>
+  <rect x="512" y="322" width="196" height="13" rx="3" fill="#fbf3c9" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="332" font-size="8.3" fill="#1a1a1a">滑动窗口注意力 · 窗口 1,024 tokens</text>
+  <rect x="512" y="338" width="196" height="13" rx="3" fill="#fbf3c9" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="348" font-size="8.3" fill="#1a1a1a">滑动窗口注意力 · 窗口 1,024 tokens</text>
+  <rect x="512" y="354" width="196" height="13" rx="3" fill="#e9c78a" stroke="#000000" stroke-width="0.8"/>
+  <text x="518" y="364" font-size="8.3" font-weight="700" fill="#1a1a1a">全局注意力 · 24 Q 头 / 8 KV 头</text>
+
+  <line x1="610" y1="372" x2="610" y2="388" stroke="#000000" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- MoE -->
+  <rect x="500" y="388" width="220" height="52" rx="7" fill="#cfe4cf" stroke="#000000" stroke-width="1.2"/>
+  <text x="610" y="407" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">稀疏 MoE · 128 选 8（SwiGLU）</text>
+  <text x="610" y="423" text-anchor="middle" font-size="9" fill="#444444">隐藏维 2,304 · 路由分数归一化后放大 8 倍</text>
+
+  <!-- 位置编码注记 -->
+  <rect x="500" y="450" width="220" height="26" rx="5" fill="#f8d3d8" stroke="#000000" stroke-width="1"/>
+  <text x="610" y="467" text-anchor="middle" font-size="9" fill="#1a1a1a">位置信息：学习式相对偏置 d_rel = 16（不用 RoPE）</text>
+
+  <!-- 输出 -->
+  <rect x="500" y="492" width="220" height="34" rx="7" fill="#e8e8e8" stroke="#000000" stroke-width="1.2"/>
+  <text x="610" y="513" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1a1a1a">输出 x_r → 下一轮 / Coda</text>
+
+  <!-- Attention Residuals -->
+  <rect x="392" y="540" width="328" height="42" rx="7" fill="#ffffff" stroke="#000000" stroke-width="1.1"/>
+  <text x="404" y="557" font-size="9.5" font-weight="700" fill="#1a1a1a">Attention Residuals：取代单条残差流</text>
+  <text x="404" y="572" font-size="9" fill="#444444">每 6 层块维护本块输出之和，后续层可学习加权读取；门控初始关闭</text>
+
+  <!-- 精度条 -->
+  <rect x="392" y="594" width="328" height="40" rx="7" fill="#fdf8ec" stroke="#c2a03c" stroke-width="1"/>
+  <text x="404" y="611" font-size="9.5" font-weight="700" fill="#8a6d1f">原生精度训练：L0–19 专家 NVFP4，L20–23 MXFP8</text>
+  <text x="404" y="626" font-size="9" fill="#8a6d1f">精度即发布精度，无事后量化；专家由 384 剪至 128 后蒸馏补齐</text>
+
+  <!-- 规格条 -->
+  <rect x="392" y="644" width="328" height="40" rx="7" fill="#e8e8e8" stroke="#000000" stroke-width="1.1"/>
+  <text x="404" y="661" font-size="9.5" font-weight="700" fill="#1a1a1a">部署：权重约 20 GB（Apache 2.0）</text>
+  <text x="404" y="676" font-size="9" fill="#444444">32 GB 统一内存即可运行 · 附 3 层 DSpark 草稿头用于投机解码</text>
+
+  <!-- 脚注 -->
+  <text x="410" y="736" text-anchor="middle" font-size="10.5" fill="#8a8a8a">图 13 · Inkling 2 Mini：24 层分 4 块，中段 12 层循环 3 次得 48 层等效深度（据官方模型卡与发布页绘制）</text>
+  <text x="410" y="754" text-anchor="middle" font-size="10" fill="#7a7a7a">KV 缓存按轮独立维护：262K 上下文下约需 8.76 GB（BF16）</text>
+</svg>

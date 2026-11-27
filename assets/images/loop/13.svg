@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="500" viewBox="0 0 820 500" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="820" height="500" fill="#1a1a1a"/>
+
+  <text x="410" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#f5f5f5">Inkling 2 Mini 与同量级开放权重模型的对比</text>
+  <text x="410" y="56" text-anchor="middle" font-size="11.5" fill="#a8a8a8">26.4B 总参 / 3.4B 激活（循环后每 token 读取 5.4B）· 四项基准得分（%）· 据官方 2026-11-20 发布页</text>
+
+  <!-- 图例 -->
+  <rect x="250" y="74" width="14" height="12" fill="#f6c177" stroke="#000000" stroke-width="0.8"/>
+  <text x="270" y="84" font-size="10.5" fill="#dddddd">Inkling 2 Mini</text>
+  <rect x="400" y="74" width="14" height="12" fill="#c9cfea" stroke="#000000" stroke-width="0.8"/>
+  <text x="420" y="84" font-size="10.5" fill="#dddddd">Qwen3.8-27B（稠密）</text>
+  <rect x="570" y="74" width="14" height="12" fill="#d8d8d8" stroke="#000000" stroke-width="0.8"/>
+  <text x="590" y="84" font-size="10.5" fill="#dddddd">Gemma 4 31B（稠密）</text>
+
+  <!-- 网格与刻度 -->
+  <line x1="230" y1="106" x2="230" y2="440" stroke="#555555" stroke-width="1"/>
+  <line x1="365" y1="106" x2="365" y2="440" stroke="#3a3a3a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="500" y1="106" x2="500" y2="440" stroke="#3a3a3a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="635" y1="106" x2="635" y2="440" stroke="#3a3a3a" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="770" y1="106" x2="770" y2="440" stroke="#555555" stroke-width="1"/>
+  <text x="230" y="456" text-anchor="middle" font-size="10" fill="#999999">0</text>
+  <text x="365" y="456" text-anchor="middle" font-size="10" fill="#999999">25</text>
+  <text x="500" y="456" text-anchor="middle" font-size="10" fill="#999999">50</text>
+  <text x="635" y="456" text-anchor="middle" font-size="10" fill="#999999">75</text>
+  <text x="770" y="456" text-anchor="middle" font-size="10" fill="#999999">100</text>
+
+  <!-- 第 1 组：DeepSWE v1.1 -->
+  <text x="220" y="155" text-anchor="end" font-size="11" font-weight="700" fill="#f0f0f0">DeepSWE v1.1</text>
+  <rect x="230" y="120" width="260.3" height="17" fill="#f6c177" stroke="#000000" stroke-width="0.8"/>
+  <text x="496" y="133" font-size="10" fill="#f0f0f0">48.2</text>
+  <rect x="230" y="142" width="227.9" height="17" fill="#c9cfea" stroke="#000000" stroke-width="0.8"/>
+  <text x="464" y="155" font-size="10" fill="#cdd3ec">42.2</text>
+  <rect x="230" y="164" width="1.6" height="17" fill="#d8d8d8" stroke="#000000" stroke-width="0.8"/>
+  <text x="238" y="177" font-size="10" fill="#c8c8c8">0.3</text>
+
+  <!-- 第 2 组：SWE-bench Pro v2 Hard -->
+  <text x="220" y="240" text-anchor="end" font-size="11" font-weight="700" fill="#f0f0f0">SWE-bench Pro v2 Hard</text>
+  <rect x="230" y="205" width="420.7" height="17" fill="#f6c177" stroke="#000000" stroke-width="0.8"/>
+  <text x="656" y="218" font-size="10" fill="#f0f0f0">77.9</text>
+  <rect x="230" y="227" width="398.5" height="17" fill="#c9cfea" stroke="#000000" stroke-width="0.8"/>
+  <text x="634" y="240" font-size="10" fill="#cdd3ec">73.8</text>
+  <rect x="230" y="249" width="76.7" height="17" fill="#d8d8d8" stroke="#000000" stroke-width="0.8"/>
+  <text x="313" y="262" font-size="10" fill="#c8c8c8">14.2</text>
+
+  <!-- 第 3 组：BrowseComp -->
+  <text x="220" y="325" text-anchor="end" font-size="11" font-weight="700" fill="#f0f0f0">BrowseComp（搜索）</text>
+  <rect x="230" y="290" width="426.6" height="17" fill="#f6c177" stroke="#000000" stroke-width="0.8"/>
+  <text x="662" y="303" font-size="10" fill="#f0f0f0">79.0</text>
+  <rect x="230" y="312" width="332.6" height="17" fill="#c9cfea" stroke="#000000" stroke-width="0.8"/>
+  <text x="568" y="325" font-size="10" fill="#cdd3ec">61.6</text>
+  <rect x="230" y="334" width="199.8" height="17" fill="#d8d8d8" stroke="#000000" stroke-width="0.8"/>
+  <text x="436" y="347" font-size="10" fill="#c8c8c8">37.0</text>
+
+  <!-- 第 4 组：MCP Atlas -->
+  <text x="220" y="410" text-anchor="end" font-size="11" font-weight="700" fill="#f0f0f0">MCP Atlas（工具调用）</text>
+  <rect x="230" y="375" width="446.6" height="17" fill="#f6c177" stroke="#000000" stroke-width="0.8"/>
+  <text x="682" y="388" font-size="10" fill="#f0f0f0">82.7</text>
+  <rect x="230" y="397" width="417.4" height="17" fill="#c9cfea" stroke="#000000" stroke-width="0.8"/>
+  <text x="653" y="410" font-size="10" fill="#cdd3ec">77.3</text>
+  <rect x="230" y="419" width="292.7" height="17" fill="#d8d8d8" stroke="#000000" stroke-width="0.8"/>
+  <text x="529" y="432" font-size="10" fill="#c8c8c8">54.2</text>
+
+  <text x="410" y="484" text-anchor="middle" font-size="10" fill="#8a8a8a">四项均为智能体编程、搜索与工具调用类任务；Inkling 2 Mini 在长程任务上领先，在多轮对话与纯知识问答上并不占优</text>
+</svg>
